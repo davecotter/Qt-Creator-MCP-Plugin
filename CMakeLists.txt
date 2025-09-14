@@ -82,58 +82,134 @@ configure_file(
     @ONLY
 )
 
-# Use the standard Qt Creator plugins directory
-set(QTCREATOR_PLUGINS_DIR "$ENV{HOME}/Library/Application Support/QtProject/qtcreator/plugins")
+# Use the standard Qt Creator plugins directory - platform specific
+if(WIN32)
+    # Windows: Use AppData\Local\QtProject\qtcreator\plugins
+    set(QTCREATOR_PLUGINS_DIR "$ENV{LOCALAPPDATA}/QtProject/qtcreator/plugins")
+elseif(APPLE)
+    # macOS: Use ~/Library/Application Support/QtProject/qtcreator/plugins
+    set(QTCREATOR_PLUGINS_DIR "$ENV{HOME}/Library/Application Support/QtProject/qtcreator/plugins")
+else()
+    # Linux: Use ~/.local/share/data/QtProject/qtcreator/plugins
+    set(QTCREATOR_PLUGINS_DIR "$ENV{HOME}/.local/share/data/QtProject/qtcreator/plugins")
+endif()
 message(STATUS "Using standard Qt Creator plugins directory: ${QTCREATOR_PLUGINS_DIR}")
 
-# Custom target to clean up previous plugin versions
-add_custom_target(CleanOldPlugins
-    COMMAND ${CMAKE_COMMAND} -E rm -f
-        "${QTCREATOR_PLUGINS_DIR}/libQt_MCP_Plugin.dylib"
-        "${QTCREATOR_PLUGINS_DIR}/libQt_MCP_Plugin_v1_0.dylib"
-        "${QTCREATOR_PLUGINS_DIR}/libQt_MCP_Plugin_v1_1.dylib"
-        "${QTCREATOR_PLUGINS_DIR}/libQt_MCP_Plugin_v1_2.dylib"
-        "${QTCREATOR_PLUGINS_DIR}/libQt_MCP_Plugin_v1_3.dylib"
-        "${QTCREATOR_PLUGINS_DIR}/libQt_MCP_Plugin_v1_4.dylib"
-        "${QTCREATOR_PLUGINS_DIR}/libQt_MCP_Plugin_v1_5.dylib"
-        "${QTCREATOR_PLUGINS_DIR}/libQt_MCP_Plugin_v1_6.dylib"
-        "${QTCREATOR_PLUGINS_DIR}/Qt_MCP_Plugin.json"
-        "${QTCREATOR_PLUGINS_DIR}/Qt_MCP_Plugin_v1_0.json"
-        "${QTCREATOR_PLUGINS_DIR}/Qt_MCP_Plugin_v1_3.json"
-        "${QTCREATOR_PLUGINS_DIR}/Qt_MCP_Plugin_v1_4.json"
-        "${QTCREATOR_PLUGINS_DIR}/Qt_MCP_Plugin_v1_5.json"
-        "${QTCREATOR_PLUGINS_DIR}/Qt_MCP_Plugin_v1_6.json"
-        "${CMAKE_CURRENT_BINARY_DIR}/Qt_MCP_Plugin.json"
-        "${CMAKE_CURRENT_BINARY_DIR}/Qt_MCP_Plugin_v1_1.json"
-        "${CMAKE_CURRENT_BINARY_DIR}/Qt_MCP_Plugin_v1_2.json"
-        "${CMAKE_CURRENT_BINARY_DIR}/Qt_MCP_Plugin_v1_3.json"
-        "${CMAKE_CURRENT_BINARY_DIR}/Qt_MCP_Plugin_v1_4.json"
-        "${CMAKE_CURRENT_BINARY_DIR}/Qt_MCP_Plugin_v1_5.json"
-        "${CMAKE_CURRENT_BINARY_DIR}/Qt_MCP_Plugin_v1_6.json"
-    COMMENT "Cleaning up previous plugin versions"
-)
+# Custom target to clean up previous plugin versions - platform specific
+if(WIN32)
+    add_custom_target(CleanOldPlugins
+        COMMAND ${CMAKE_COMMAND} -E rm -f
+            "${QTCREATOR_PLUGINS_DIR}/Qt_MCP_Plugin.dll"
+            "${QTCREATOR_PLUGINS_DIR}/Qt_MCP_Plugin_v1_0.dll"
+            "${QTCREATOR_PLUGINS_DIR}/Qt_MCP_Plugin_v1_1.dll"
+            "${QTCREATOR_PLUGINS_DIR}/Qt_MCP_Plugin_v1_2.dll"
+            "${QTCREATOR_PLUGINS_DIR}/Qt_MCP_Plugin_v1_3.dll"
+            "${QTCREATOR_PLUGINS_DIR}/Qt_MCP_Plugin_v1_4.dll"
+            "${QTCREATOR_PLUGINS_DIR}/Qt_MCP_Plugin_v1_5.dll"
+            "${QTCREATOR_PLUGINS_DIR}/Qt_MCP_Plugin_v1_6.dll"
+            "${QTCREATOR_PLUGINS_DIR}/Qt_MCP_Plugin.json"
+            "${QTCREATOR_PLUGINS_DIR}/Qt_MCP_Plugin_v1_0.json"
+            "${QTCREATOR_PLUGINS_DIR}/Qt_MCP_Plugin_v1_3.json"
+            "${QTCREATOR_PLUGINS_DIR}/Qt_MCP_Plugin_v1_4.json"
+            "${QTCREATOR_PLUGINS_DIR}/Qt_MCP_Plugin_v1_5.json"
+            "${QTCREATOR_PLUGINS_DIR}/Qt_MCP_Plugin_v1_6.json"
+            "${CMAKE_CURRENT_BINARY_DIR}/Qt_MCP_Plugin.json"
+            "${CMAKE_CURRENT_BINARY_DIR}/Qt_MCP_Plugin_v1_1.json"
+            "${CMAKE_CURRENT_BINARY_DIR}/Qt_MCP_Plugin_v1_2.json"
+            "${CMAKE_CURRENT_BINARY_DIR}/Qt_MCP_Plugin_v1_3.json"
+            "${CMAKE_CURRENT_BINARY_DIR}/Qt_MCP_Plugin_v1_4.json"
+            "${CMAKE_CURRENT_BINARY_DIR}/Qt_MCP_Plugin_v1_5.json"
+            "${CMAKE_CURRENT_BINARY_DIR}/Qt_MCP_Plugin_v1_6.json"
+        COMMENT "Cleaning up previous plugin versions (Windows)"
+    )
+else()
+    add_custom_target(CleanOldPlugins
+        COMMAND ${CMAKE_COMMAND} -E rm -f
+            "${QTCREATOR_PLUGINS_DIR}/libQt_MCP_Plugin.dylib"
+            "${QTCREATOR_PLUGINS_DIR}/libQt_MCP_Plugin_v1_0.dylib"
+            "${QTCREATOR_PLUGINS_DIR}/libQt_MCP_Plugin_v1_1.dylib"
+            "${QTCREATOR_PLUGINS_DIR}/libQt_MCP_Plugin_v1_2.dylib"
+            "${QTCREATOR_PLUGINS_DIR}/libQt_MCP_Plugin_v1_3.dylib"
+            "${QTCREATOR_PLUGINS_DIR}/libQt_MCP_Plugin_v1_4.dylib"
+            "${QTCREATOR_PLUGINS_DIR}/libQt_MCP_Plugin_v1_5.dylib"
+            "${QTCREATOR_PLUGINS_DIR}/libQt_MCP_Plugin_v1_6.dylib"
+            "${QTCREATOR_PLUGINS_DIR}/Qt_MCP_Plugin.json"
+            "${QTCREATOR_PLUGINS_DIR}/Qt_MCP_Plugin_v1_0.json"
+            "${QTCREATOR_PLUGINS_DIR}/Qt_MCP_Plugin_v1_3.json"
+            "${QTCREATOR_PLUGINS_DIR}/Qt_MCP_Plugin_v1_4.json"
+            "${QTCREATOR_PLUGINS_DIR}/Qt_MCP_Plugin_v1_5.json"
+            "${QTCREATOR_PLUGINS_DIR}/Qt_MCP_Plugin_v1_6.json"
+            "${CMAKE_CURRENT_BINARY_DIR}/Qt_MCP_Plugin.json"
+            "${CMAKE_CURRENT_BINARY_DIR}/Qt_MCP_Plugin_v1_1.json"
+            "${CMAKE_CURRENT_BINARY_DIR}/Qt_MCP_Plugin_v1_2.json"
+            "${CMAKE_CURRENT_BINARY_DIR}/Qt_MCP_Plugin_v1_3.json"
+            "${CMAKE_CURRENT_BINARY_DIR}/Qt_MCP_Plugin_v1_4.json"
+            "${CMAKE_CURRENT_BINARY_DIR}/Qt_MCP_Plugin_v1_5.json"
+            "${CMAKE_CURRENT_BINARY_DIR}/Qt_MCP_Plugin_v1_6.json"
+        COMMENT "Cleaning up previous plugin versions (macOS/Linux)"
+    )
+endif()
 
-# Custom target to install the plugin to the external plugins directory
-add_custom_target(InstallPlugin
-    COMMAND ${CMAKE_COMMAND} -E make_directory "${QTCREATOR_PLUGINS_DIR}"
-    COMMAND ${CMAKE_COMMAND} -E copy
-        "${CMAKE_CURRENT_BINARY_DIR}/Qt Creator.app/Contents/PlugIns/qtcreator/libQt_MCP_Plugin.dylib"
-        "${QTCREATOR_PLUGINS_DIR}/"
-    COMMAND ${CMAKE_COMMAND} -E copy
-        "${CMAKE_CURRENT_BINARY_DIR}/Qt_MCP_Plugin.json"
-        "${QTCREATOR_PLUGINS_DIR}/"
-    DEPENDS Qt_MCP_Plugin
-    COMMENT "Installing plugin to external Qt Creator plugins directory"
-)
+# Custom target to install the plugin to the external plugins directory - platform specific
+if(WIN32)
+    add_custom_target(InstallPlugin
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${QTCREATOR_PLUGINS_DIR}"
+        COMMAND ${CMAKE_COMMAND} -E copy
+            "${CMAKE_CURRENT_BINARY_DIR}/lib/qtcreator/plugins/Qt_MCP_Plugin.dll"
+            "${QTCREATOR_PLUGINS_DIR}/"
+        COMMAND ${CMAKE_COMMAND} -E copy
+            "${CMAKE_CURRENT_BINARY_DIR}/Qt_MCP_Plugin.json"
+            "${QTCREATOR_PLUGINS_DIR}/"
+        DEPENDS Qt_MCP_Plugin
+        COMMENT "Installing plugin to external Qt Creator plugins directory (Windows)"
+    )
+else()
+    add_custom_target(InstallPlugin
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${QTCREATOR_PLUGINS_DIR}"
+        COMMAND ${CMAKE_COMMAND} -E copy
+            "${CMAKE_CURRENT_BINARY_DIR}/Qt Creator.app/Contents/PlugIns/qtcreator/libQt_MCP_Plugin.dylib"
+            "${QTCREATOR_PLUGINS_DIR}/"
+        COMMAND ${CMAKE_COMMAND} -E copy
+            "${CMAKE_CURRENT_BINARY_DIR}/Qt_MCP_Plugin.json"
+            "${QTCREATOR_PLUGINS_DIR}/"
+        DEPENDS Qt_MCP_Plugin
+        COMMENT "Installing plugin to external Qt Creator plugins directory (macOS/Linux)"
+    )
+endif()
 
-# Enable the Run button in Qt Creator
-find_program(QtCreatorExecutable
-  NAMES
-    qtcreator "Qt Creator"
-  PATHS
-    "/Users/davec/Developer/Qt/Qt Creator.app/Contents/MacOS"
-  NO_DEFAULT_PATH
-)
+# Enable the Run button in Qt Creator - platform specific
+if(WIN32)
+    find_program(QtCreatorExecutable
+      NAMES
+        qtcreator.exe "Qt Creator.exe"
+      PATHS
+        "C:/Qt/Qt Creator/6.9.2/msvc2022_64/bin"
+        "C:/Program Files/Qt/Qt Creator/6.9.2/msvc2022_64/bin"
+        "C:/Qt/Qt Creator/6.9.2/mingw_64/bin"
+        "C:/Program Files/Qt/Qt Creator/6.9.2/mingw_64/bin"
+      NO_DEFAULT_PATH
+    )
+elseif(APPLE)
+    find_program(QtCreatorExecutable
+      NAMES
+        qtcreator "Qt Creator"
+      PATHS
+        "/Users/davec/Developer/Qt/Qt Creator.app/Contents/MacOS"
+        "/Applications/Qt Creator.app/Contents/MacOS"
+      NO_DEFAULT_PATH
+    )
+else()
+    find_program(QtCreatorExecutable
+      NAMES
+        qtcreator
+      PATHS
+        "/opt/qtcreator/bin"
+        "/usr/local/qtcreator/bin"
+        "/usr/bin"
+      NO_DEFAULT_PATH
+    )
+endif()
+
 if (QtCreatorExecutable)
   add_custom_target(RunQtCreator
     COMMAND ${QtCreatorExecutable} -pluginpath "${QTCREATOR_PLUGINS_DIR}"

@@ -106,13 +106,19 @@ QString MCPCommands::debug()
     auto checkProcessRunning = []() -> bool {
         QProcess checkProcess;
 #ifdef Q_OS_WIN
-        checkProcess.start("tasklist", QStringList() << "/FI" << "IMAGENAME eq kJams*");
+        // Windows: Use tasklist with proper filtering
+        checkProcess.start("tasklist", QStringList() << "/FI" << "IMAGENAME eq kJams.exe" << "/FO" << "CSV");
+        checkProcess.waitForFinished(2000);
+        QString output = QString::fromUtf8(checkProcess.readAllStandardOutput());
+        // On Windows, tasklist returns CSV format, look for kJams.exe
+        return output.contains("kJams.exe", Qt::CaseInsensitive);
 #else
+        // macOS/Linux: Use ps command (existing functionality preserved)
         checkProcess.start("ps", QStringList() << "aux");
-#endif
         checkProcess.waitForFinished(2000);
         QString output = QString::fromUtf8(checkProcess.readAllStandardOutput());
         return output.contains("kJams", Qt::CaseInsensitive);
+#endif
     };
     
     // Trigger debug action on main thread
