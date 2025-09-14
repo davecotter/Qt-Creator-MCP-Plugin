@@ -1,15 +1,15 @@
 {
     "Id" : "qt_mcp_plugin",
     "Name" : "Qt MCP Plugin",
-    "Version" : "1.18.0",
-    "CompatVersion" : "1.18.0",
+    "Version" : "1.19.0",
+    "CompatVersion" : "1.19.0",
     "Vendor" : "Metamuse Media",
     "VendorId" : "metamusemedia",
     "Copyright" : "(C) Metamuse Media",
     "License" : "LGPL",
-    "Description" : "Provides MCP Support for Qt Creator - Non-Blocking Event Loop Version 1.18",
+    "Description" : "Provides MCP Support for Qt Creator - Non-Blocking Event Loop Version 1.19",
     "Url" : "https://www.metamusemedia.com",
-    "DocumentationUrl" : "",
+    "DocumentationUrl" : "https://github.com/davecotter/Qt-Creator-MCP-Plugin",
     "Dependencies" : [
         { "Id" : "core", "Version" : "17.0.1" },
         { "Id" : "projectexplorer", "Version" : "17.0.1" }

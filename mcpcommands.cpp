@@ -152,19 +152,26 @@ QString MCPCommands::debug()
     }
     
     results.append("Debug session initiated, waiting for kJams to start...");
+    results.append("NOTE: This operation may take up to 60 seconds. Please wait for completion.");
     
-    // Wait for kJams to start (up to 30 seconds)
-    for (int i = 0; i < 30; i++) {
+    // Wait for kJams to start (up to 60 seconds)
+    for (int i = 0; i < 60; i++) {
         QThread::msleep(1000); // Wait 1 second
+        
+        // Provide progress updates every 10 seconds
+        if ((i + 1) % 10 == 0) {
+            results.append("Progress: " + QString::number((i + 1)) + "/60 seconds elapsed...");
+        }
+        
         if (checkProcessRunning()) {
             results.append("SUCCESS: kJams process detected after " + QString::number((i + 1)) + " seconds");
             results.append("Debug session is now active.");
+            results.append("IMPORTANT: kJams is now running under the debugger. Use the MCP plugin to control it.");
             break;
-        } else if (i == 29) {
-            results.append("WARNING: Debug session started but kJams process not detected after 30 seconds");
+        } else if (i == 59) {
+            results.append("WARNING: Debug session started but kJams process not detected after 60 seconds");
             results.append("The debugger may still be starting up or there may be an issue");
-        } else {
-            results.append("Still waiting... (" + QString::number((i + 1)) + " seconds elapsed)");
+            results.append("Check Qt Creator's debugger output for more information");
         }
     }
     

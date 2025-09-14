@@ -302,7 +302,24 @@ void MCPServer::processRequest(QTcpSocket *client, const QJsonObject &request)
         methods.append("saveSession");
         methods.append("listIssues");
         methods.append("listMethods");
+        methods.append("getMethodMetadata");
         result = methods;
+    }
+    else if (method == "getMethodMetadata") {
+        QJsonObject metadata;
+        
+        // Define expected durations for long-running operations (in seconds)
+        QJsonObject methodDurations;
+        methodDurations["debug"] = 60;  // Up to 60 seconds
+        methodDurations["build"] = 1200;  // Up to 20 minutes (1200 seconds)
+        methodDurations["runProject"] = 60;  // Up to 60 seconds
+        methodDurations["loadSession"] = 30;  // Up to 30 seconds
+        methodDurations["cleanProject"] = 300;  // Up to 5 minutes (300 seconds)
+        
+        metadata["expectedDurations"] = methodDurations;
+        metadata["description"] = "Provides metadata about MCP methods, including expected operation durations in seconds";
+        
+        result = metadata;
     }
     else {
         errorMessage = QString("Unknown method: %1").arg(method);
