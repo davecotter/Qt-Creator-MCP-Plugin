@@ -46,23 +46,66 @@ All long-running operations include timeout hints in their responses, and you ca
 
 ## Prerequisites
 
-### Windows
-- **Qt Creator** 6.9.2 or later with development headers
+### Required Qt Components
+
+**⚠️ IMPORTANT: You must install Qt with the following components:**
+
+1. **Qt Creator** 6.9.2 or later
+2. **Qt Libraries** 6.9.2 or later (exact version match required)
+3. **Qt Plugin Development** (includes Qt Creator plugin development headers)
+4. **Qt Sources** (required for plugin compilation)
+
+### Installation Instructions
+
+**Windows:**
+- Download Qt from [qt.io](https://www.qt.io/download)
+- During installation, ensure you select:
+  - ✅ Qt Creator 6.9.2
+  - ✅ Qt 6.9.2 (MSVC 2022 64-bit or MinGW 64-bit)
+  - ✅ Qt Plugin Development
+  - ✅ Qt Sources
 - **CMake** 3.16 or later
 - **Visual Studio** 2019/2022 or **MinGW** compiler
 - **Git** for cloning the repository
 
-### macOS
-- **Qt Creator** 6.9.2 or later with development headers
+**macOS:**
+- Download Qt from [qt.io](https://www.qt.io/download)
+- During installation, ensure you select:
+  - ✅ Qt Creator 6.9.2
+  - ✅ Qt 6.9.2 (macOS)
+  - ✅ Qt Plugin Development
+  - ✅ Qt Sources
 - **CMake** 3.16 or later
 - **Xcode Command Line Tools** (`xcode-select --install`)
 - **Git** for cloning the repository
 
-### Linux
-- **Qt Creator** 6.9.2 or later with development headers
+**Linux:**
+- Download Qt from [qt.io](https://www.qt.io/download)
+- During installation, ensure you select:
+  - ✅ Qt Creator 6.9.2
+  - ✅ Qt 6.9.2 (GCC 64-bit)
+  - ✅ Qt Plugin Development
+  - ✅ Qt Sources
 - **CMake** 3.16 or later
 - **GCC** or **Clang** compiler
 - **Git** for cloning the repository
+
+### Verifying Your Installation
+
+**Check Qt Creator Version:**
+- Open Qt Creator
+- Go to Help → About Qt Creator
+- Verify version is 6.9.2 or later
+
+**Check Qt Libraries Version:**
+- In Qt Creator, go to Help → About Qt
+- Verify Qt version is 6.9.2 or later
+
+**Verify Plugin Development Headers:**
+- Look for these directories in your Qt installation:
+  - `Qt Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/` (macOS)
+  - `Qt Creator/6.9.2/msvc2022_64/include/qtcreator/src/plugins/` (Windows)
+  - `/opt/qtcreator/include/qtcreator/src/plugins/` (Linux)
 
 ## How to Build
 
@@ -80,8 +123,14 @@ cd build
 
 ### Step 3: Configure and Build
 
-**Windows:**
+**Windows (Command Prompt):**
 ```cmd
+cmake -DCMAKE_PREFIX_PATH="C:/Qt/Qt Creator/6.9.2/msvc2022_64" -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
+cmake --build .
+```
+
+**Windows (PowerShell):**
+```powershell
 cmake -DCMAKE_PREFIX_PATH="C:/Qt/Qt Creator/6.9.2/msvc2022_64" -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
 cmake --build .
 ```
@@ -115,6 +164,8 @@ cmake --build .
 
 ## How to Run
 
+### Option 1: Using CMake Target (Cross-Platform)
+
 From the command line run
 
     cmake --build . --target RunQtCreator
@@ -127,6 +178,18 @@ start the Qt Creator executable with the following parameters
 where `<path_to_plugin>` is the path to the resulting plugin library in the build directory
 (`<plugin_build>/lib/qtcreator/plugins` on Windows and Linux,
 `<plugin_build>/Qt Creator.app/Contents/PlugIns` on macOS).
+
+### Option 2: Using Platform-Specific Scripts
+
+**Windows:**
+```cmd
+launch_qtcreator_with_plugin.bat
+```
+
+**macOS/Linux:**
+```bash
+./launch_qtcreator_with_plugin.sh
+```
 
 You might want to add `-temporarycleansettings` (or `-tcs`) to ensure that the opened Qt Creator
 instance cannot mess with your user-global Qt Creator settings.
@@ -239,6 +302,9 @@ sudo yum install nc
 - **"Could not find QtCreator"**: Make sure you're using the correct `CMAKE_PREFIX_PATH` for your platform
 - **"CMake version too old"**: Update CMake to version 3.16 or later
 - **"Compiler not found"**: Install Visual Studio (Windows), Xcode Command Line Tools (macOS), or GCC/Clang (Linux)
+- **"Qt Plugin Development headers not found"**: Reinstall Qt and ensure "Qt Plugin Development" component is selected
+- **"Qt Sources not found"**: Reinstall Qt and ensure "Qt Sources" component is selected
+- **"Version mismatch"**: Ensure Qt Creator and Qt Libraries are both version 6.9.2 or later
 
 **Runtime Issues:**
 - **"MCP server not starting"**: Check that Qt Creator is running and the plugin is loaded
@@ -261,6 +327,32 @@ sudo yum install nc
 - Install development packages: `sudo apt-get install build-essential cmake` (Ubuntu/Debian)
 - Make sure Qt Creator development headers are installed
 - Check that your Qt installation includes the development files
+
+### Qt Installation Requirements
+
+**If you get build errors related to missing Qt components:**
+
+1. **Uninstall current Qt installation**
+2. **Reinstall Qt with ALL required components:**
+   - Qt Creator 6.9.2
+   - Qt 6.9.2 (matching your platform)
+   - ✅ **Qt Plugin Development** (CRITICAL - includes plugin headers)
+   - ✅ **Qt Sources** (CRITICAL - required for compilation)
+   - ✅ **Qt Debug Information Files** (recommended)
+
+**Common Qt Installation Mistakes:**
+- ❌ Installing only Qt Creator without Qt Libraries
+- ❌ Installing Qt Libraries without Plugin Development component
+- ❌ Installing different versions of Qt Creator and Qt Libraries
+- ❌ Missing Qt Sources component
+
+**Verification Commands:**
+```bash
+# Check if plugin development headers exist
+ls -la "Qt Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/"  # macOS
+ls -la "C:/Qt/Qt Creator/6.9.2/msvc2022_64/include/qtcreator/src/plugins/"  # Windows
+ls -la "/opt/qtcreator/include/qtcreator/src/plugins/"  # Linux
+```
 
 ### Getting Help
 
