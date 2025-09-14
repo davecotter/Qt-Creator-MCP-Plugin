@@ -1,0 +1,17 @@
+{
+    "Id" : "qt_mcp_plugin_v1_7",
+    "Name" : "Qt_MCP_Plugin_v1.7",
+    "Version" : "1.7.0",
+    "CompatVersion" : "1.7.0",
+    "Vendor" : "Metamuse Media",
+    "VendorId" : "metamusemedia",
+    "Copyright" : "(C) Metamuse Media",
+    "License" : "LGPL",
+    "Description" : "Provides MCP Support for Qt Creator - Version 1.7 with Improved Debug Command",
+    "Url" : "https://www.metamusemedia.com",
+    "DocumentationUrl" : "",
+    "Dependencies" : [
+        { "Id" : "core", "Version" : "17.0.1" },
+        { "Id" : "projectexplorer", "Version" : "17.0.1" }
+    ]
+}

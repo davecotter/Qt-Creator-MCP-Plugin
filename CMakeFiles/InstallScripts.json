@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"/Volumes/Developer/depot/Qt_MCP_Plugin/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

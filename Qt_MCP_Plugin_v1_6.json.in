@@ -1,0 +1,17 @@
+{
+    "Id" : "qt_mcp_plugin_v1_6",
+    "Name" : "Qt_MCP_Plugin_v1.6",
+    "Version" : "1.6.0",
+    "CompatVersion" : "1.6.0",
+    "Vendor" : "Metamuse Media",
+    "VendorId" : "metamusemedia",
+    "Copyright" : "(C) Metamuse Media",
+    "License" : "LGPL",
+    "Description" : "Provides MCP Support for Qt Creator - Version 1.6 with Version Command and Enhanced Debug Output",
+    "Url" : "https://www.metamusemedia.com",
+    "DocumentationUrl" : "",
+    "Dependencies" : [
+        { "Id" : "core", "Version" : "17.0.1" },
+        { "Id" : "projectexplorer", "Version" : "17.0.1" }
+    ]
+}
