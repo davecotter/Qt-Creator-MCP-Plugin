@@ -1,9 +1,16 @@
 cmake_minimum_required(VERSION 3.16)
 
-# Qt Creator installation path
-set(CMAKE_PREFIX_PATH "/Users/davec/Developer/Qt/Qt Creator.app/Contents/Frameworks")
-list(APPEND CMAKE_PREFIX_PATH "/Users/davec/Developer/Qt/Qt Creator.app/Contents/Resources")
-list(APPEND CMAKE_PREFIX_PATH "/Users/davec/Developer/Qt/6.9.2/macos")
+# Qt Creator installation path - platform specific
+if(WIN32)
+    # Windows paths - user should set these via CMAKE_PREFIX_PATH
+    # Example: cmake -DCMAKE_PREFIX_PATH="C:/Qt/Qt Creator/6.9.2/msvc2022_64"
+elseif(APPLE)
+    # macOS paths - user should set these via CMAKE_PREFIX_PATH  
+    # Example: cmake -DCMAKE_PREFIX_PATH="/Users/username/Qt/Qt Creator.app/Contents/Resources"
+else()
+    # Linux paths - user should set these via CMAKE_PREFIX_PATH
+    # Example: cmake -DCMAKE_PREFIX_PATH="/opt/qtcreator"
+endif()
 
 # Prevent using system Qt
 set(QT_NO_USE_FIND_PACKAGE_Qt6 TRUE)

@@ -102,10 +102,14 @@ QString MCPCommands::debug()
     results.append("Run configuration: " + runConfig->displayName());
     results.append("");
     
-    // Helper function to check if kJams process is running
+    // Helper function to check if kJams process is running (cross-platform)
     auto checkProcessRunning = []() -> bool {
         QProcess checkProcess;
+#ifdef Q_OS_WIN
+        checkProcess.start("tasklist", QStringList() << "/FI" << "IMAGENAME eq kJams*");
+#else
         checkProcess.start("ps", QStringList() << "aux");
+#endif
         checkProcess.waitForFinished(2000);
         QString output = QString::fromUtf8(checkProcess.readAllStandardOutput());
         return output.contains("kJams", Qt::CaseInsensitive);
