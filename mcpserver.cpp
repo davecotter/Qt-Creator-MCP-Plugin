@@ -180,15 +180,27 @@ void MCPServer::processRequest(QTcpSocket *client, const QJsonObject &request)
     // Route the method to appropriate handler
     if (method == "build") {
         bool successB = m_commandsP->build();
-        result = successB;
+        // For long-running operations, provide timeout hints
+        QJsonObject buildResult;
+        buildResult["success"] = successB;
+        buildResult["message"] = "Build started. This operation may take up to 20 minutes.";
+        buildResult["timeoutInfo"] = "Call getMethodMetadata() for expected operation durations";
+        result = buildResult;
     }
     else if (method == "debug") {
         QString debugResults = m_commandsP->debug();
-        result = debugResults;
+        // Add timeout hint to debug response
+        QJsonObject debugResult;
+        debugResult["output"] = debugResults;
+        debugResult["timeoutInfo"] = "Call getMethodMetadata() for expected operation durations";
+        result = debugResult;
     }
     else if (method == "getVersion") {
-        QString version = m_commandsP->getVersion();
-        result = version;
+        QJsonObject versionInfo;
+        versionInfo["version"] = m_commandsP->getVersion();
+        versionInfo["plugin"] = "Qt MCP Plugin";
+        versionInfo["note"] = "Some operations may take several minutes. Call getMethodMetadata() for timeout information.";
+        result = versionInfo;
     }
     else if (method == "openFile") {
         if (!params.isObject()) {
@@ -238,11 +250,19 @@ void MCPServer::processRequest(QTcpSocket *client, const QJsonObject &request)
     }
     else if (method == "runProject") {
         bool successB = m_commandsP->runProject();
-        result = successB;
+        QJsonObject runResult;
+        runResult["success"] = successB;
+        runResult["message"] = "Project run started. This operation may take up to 60 seconds.";
+        runResult["timeoutInfo"] = "Call getMethodMetadata() for expected operation durations";
+        result = runResult;
     }
     else if (method == "cleanProject") {
         bool successB = m_commandsP->cleanProject();
-        result = successB;
+        QJsonObject cleanResult;
+        cleanResult["success"] = successB;
+        cleanResult["message"] = "Project clean started. This operation may take up to 5 minutes.";
+        cleanResult["timeoutInfo"] = "Call getMethodMetadata() for expected operation durations";
+        result = cleanResult;
     }
     else if (method == "listOpenFiles") {
         QStringList files = m_commandsP->listOpenFiles();
@@ -270,7 +290,11 @@ void MCPServer::processRequest(QTcpSocket *client, const QJsonObject &request)
         } else {
             QString sessionName = params.toObject().value("sessionName").toString();
             bool successB = m_commandsP->loadSession(sessionName);
-            result = successB;
+            QJsonObject loadResult;
+            loadResult["success"] = successB;
+            loadResult["message"] = "Session loading started. This operation may take up to 30 seconds.";
+            loadResult["timeoutInfo"] = "Call getMethodMetadata() for expected operation durations";
+            result = loadResult;
         }
     }
     else if (method == "saveSession") {
