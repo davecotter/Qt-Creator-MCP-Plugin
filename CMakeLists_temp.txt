@@ -1,0 +1,79 @@
+cmake_minimum_required(VERSION 3.16)
+
+# Qt Creator installation path - platform specific
+if(WIN32)
+    # Windows paths - user should set these via CMAKE_PREFIX_PATH
+    # Example: cmake -DCMAKE_PREFIX_PATH="C:/Qt/Qt Creator/6.9.2/msvc2022_64"
+elseif(APPLE)
+    # macOS paths - user should set these via CMAKE_PREFIX_PATH  
+    # Example: cmake -DCMAKE_PREFIX_PATH="/Users/username/Qt/Qt Creator.app/Contents/Resources"
+else()
+    # Linux paths - user should set these via CMAKE_PREFIX_PATH
+    # Example: cmake -DCMAKE_PREFIX_PATH="/opt/qtcreator"
+endif()
+
+# Prevent using system Qt
+set(QT_NO_USE_FIND_PACKAGE_Qt6 TRUE)
+set(QT_NO_USE_FIND_PACKAGE_Qt5 TRUE)
+
+project(Qt_MCP_Plugin)
+
+# Include centralized versioning
+include(version.cmake)
+
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# Try to find Qt6 components without QtCreator dependency
+find_package(Qt6 COMPONENTS Widgets Network REQUIRED)
+
+# Add a CMake option that enables building your plugin with tests.
+# You don't want your released plugin binaries to contain tests,
+# so make that default to 'NO'.
+# Enable tests by passing -DWITH_TESTS=ON to CMake.
+option(WITH_TESTS "Builds with tests" NO)
+
+if(WITH_TESTS)
+  # Look for QtTest
+  find_package(Qt6 REQUIRED COMPONENTS Test)
+
+  # Tell CMake functions like add_qtc_plugin about the QtTest component.
+  set(IMPLICIT_DEPENDS Qt::Test)
+
+  # Enable ctest for auto tests.
+  enable_testing()
+endif()
+
+# Create a simple library instead of Qt Creator plugin for now
+add_library(Qt_MCP_Plugin SHARED
+    qt_mcp_plugin.cpp
+    qt_mcp_pluginconstants.h
+    qt_mcp_plugintr.h
+    mcpserver.cpp
+    mcpserver.h
+    mcpcommands.cpp
+    mcpcommands.h
+)
+
+# Link with Qt6
+target_link_libraries(Qt_MCP_Plugin
+    Qt::Widgets
+    Qt::Network
+)
+
+# Set plugin properties without version in filename
+set_target_properties(Qt_MCP_Plugin PROPERTIES
+    SOVERSION ${PLUGIN_VERSION_MAJOR}
+)
+
+# Generate the plugin JSON file
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/Qt_MCP_Plugin.json.in
+    ${CMAKE_CURRENT_BINARY_DIR}/Qt_MCP_Plugin.json
+    @ONLY
+)
+

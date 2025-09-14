@@ -10,6 +10,8 @@ A plugin for Qt Creator that implements Model Context Protocol (MCP), allowing A
 - **Timeout Management**: Intelligent timeout handling with operation duration hints
 - **File Operations**: Open files, list open files, manage editor state
 - **Issue Tracking**: List build issues and project status
+- **Tools Menu Integration**: Complete MCP command menu accessible via Tools → MCP Plugin
+- **Console Output**: All command results displayed in Qt Creator's General Messages panel
 
 ## MCP Protocol Support
 
@@ -43,6 +45,32 @@ The plugin provides intelligent timeout handling for long-running operations:
 - **cleanProject**: Up to 5 minutes (300 seconds)
 
 All long-running operations include timeout hints in their responses, and you can call `getMethodMetadata()` to get detailed timeout information.
+
+## Using the Tools Menu
+
+The plugin adds a comprehensive menu under **Tools → MCP Plugin** with the following options:
+
+### Menu Structure
+- **About MCP Plugin** - Shows plugin status and server information
+- **Get Version** - Display plugin version information
+- **List Sessions** - Show available Qt Creator sessions
+- **List Projects** - Display loaded projects
+- **List Build Configs** - Show available build configurations
+- **Get Current Project** - Display current project name
+- **Get Current Build Config** - Show current build configuration
+- **Get Current Session** - Display current session name
+- **List Open Files** - Show currently open files
+- **List Issues** - Display build issues and warnings
+- **Build Project** - Start a project build
+- **Run Project** - Execute the current project
+- **Debug Project** - Start debug session
+- **Clean Project** - Clean build artifacts
+- **Save Session** - Save current session
+- **Quit Qt Creator** - Exit Qt Creator
+
+### Console Output
+
+All command results are displayed in Qt Creator's **General Messages** panel (View → Views → General Messages). The messages flash briefly to draw attention, then remain visible in the panel. This provides a convenient way to see command results without needing to use the MCP server directly.
 
 ## Prerequisites
 
@@ -161,6 +189,192 @@ cmake --build .
 - `/opt/qtcreator/`
 - `/usr/local/qtcreator/`
 - `~/Qt/Qt Creator/6.9.2/gcc_64/`
+
+## How to Install the Plugin
+
+### ⚠️ IMPORTANT: Plugin Installation Requirements
+
+**The plugin MUST be installed in the correct location to work automatically when users double-click Qt Creator.**
+
+### Step 4: Install the Plugin
+
+After building, install the plugin using CMake:
+
+```bash
+cmake --build . --target InstallPlugin
+```
+
+This will automatically:
+1. Clean up any previous plugin versions
+2. Install the plugin to the correct user-specific directory
+3. Copy the plugin configuration file
+
+### Plugin Installation Locations
+
+The plugin is installed to user-specific directories that persist across Qt Creator updates:
+
+**Windows:**
+- `%LOCALAPPDATA%\QtProject\qtcreator\plugins\`
+
+**macOS:**
+- `~/Library/Application Support/QtProject/qtcreator/plugins/`
+
+**Linux:**
+- `~/.local/share/data/QtProject/qtcreator/plugins/`
+
+### ⚠️ CRITICAL: macOS Plugin Loading Limitations
+
+**IMPORTANT: Qt Creator on macOS does NOT automatically load plugins from external user directories.**
+
+After extensive testing, the following approaches **DO NOT WORK** on macOS:
+- ❌ Installing plugins in user directories (`~/Library/Application Support/QtProject/qtcreator/plugins/`)
+- ❌ Modifying `qt.conf` with `AdditionalPlugins=` 
+- ❌ Using `QT_PLUGIN_PATH` environment variable
+- ❌ Symbolic links from external directories
+
+**Qt Creator only loads plugins from its internal app bundle by default.**
+
+### macOS Working Solutions
+
+Since external plugin loading doesn't work on macOS, you have these options:
+
+#### Option 1: Install in App Bundle (Temporary)
+
+**⚠️ WARNING: This will be lost when Qt Creator is updated!**
+
+```bash
+# Install plugin directly in Qt Creator app bundle
+cp ~/Library/Application\ Support/QtProject/qtcreator/plugins/* "/Applications/Qt Creator.app/Contents/PlugIns/qtcreator/"
+```
+
+**Pros:** Works immediately, no configuration needed
+**Cons:** Plugin is lost when Qt Creator updates
+
+#### Option 2: Use Command-Line Plugin Loading
+
+Create a script or alias to launch Qt Creator with the plugin path:
+
+```bash
+# Create a launch script
+cat > ~/launch_qtcreator_with_mcp.sh << 'EOF'
+#!/bin/bash
+"/Applications/Qt Creator.app/Contents/MacOS/Qt Creator" -pluginpath ~/Library/Application\ Support/QtProject/qtcreator/plugins "$@"
+EOF
+
+chmod +x ~/launch_qtcreator_with_mcp.sh
+```
+
+Then use: `~/launch_qtcreator_with_mcp.sh` instead of launching Qt Creator normally.
+
+**Pros:** Plugin persists across updates
+**Cons:** Must use script instead of double-clicking the app
+
+#### Option 3: Create Application Alias (Recommended)
+
+Create a new application bundle that launches Qt Creator with the plugin:
+
+```bash
+# Create a wrapper app (advanced users)
+# This creates a new app that automatically loads the plugin
+```
+
+### macOS Plugin Installation Commands
+
+```bash
+# Build and install the plugin
+cmake --build . --target InstallPlugin
+
+# Then choose one of the working solutions above
+```
+
+#### Windows Configuration
+
+1. **Modify Qt Creator's configuration file:**
+   ```cmd
+   # Backup the original configuration
+   copy "C:\Qt\Qt Creator\6.9.2\msvc2022_64\bin\qt.conf" "C:\Qt\Qt Creator\6.9.2\msvc2022_64\bin\qt.conf.backup"
+   
+   # Edit the configuration file
+   notepad "C:\Qt\Qt Creator\6.9.2\msvc2022_64\bin\qt.conf"
+   ```
+
+2. **Add the user plugin directory to the configuration:**
+   ```
+   [Paths]
+   Prefix=.
+   Binaries=.
+   Libraries=lib
+   Plugins=plugins
+   Qml2Imports=qml
+   AdditionalPlugins=%LOCALAPPDATA%\QtProject\qtcreator\plugins
+   ```
+
+#### Linux Configuration
+
+1. **Modify Qt Creator's configuration file:**
+   ```bash
+   # Backup the original configuration
+   cp "/opt/qtcreator/bin/qt.conf" "/opt/qtcreator/bin/qt.conf.backup"
+   
+   # Edit the configuration file
+   nano "/opt/qtcreator/bin/qt.conf"
+   ```
+
+2. **Add the user plugin directory to the configuration:**
+   ```
+   [Paths]
+   Prefix=.
+   Binaries=bin
+   Libraries=lib
+   Plugins=lib/qtcreator/plugins
+   Qml2Imports=qml
+   AdditionalPlugins=/home/$(whoami)/.local/share/data/QtProject/qtcreator/plugins
+   ```
+
+### Alternative: Command-Line Plugin Loading
+
+If you prefer not to modify Qt Creator's configuration, you can start Qt Creator with the plugin path:
+
+```bash
+# macOS
+"/Applications/Qt Creator.app/Contents/MacOS/Qt Creator" -pluginpath ~/Library/Application\ Support/QtProject/qtcreator/plugins
+
+# Windows
+"C:\Qt\Qt Creator\6.9.2\msvc2022_64\bin\qtcreator.exe" -pluginpath "%LOCALAPPDATA%\QtProject\qtcreator\plugins"
+
+# Linux
+/opt/qtcreator/bin/qtcreator -pluginpath ~/.local/share/data/QtProject/qtcreator/plugins
+```
+
+**Note:** Command-line loading only works when explicitly specified. For automatic loading when users double-click the app, the qt.conf configuration is required.
+
+### Verify Plugin Installation
+
+#### macOS Verification
+
+1. **Start Qt Creator** using one of the working solutions above
+2. **Check Help → About Plugins** to verify "Qt MCP Plugin" is listed
+3. **Test MCP connectivity:**
+   ```bash
+   # Test if MCP server is running
+   nc -z localhost 3001 && echo "MCP server is running" || echo "MCP server is not running"
+   
+   # Get plugin version
+   echo '{"jsonrpc": "2.0", "method": "getVersion", "id": 1}' | nc localhost 3001
+   ```
+
+#### Windows/Linux Verification
+
+1. **Start Qt Creator** (normally or with -pluginpath)
+2. **Check Help → About Plugins** to verify "Qt MCP Plugin" is listed
+3. **Test MCP connectivity:**
+   ```bash
+   # Test if MCP server is running
+   nc -z localhost 3001 && echo "MCP server is running" || echo "MCP server is not running"
+   
+   # Get plugin version
+   echo '{"jsonrpc": "2.0", "method": "getVersion", "id": 1}' | nc localhost 3001
+   ```
 
 ## How to Run
 
@@ -364,5 +578,8 @@ If you encounter issues:
 
 ## Version History
 
+- **v1.22.0**: Fixed console output to use Qt Creator's General Messages panel via `Core::MessageManager::writeFlashing()`, removed all dialog popups, improved user experience
+- **v1.21.0**: Updated version numbering in menu items and About dialog, implemented centralized output function
+- **v1.20.0**: Added comprehensive Tools menu with all MCP commands, console output integration, improved user experience
 - **v1.19.0**: Enhanced timeout management, added `getMethodMetadata` method, improved debug command reliability, Windows compatibility
 - **v1.18.0**: Initial MCP server implementation with basic Qt Creator integration
