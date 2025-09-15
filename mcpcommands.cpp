@@ -161,33 +161,63 @@ QString MCPCommands::debug()
         return results.join("\n");
     }
     
-    results.append("Debug session initiated, waiting for kJams to start...");
-    results.append("NOTE: This operation may take up to 60 seconds. Please wait for completion.");
-    
-    // Wait for kJams to start (up to 60 seconds)
-    for (int i = 0; i < 60; i++) {
-        QThread::msleep(1000); // Wait 1 second
-        
-        // Provide progress updates every 10 seconds
-        if ((i + 1) % 10 == 0) {
-            results.append("Progress: " + QString::number((i + 1)) + "/60 seconds elapsed...");
-        }
-        
-        if (checkProcessRunning()) {
-            results.append("SUCCESS: kJams process detected after " + QString::number((i + 1)) + " seconds");
-            results.append("Debug session is now active.");
-            results.append("IMPORTANT: kJams is now running under the debugger. Use the MCP plugin to control it.");
-            break;
-        } else if (i == 59) {
-            results.append("WARNING: Debug session started but kJams process not detected after 60 seconds");
-            results.append("The debugger may still be starting up or there may be an issue");
-            results.append("Check Qt Creator's debugger output for more information");
-        }
-    }
+    results.append("Debug session initiated successfully!");
+    results.append("The debugger is now starting in the background.");
+    results.append("Check Qt Creator's debugger output for progress updates.");
+    results.append("NOTE: The debug session will continue running asynchronously.");
     
     results.append("");
     results.append("=== DEBUG RESULT ===");
     results.append("Debug command completed.");
+    
+    return results.join("\n");
+}
+
+QString MCPCommands::stopDebug()
+{
+    QStringList results;
+    results.append("=== STOP DEBUGGING ===");
+    
+    // Use ActionManager to trigger the "Stop Debugging" action
+    Core::ActionManager *actionManager = Core::ActionManager::instance();
+    if (!actionManager) {
+        results.append("ERROR: ActionManager not available");
+        return results.join("\n");
+    }
+    
+    // Try different possible action IDs for stopping debugging
+    QStringList stopActionIds = {
+        "Debugger.StopDebugger",
+        "Debugger.Stop",
+        "ProjectExplorer.StopDebugging",
+        "ProjectExplorer.Stop",
+        "Debugger.StopDebugging"
+    };
+    
+    bool actionTriggered = false;
+    for (const QString &actionId : stopActionIds) {
+        results.append("Trying stop debug action: " + actionId);
+        
+        Core::Command *command = actionManager->command(Utils::Id::fromString(actionId));
+        if (command && command->action()) {
+            results.append("Found stop debug action, triggering...");
+            command->action()->trigger();
+            results.append("Stop debug action triggered successfully");
+            actionTriggered = true;
+            break;
+        } else {
+            results.append("Stop debug action not found: " + actionId);
+        }
+    }
+    
+    if (!actionTriggered) {
+        results.append("WARNING: No stop debug action found among tried IDs");
+        results.append("You may need to stop debugging manually from Qt Creator's debugger interface");
+    }
+    
+    results.append("");
+    results.append("=== STOP DEBUG RESULT ===");
+    results.append("Stop debug command completed.");
     
     return results.join("\n");
 }

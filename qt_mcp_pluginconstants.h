@@ -11,6 +11,7 @@ const char ABOUT_ACTION_ID[] = "Qt_MCP_Plugin.About";
 // MCP Command actions
 const char BUILD_ACTION_ID[] = "Qt_MCP_Plugin.Build";
 const char DEBUG_ACTION_ID[] = "Qt_MCP_Plugin.Debug";
+const char STOP_DEBUG_ACTION_ID[] = "Qt_MCP_Plugin.StopDebug";
 const char LIST_PROJECTS_ACTION_ID[] = "Qt_MCP_Plugin.ListProjects";
 const char LIST_BUILD_CONFIGS_ACTION_ID[] = "Qt_MCP_Plugin.ListBuildConfigs";
 const char QUIT_ACTION_ID[] = "Qt_MCP_Plugin.Quit";

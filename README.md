@@ -6,7 +6,7 @@ A plugin for Qt Creator that implements Model Context Protocol (MCP), allowing A
 
 - **MCP Server Integration**: Provides a TCP-based MCP server for AI communication
 - **Project Management**: Load sessions, switch build configurations, manage projects
-- **Build & Debug Support**: Trigger builds, start debug sessions, run projects
+- **Build & Debug Support**: Trigger builds, start/stop debug sessions, run projects
 - **Timeout Management**: Intelligent timeout handling with operation duration hints
 - **File Operations**: Open files, list open files, manage editor state
 - **Issue Tracking**: List build issues and project status
@@ -27,6 +27,7 @@ A plugin for Qt Creator that implements Model Context Protocol (MCP), allowing A
 - `switchToBuildConfig` - Switch to a specific build configuration
 - `build` - Start a project build
 - `debug` - Start a debug session
+- `stopDebug` - Stop active debug session
 - `runProject` - Run the current project
 - `cleanProject` - Clean the current project
 - `openFile` - Open a file in the editor
@@ -63,7 +64,8 @@ The plugin adds a comprehensive menu under **Tools → MCP Plugin** with the fol
 - **List Issues** - Display build issues and warnings
 - **Build Project** - Start a project build
 - **Run Project** - Execute the current project
-- **Debug Project** - Start debug session
+- **Debug Project** - Start debug session (non-blocking)
+- **Stop Debugging** - Stop active debug session
 - **Clean Project** - Clean build artifacts
 - **Save Session** - Save current session
 - **Quit Qt Creator** - Exit Qt Creator
@@ -578,6 +580,9 @@ If you encounter issues:
 
 ## Version History
 
+- **v1.25.0**: Added Stop Debugging command, fixed debug command blocking behavior (removed 60-second sleep loop), improved debug session management
+- **v1.24.0**: Added startup message to General Messages panel showing plugin version and MCP server status
+- **v1.23.0**: Added startup message functionality to confirm plugin loading and server status
 - **v1.22.0**: Fixed console output to use Qt Creator's General Messages panel via `Core::MessageManager::writeFlashing()`, removed all dialog popups, improved user experience
 - **v1.21.0**: Updated version numbering in menu items and About dialog, implemented centralized output function
 - **v1.20.0**: Added comprehensive Tools menu with all MCP commands, console output integration, improved user experience

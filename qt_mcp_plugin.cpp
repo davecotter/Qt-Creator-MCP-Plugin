@@ -176,6 +176,11 @@ public:
 			QMessageBox::warning(ICore::dialogParent(),
 							   Tr::tr("MCP Plugin"),
 							   Tr::tr("Failed to start MCP server"));
+		} else {
+			// Show startup message in General Messages panel
+			outputMessage(QString("MCP Plugin v%1 loaded and functioning - MCP server running on port %2")
+				.arg(PLUGIN_VERSION_STRING)
+				.arg(m_serverP->getPort()));
 		}
 
 		// Create the MCP Plugin menu
@@ -257,6 +262,11 @@ public:
 				.addToContainer(Constants::MENU_ID)
 				.setText(Tr::tr("Debug Project"))
 				.addOnTriggered(this, &Qt_MCP_PluginPlugin::executeDebug);
+
+		ActionBuilder(this, Constants::STOP_DEBUG_ACTION_ID)
+				.addToContainer(Constants::MENU_ID)
+				.setText(Tr::tr("Stop Debugging"))
+				.addOnTriggered(this, &Qt_MCP_PluginPlugin::executeStopDebug);
 
 		ActionBuilder(this, Constants::CLEAN_PROJECT_ACTION_ID)
 				.addToContainer(Constants::MENU_ID)
@@ -385,6 +395,13 @@ private:
 		outputMessage("Starting debug session...");
 		QString result = m_commandsP->debug();
 		outputMessage(QString("Debug result: %1").arg(result));
+	}
+
+	void executeStopDebug()
+	{
+		outputMessage("Stopping debug session...");
+		QString result = m_commandsP->stopDebug();
+		outputMessage(QString("Stop debug result: %1").arg(result));
 	}
 
 	void executeCleanProject()

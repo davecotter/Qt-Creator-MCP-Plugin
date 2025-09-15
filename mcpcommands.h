@@ -17,6 +17,7 @@ public:
     // Core MCP commands
     bool build();
     QString debug();
+    QString stopDebug();
     bool openFile(const QString &path);
     QStringList listProjects();
     QStringList listBuildConfigs();
