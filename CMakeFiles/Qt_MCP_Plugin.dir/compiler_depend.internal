@@ -4674,6 +4674,7 @@ CMakeFiles/Qt_MCP_Plugin.dir/mcpcommands.cpp.o
  /Users/davec/Developer/Qt/Qt Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/runcontrol.h
  /Users/davec/Developer/Qt/Qt Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/target.h
  /Users/davec/Developer/Qt/Qt Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/task.h
+ /Users/davec/Developer/Qt/Qt Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/taskhub.h
  /Users/davec/Developer/Qt/Qt Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/texteditor/texteditor_global.h
  /Users/davec/Developer/Qt/Qt Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/texteditor/textmark.h
  /Volumes/Developer/depot/Qt_MCP_Plugin/mcpcommands.h

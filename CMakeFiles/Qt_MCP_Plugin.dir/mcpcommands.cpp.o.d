@@ -1275,9 +1275,9 @@ CMakeFiles/Qt_MCP_Plugin.dir/mcpcommands.cpp.o: \
   /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/utils/hostosinfo.h \
   /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/utils/action.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/QAction \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/projectmanager.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/projectexplorer_export.h \
+  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/taskhub.h \
   /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/task.h \
+  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/projectexplorer_export.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/QIcon \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/QTextLayout \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qtextlayout.h \
@@ -1312,6 +1312,7 @@ CMakeFiles/Qt_MCP_Plugin.dir/mcpcommands.cpp.o: \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qtextformat.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qpen.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qtextoption.h \
+  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/projectmanager.h \
   /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/project.h \
   /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/deploymentdata.h \
   /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/deployablefile.h \

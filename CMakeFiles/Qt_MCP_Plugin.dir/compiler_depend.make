@@ -4671,6 +4671,7 @@ CMakeFiles/Qt_MCP_Plugin.dir/mcpcommands.cpp.o: mcpcommands.cpp \
   /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/runcontrol.h \
   /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/target.h \
   /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/task.h \
+  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/taskhub.h \
   /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/texteditor/texteditor_global.h \
   /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/texteditor/textmark.h \
   mcpcommands.h \
@@ -7809,6 +7810,8 @@ mcpserver.h:
 /Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Widgets/Qt6WidgetsConfigVersion.cmake:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Widgets/Qt6WidgetsConfig.cmake:
+
+/Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/taskhub.h:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Widgets/Qt6QMacStylePluginTargets-relwithdebinfo.cmake:
 

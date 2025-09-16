@@ -8,6 +8,8 @@
 #include <coreplugin/editormanager/documentmodel.h>
 #include <coreplugin/session.h>
 #include <coreplugin/actionmanager/actionmanager.h>
+#include <projectexplorer/taskhub.h>
+#include <projectexplorer/task.h>
 #include <projectexplorer/projectmanager.h>
 #include <projectexplorer/project.h>
 #include <projectexplorer/target.h>
@@ -568,15 +570,18 @@ bool MCPCommands::saveSession()
 
 QStringList MCPCommands::listIssues()
 {
-    qDebug() << "Listing issues from build system";
+    qDebug() << "Listing issues from Qt Creator's Issues panel";
     
     QStringList issues;
     
-    // Check if there's a build in progress
+    // Note: Issues panel integration is complex and requires access to internal Qt Creator APIs
+    // For now, we'll provide project status information and indicate the limitation
+    
+    // For now, let's try a different approach - check if there are any recent build results
+    // that might contain issues
     if (ProjectExplorer::BuildManager::isBuilding()) {
-        issues.append("INFO:Build in progress...");
+        issues.append("INFO:Build in progress - issues may not be current");
         qDebug() << "Build is currently in progress";
-        return issues;
     }
     
     // Get current project information
@@ -634,20 +639,12 @@ QStringList MCPCommands::listIssues()
         qDebug() << "Build directory exists:" << buildDir.toUserOutput();
     }
     
-    // Check for actual build errors by looking at recent build results
+    // For now, return a message indicating that we need to implement proper Issues panel access
     if (issues.isEmpty()) {
-        qDebug() << "Checking for build errors...";
-        
-        Utils::FilePath buildDir = activeBuildConfig->buildDirectory();
-        if (buildDir.exists()) {
-            qDebug() << "Build directory exists, checking for compilation artifacts";
-            
-            // For now, let's return empty list to see what the real state is
-            // This will help us understand if there are actually any build errors
-            qDebug() << "No real build errors detected - returning empty list";
-        } else {
-            issues.append("WARNING:Build directory does not exist - build may have failed");
-        }
+        issues.append("INFO:Issues panel integration not yet fully implemented");
+        issues.append("INFO:This command currently shows project status information");
+        issues.append("INFO:To see actual build issues, check the Issues panel in Qt Creator");
+        qDebug() << "Issues panel integration not yet fully implemented";
     }
     
     qDebug() << "Found" << issues.size() << "issues total";
