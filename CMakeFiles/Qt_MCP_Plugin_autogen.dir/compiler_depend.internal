@@ -1007,6 +1007,8 @@
  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/QPointer
  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/QRect
  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/QSettings
+ /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/QSize
+ /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/QSizeF
  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/QStaticPlugin
  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/QString
  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/QStringList
@@ -1178,18 +1180,29 @@
  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/qyieldcpu.h
  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/QAction
  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/QFont
+ /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/QIcon
  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/QPalette
+ /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/QTextLayout
+ /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/QTransform
  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qaction.h
  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qbitmap.h
  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qbrush.h
  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qcolor.h
  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qcursor.h
+ /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qevent.h
+ /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qeventpoint.h
  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qfont.h
+ /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qfontdatabase.h
  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qfontinfo.h
  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qfontmetrics.h
  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qfontvariableaxis.h
+ /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qglyphrun.h
+ /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qguiapplication.h
+ /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qguiapplication_platform.h
  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qicon.h
  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qimage.h
+ /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qinputdevice.h
+ /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qinputmethod.h
  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qkeysequence.h
  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qpaintdevice.h
  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qpalette.h
@@ -1197,18 +1210,25 @@
  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qpicture.h
  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qpixelformat.h
  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qpixmap.h
+ /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qpointingdevice.h
  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qpolygon.h
+ /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qrawfont.h
  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qregion.h
  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qrgb.h
  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qrgba64.h
+ /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qscreen.h
+ /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qscreen_platform.h
  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qtextcursor.h
  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qtextdocument.h
  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qtextformat.h
+ /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qtextlayout.h
  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qtextoption.h
  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qtgui-config.h
  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qtguiexports.h
  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qtguiglobal.h
  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qtransform.h
+ /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qvector2d.h
+ /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qvectornd.h
  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qwindowdefs.h
  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtNetwork.framework/Versions/A/Headers/QTcpServer
  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtNetwork.framework/Versions/A/Headers/QTcpSocket
@@ -1984,6 +2004,8 @@
  /Users/davec/Developer/Qt/Qt Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/coreplugin/icontext.h
  /Users/davec/Developer/Qt/Qt Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/coreplugin/icore.h
  /Users/davec/Developer/Qt/Qt Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/coreplugin/messagemanager.h
+ /Users/davec/Developer/Qt/Qt Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/projectexplorer_export.h
+ /Users/davec/Developer/Qt/Qt Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/task.h
  /Users/davec/Developer/Qt/Qt Creator.app/Contents/Resources/lib/cmake/QtCreator/QtCreatorAPI.cmake
  /Users/davec/Developer/Qt/Qt Creator.app/Contents/Resources/lib/cmake/QtCreator/QtCreatorAPIInternal.cmake
  /Users/davec/Developer/Qt/Qt Creator.app/Contents/Resources/lib/cmake/QtCreator/QtCreatorConfig.cmake

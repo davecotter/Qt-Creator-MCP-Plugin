@@ -246,15 +246,15 @@ public:
 				.setText(Tr::tr("List Issues"))
 				.addOnTriggered(this, &Qt_MCP_PluginPlugin::executeListIssues);
 
+		ActionBuilder(this, Constants::GET_METHOD_METADATA_ACTION_ID)
+				.addToContainer(Constants::MENU_ID)
+				.setText(Tr::tr("Get Method Metadata"))
+				.addOnTriggered(this, &Qt_MCP_PluginPlugin::executeGetMethodMetadata);
+
 		ActionBuilder(this, Constants::SET_METHOD_METADATA_ACTION_ID)
 				.addToContainer(Constants::MENU_ID)
 				.setText(Tr::tr("Set Method Metadata"))
 				.addOnTriggered(this, &Qt_MCP_PluginPlugin::executeSetMethodMetadata);
-
-		ActionBuilder(this, Constants::TEST_TASK_ACCESS_ACTION_ID)
-				.addToContainer(Constants::MENU_ID)
-				.setText(Tr::tr("Test Task Access (Debug)"))
-				.addOnTriggered(this, &Qt_MCP_PluginPlugin::executeTestTaskAccess);
 
 		menu->addSeparator();
 
@@ -384,6 +384,14 @@ private:
 		outputMessage(QString("Build Issues: %1").arg(issues.join(", ")));
 	}
 
+	void executeGetMethodMetadata()
+	{
+		outputMessage("Getting method metadata...");
+		// Get metadata for all methods
+		QString result = m_commandsP->getMethodMetadata();
+		outputMessage(result);
+	}
+
 	void executeSetMethodMetadata()
 	{
 		outputMessage("Setting method metadata...");
@@ -392,14 +400,6 @@ private:
 		outputMessage(result);
 	}
 
-	void executeTestTaskAccess()
-	{
-		outputMessage("Testing task access methods...");
-		QStringList results = m_commandsP->testTaskAccess();
-		for (const QString& result : results) {
-			outputMessage(result);
-		}
-	}
 
 	void executeBuild()
 	{

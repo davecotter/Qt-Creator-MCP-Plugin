@@ -1006,6 +1006,8 @@ Qt_MCP_Plugin_autogen/timestamp: /Applications/Xcode-16.2.0.app/Contents/Develop
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/QPointer \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/QRect \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/QSettings \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/QSize \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/QSizeF \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/QStaticPlugin \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/QString \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/QStringList \
@@ -1177,18 +1179,29 @@ Qt_MCP_Plugin_autogen/timestamp: /Applications/Xcode-16.2.0.app/Contents/Develop
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/qyieldcpu.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/QAction \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/QFont \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/QIcon \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/QPalette \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/QTextLayout \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/QTransform \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qaction.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qbitmap.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qbrush.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qcolor.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qcursor.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qevent.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qeventpoint.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qfont.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qfontdatabase.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qfontinfo.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qfontmetrics.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qfontvariableaxis.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qglyphrun.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qguiapplication.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qguiapplication_platform.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qicon.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qimage.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qinputdevice.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qinputmethod.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qkeysequence.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qpaintdevice.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qpalette.h \
@@ -1196,18 +1209,25 @@ Qt_MCP_Plugin_autogen/timestamp: /Applications/Xcode-16.2.0.app/Contents/Develop
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qpicture.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qpixelformat.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qpixmap.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qpointingdevice.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qpolygon.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qrawfont.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qregion.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qrgb.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qrgba64.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qscreen.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qscreen_platform.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qtextcursor.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qtextdocument.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qtextformat.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qtextlayout.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qtextoption.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qtgui-config.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qtguiexports.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qtguiglobal.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qtransform.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qvector2d.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qvectornd.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qwindowdefs.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtNetwork.framework/Versions/A/Headers/QTcpServer \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtNetwork.framework/Versions/A/Headers/QTcpSocket \
@@ -1983,6 +2003,8 @@ Qt_MCP_Plugin_autogen/timestamp: /Applications/Xcode-16.2.0.app/Contents/Develop
   /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/coreplugin/icontext.h \
   /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/coreplugin/icore.h \
   /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/coreplugin/messagemanager.h \
+  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/projectexplorer_export.h \
+  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/task.h \
   /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/lib/cmake/QtCreator/QtCreatorAPI.cmake \
   /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/lib/cmake/QtCreator/QtCreatorAPIInternal.cmake \
   /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/lib/cmake/QtCreator/QtCreatorConfig.cmake \
@@ -2447,6 +2469,22 @@ CMakeFiles/Qt_MCP_Plugin.dir/Qt_MCP_Plugin_autogen/mocs_compilation.cpp.o: Qt_MC
   /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__exception/nested_exception.h \
   /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__exception/operations.h \
   /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__exception/terminate.h \
+  /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__filesystem/copy_options.h \
+  /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__filesystem/directory_entry.h \
+  /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__filesystem/directory_iterator.h \
+  /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__filesystem/directory_options.h \
+  /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__filesystem/file_status.h \
+  /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__filesystem/file_time_type.h \
+  /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__filesystem/file_type.h \
+  /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__filesystem/filesystem_error.h \
+  /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__filesystem/operations.h \
+  /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__filesystem/path.h \
+  /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__filesystem/path_iterator.h \
+  /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__filesystem/perm_options.h \
+  /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__filesystem/perms.h \
+  /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__filesystem/recursive_directory_iterator.h \
+  /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__filesystem/space_info.h \
+  /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__filesystem/u8path.h \
   /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__format/buffer.h \
   /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__format/concepts.h \
   /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__format/container_adaptor.h \
@@ -2873,10 +2911,12 @@ CMakeFiles/Qt_MCP_Plugin.dir/Qt_MCP_Plugin_autogen/mocs_compilation.cpp.o: Qt_MC
   /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/errno.h \
   /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/exception \
   /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/execution \
+  /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/filesystem \
   /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/format \
   /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/forward_list \
   /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/functional \
   /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/initializer_list \
+  /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/iomanip \
   /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/ios \
   /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/iosfwd \
   /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/istream \
@@ -3070,11 +3110,22 @@ CMakeFiles/Qt_MCP_Plugin.dir/Qt_MCP_Plugin_autogen/mocs_compilation.cpp.o: Qt_MC
   /Applications/Xcode-16.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16/include/stdbool.h \
   /Applications/Xcode-16.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16/include/stddef.h \
   /Applications/Xcode-16.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16/include/stdint.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QByteArrayView \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QDateTime \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QDebug \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QDir \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QDirIterator \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QHashFunctions \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QJsonArray \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QJsonDocument \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QJsonObject \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QList \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QMap \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QMetaType \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QObject \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QRect \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QSize \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QSizeF \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QString \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QStringList \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QTimer \
@@ -3117,15 +3168,24 @@ CMakeFiles/Qt_MCP_Plugin.dir/Qt_MCP_Plugin_autogen/mocs_compilation.cpp.o: Qt_MC
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qcontainerinfo.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qcontainertools_impl.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qcontiguouscache.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qcoreapplication.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qcoreapplication_platform.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qcoreevent.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qdarwinhelpers.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qdatastream.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qdatetime.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qdeadlinetimer.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qdebug.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qdir.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qdiriterator.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qdirlisting.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qelapsedtimer.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qendian.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qeventloop.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qexceptionhandling.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qfile.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qfiledevice.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qfileinfo.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qflags.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qfloat16.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qforeach.h \
@@ -3146,16 +3206,19 @@ CMakeFiles/Qt_MCP_Plugin.dir/Qt_MCP_Plugin_autogen/mocs_compilation.cpp.o: Qt_MC
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qjsonparseerror.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qjsonvalue.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qlatin1stringview.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qline.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qlist.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qlocale.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qlogging.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qmalloc.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qmap.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qmargins.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qmath.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qmetacontainer.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qmetatype.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qminmax.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qnamespace.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qnativeinterface.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qnumeric.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qobject.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qobject_impl.h \
@@ -3163,7 +3226,9 @@ CMakeFiles/Qt_MCP_Plugin.dir/Qt_MCP_Plugin_autogen/mocs_compilation.cpp.o: Qt_MC
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qobjectdefs_impl.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qoverload.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qpair.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qpoint.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qprocessordetection.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qrect.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qrefcount.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qregularexpression.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qscopedpointer.h \
@@ -3173,6 +3238,7 @@ CMakeFiles/Qt_MCP_Plugin.dir/Qt_MCP_Plugin_autogen/mocs_compilation.cpp.o: Qt_MC
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qshareddata_impl.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qsharedpointer.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qsharedpointer_impl.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qsize.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qspan.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qstdlibdetection.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qstring.h \
@@ -3202,6 +3268,7 @@ CMakeFiles/Qt_MCP_Plugin.dir/Qt_MCP_Plugin_autogen/mocs_compilation.cpp.o: Qt_MC
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qtextstream.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qtformat_impl.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qtimer.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qtimezone.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qtmetamacros.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qtmocconstants.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qtmochelpers.h \
@@ -3222,6 +3289,47 @@ CMakeFiles/Qt_MCP_Plugin.dir/Qt_MCP_Plugin_autogen/mocs_compilation.cpp.o: Qt_MC
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qversiontagging.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qxptype_traits.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qyieldcpu.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/QIcon \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/QTextLayout \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/QTransform \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qbrush.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qcolor.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qevent.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qeventpoint.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qfont.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qfontdatabase.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qglyphrun.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qguiapplication.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qguiapplication_platform.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qicon.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qimage.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qinputdevice.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qinputmethod.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qkeysequence.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qpaintdevice.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qpen.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qpixelformat.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qpixmap.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qpointingdevice.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qpolygon.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qrawfont.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qregion.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qrgb.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qrgba64.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qscreen.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qscreen_platform.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qtextcursor.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qtextdocument.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qtextformat.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qtextlayout.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qtextoption.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qtgui-config.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qtguiexports.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qtguiglobal.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qtransform.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qvector2d.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qvectornd.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qwindowdefs.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtNetwork.framework/Headers/QTcpServer \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtNetwork.framework/Headers/QTcpSocket \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtNetwork.framework/Headers/qabstractsocket.h \
@@ -3231,6 +3339,19 @@ CMakeFiles/Qt_MCP_Plugin.dir/Qt_MCP_Plugin_autogen/mocs_compilation.cpp.o: Qt_MC
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtNetwork.framework/Headers/qtnetwork-config.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtNetwork.framework/Headers/qtnetworkexports.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtNetwork.framework/Headers/qtnetworkglobal.h \
+  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/3rdparty/tl_expected/include/tl/expected.hpp \
+  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/utils/expected.h \
+  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/utils/filepath.h \
+  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/utils/filepathinfo.h \
+  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/utils/id.h \
+  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/utils/osspecificaspects.h \
+  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/utils/qtcassert.h \
+  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/utils/result.h \
+  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/utils/storekey.h \
+  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/utils/utils_global.h \
+  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/utils/utiltypes.h \
+  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/projectexplorer_export.h \
+  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/task.h \
   issuesmanager.h \
   mcpcommands.h \
   mcpserver.h \
@@ -4288,6 +4409,8 @@ CMakeFiles/Qt_MCP_Plugin.dir/issuesmanager.cpp.o: issuesmanager.cpp \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QList \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QLoggingCategory \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QMap \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QMetaMethod \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QMetaObject \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QMetaType \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QObject \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QPointer \
@@ -4393,6 +4516,7 @@ CMakeFiles/Qt_MCP_Plugin.dir/issuesmanager.cpp.o: issuesmanager.cpp \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qmargins.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qmath.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qmetacontainer.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qmetaobject.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qmetatype.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qminmax.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qmutex.h \
@@ -4592,6 +4716,7 @@ CMakeFiles/Qt_MCP_Plugin.dir/issuesmanager.cpp.o: issuesmanager.cpp \
   /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/coreplugin/helpitem.h \
   /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/coreplugin/icontext.h \
   /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/coreplugin/icore.h \
+  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/coreplugin/ioutputpane.h \
   /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/buildconfiguration.h \
   /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/buildmanager.h \
   /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/buildstep.h \
@@ -8641,17 +8766,15 @@ Qt_MCP_Plugin_autogen/include/qt_mcp_plugin.moc:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QByteArray:
 
-/Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/task.h:
-
 /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/target.h:
-
-/Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/projectexplorer_export.h:
 
 /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/projectexplorer.h:
 
 /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/projectconfiguration.h:
 
 /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/buildconfiguration.h:
+
+/Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/coreplugin/ioutputpane.h:
 
 /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/utils/pathchooser.h:
 
@@ -8687,6 +8810,62 @@ Qt_MCP_Plugin_autogen/include/qt_mcp_plugin.moc:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtWidgets.framework/Headers/QLabel:
 
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qvalidator.h:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qundostack.h:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qfontinfo.h:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qaction.h:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtWidgets.framework/Headers/qwidget.h:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qtsan_impl.h:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qrunnable.h:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qpromise.h:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qpointer.h:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qmutex.h:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qfuture_impl.h:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QVariant:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QStaticPlugin:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QSettings:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QReadLocker:
+
+/Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/future:
+
+/Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__thread/thread.h:
+
+/Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__thread/this_thread.h:
+
+/Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__stop_token/stop_token.h:
+
+/Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__stop_token/intrusive_shared_ptr.h:
+
+/Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__stop_token/atomic_unique_lock.h:
+
+Qt_MCP_Plugin_autogen/EWIEGA46WW/moc_mcpcommands.cpp:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtNetwork.framework/Headers/qtnetworkglobal.h:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtNetwork.framework/Headers/qtcpsocket.h:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtNetwork.framework/Headers/qtcpserver.h:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtNetwork.framework/Headers/qhostaddress.h:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtNetwork.framework/Headers/QTcpSocket:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtNetwork.framework/Headers/QTcpServer:
+
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qwindowdefs.h:
 
 /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/debugger/debugger_global.h:
@@ -8694,10 +8873,6 @@ Qt_MCP_Plugin_autogen/include/qt_mcp_plugin.moc:
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qvectornd.h:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qvector2d.h:
-
-/Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qvalidator.h:
-
-/Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qundostack.h:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qtransform.h:
 
@@ -8731,13 +8906,9 @@ Qt_MCP_Plugin_autogen/include/qt_mcp_plugin.moc:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qglyphrun.h:
 
-/Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qfontinfo.h:
-
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qcolor.h:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qbrush.h:
-
-/Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qaction.h:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/QTransform:
 
@@ -8746,82 +8917,6 @@ Qt_MCP_Plugin_autogen/include/qt_mcp_plugin.moc:
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/QTextLayout:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/QIcon:
-
-/Users/davec/Developer/Qt/6.9.2/macos/lib/QtWidgets.framework/Headers/qwidget.h:
-
-/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qtsan_impl.h:
-
-/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qtimezone.h:
-
-/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qrunnable.h:
-
-/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qrect.h:
-
-/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qpromise.h:
-
-/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qpointer.h:
-
-/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qpoint.h:
-
-/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qmutex.h:
-
-/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qmargins.h:
-
-/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qfuture_impl.h:
-
-/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qfile.h:
-
-/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qdiriterator.h:
-
-/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qdir.h:
-
-/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qcoreevent.h:
-
-/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qabstractitemmodel.h:
-
-/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QVariant:
-
-/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QStaticPlugin:
-
-/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QSizeF:
-
-/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QSettings:
-
-/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QReadLocker:
-
-/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QHashFunctions:
-
-/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QDirIterator:
-
-/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QByteArrayView:
-
-/Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/future:
-
-/Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__thread/thread.h:
-
-/Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__thread/this_thread.h:
-
-/Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__stop_token/stop_token.h:
-
-/Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__stop_token/stop_state.h:
-
-/Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__stop_token/intrusive_shared_ptr.h:
-
-/Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__stop_token/atomic_unique_lock.h:
-
-Qt_MCP_Plugin_autogen/EWIEGA46WW/moc_mcpcommands.cpp:
-
-/Users/davec/Developer/Qt/6.9.2/macos/lib/QtNetwork.framework/Headers/qtnetworkglobal.h:
-
-/Users/davec/Developer/Qt/6.9.2/macos/lib/QtNetwork.framework/Headers/qtcpsocket.h:
-
-/Users/davec/Developer/Qt/6.9.2/macos/lib/QtNetwork.framework/Headers/qtcpserver.h:
-
-/Users/davec/Developer/Qt/6.9.2/macos/lib/QtNetwork.framework/Headers/qhostaddress.h:
-
-/Users/davec/Developer/Qt/6.9.2/macos/lib/QtNetwork.framework/Headers/QTcpSocket:
-
-/Users/davec/Developer/Qt/6.9.2/macos/lib/QtNetwork.framework/Headers/QTcpServer:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qversiontagging.h:
 
@@ -8842,6 +8937,8 @@ Qt_MCP_Plugin_autogen/EWIEGA46WW/moc_mcpcommands.cpp:
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qtnoop.h:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qtmocconstants.h:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qtimezone.h:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qtimer.h:
 
@@ -8883,7 +8980,11 @@ Qt_MCP_Plugin_autogen/EWIEGA46WW/moc_mcpcommands.cpp:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qrefcount.h:
 
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qrect.h:
+
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qprocessordetection.h:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qpoint.h:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qfontdatabase.h:
 
@@ -8898,6 +8999,8 @@ Qt_MCP_Plugin_autogen/EWIEGA46WW/moc_mcpcommands.cpp:
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qnumeric.h:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qmath.h:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qmargins.h:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qlogging.h:
 
@@ -8923,7 +9026,11 @@ Qt_MCP_Plugin_autogen/EWIEGA46WW/moc_mcpcommands.cpp:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qfloat16.h:
 
-/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qelapsedtimer.h:
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qfile.h:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qdiriterator.h:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qdir.h:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qdebug.h:
 
@@ -8932,6 +9039,8 @@ Qt_MCP_Plugin_autogen/EWIEGA46WW/moc_mcpcommands.cpp:
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qdatetime.h:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qdarwinhelpers.h:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qcoreevent.h:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qcompilerdetection.h:
 
@@ -8961,8 +9070,6 @@ Qt_MCP_Plugin_autogen/EWIEGA46WW/moc_mcpcommands.cpp:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qarraydataops.h:
 
-/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qarraydata.h:
-
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qanystringview.h:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qalgorithms.h:
@@ -8979,7 +9086,15 @@ Qt_MCP_Plugin_autogen/EWIEGA46WW/moc_mcpcommands.cpp:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QStringList:
 
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QSizeF:
+
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QJsonArray:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QHashFunctions:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QDirIterator:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QByteArrayView:
 
 /Applications/Xcode-16.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16/include/stddef.h:
 
@@ -9111,6 +9226,10 @@ CMakeFiles/4.0.3/CMakeCXXCompiler.cmake:
 
 /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/lib/cmake/QtCreator/QtCreatorAPI.cmake:
 
+/Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/task.h:
+
+/Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/projectexplorer_export.h:
+
 /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/coreplugin/messagemanager.h:
 
 /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/coreplugin/icore.h:
@@ -9187,15 +9306,17 @@ mcpserver.h:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Widgets/Qt6WidgetsConfigVersion.cmake:
 
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QMetaMethod:
+
 /Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Widgets/Qt6WidgetsConfig.cmake:
 
 /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/taskhub.h:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Widgets/Qt6QMacStylePluginTargets-relwithdebinfo.cmake:
 
-/Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qtguiglobal.h:
-
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QReadWriteLock:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qtguiglobal.h:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Widgets/Qt6QMacStylePluginConfig.cmake:
 
@@ -9222,10 +9343,6 @@ mcpserver.h:
 qt_mcp_pluginconstants.h:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Sql/Qt6SqlPlugins.cmake:
-
-/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QFile:
-
-/Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Sql/Qt6SqlConfigVersion.cmake:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Sql/Qt6SqlConfig.cmake:
 
@@ -9307,9 +9424,9 @@ qt_mcp_pluginconstants.h:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6QmlWorkerScript/Qt6QmlWorkerScriptTargets-relwithdebinfo.cmake:
 
-/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qcoreapplication_platform.h:
-
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qjsonobject.h:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qcoreapplication_platform.h:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6QmlWorkerScript/Qt6QmlWorkerScriptConfigVersionImpl.cmake:
 
@@ -9416,6 +9533,8 @@ qt_mcp_pluginconstants.h:
 /Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6QmlAssetDownloaderPrivate/Qt6QmlAssetDownloaderPrivateConfig.cmake:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6QmlAssetDownloader/Qt6QmlAssetDownloaderTargets.cmake:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QMetaObject:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6QmlAssetDownloader/Qt6QmlAssetDownloaderTargets-relwithdebinfo.cmake:
 
@@ -9585,8 +9704,6 @@ qt_mcp_pluginconstants.h:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Qml/QmlPlugins/Qt6qtquickcontrols2macosstylepluginConfig.cmake:
 
-/Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Qml/QmlPlugins/Qt6qtquickcontrols2macosstyleimplpluginTargets-relwithdebinfo.cmake:
-
 /Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Qml/QmlPlugins/Qt6qtquickcontrols2macosstyleimplpluginConfig.cmake:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Qml/QmlPlugins/Qt6qtquickcontrols2iosstylepluginAdditionalTargetInfo.cmake:
@@ -9643,21 +9760,11 @@ qt_mcp_pluginconstants.h:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Qml/QmlPlugins/Qt6qquickvectorimagepluginTargets.cmake:
 
-/Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6QuickWidgets/Qt6QuickWidgetsConfig.cmake:
-
-/Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__type_traits/integral_constant.h:
-
-/Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Qml/QmlPlugins/Qt6qquicklayoutspluginTargets.cmake:
-
 /Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Qml/QmlPlugins/Qt6qquicklayoutspluginTargets-relwithdebinfo.cmake:
 
-/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/QMap:
+/opt/homebrew/share/cmake/Modules/Compiler/Clang.cmake:
 
-/Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Qml/QmlPlugins/Qt6qquicklayoutspluginConfig.cmake:
-
-/Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Gui/Qt6QGifPluginTargets-relwithdebinfo.cmake:
-
-/Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Qml/QmlPlugins/Qt6qquicklayoutspluginAdditionalTargetInfo.cmake:
+/Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Qml/QmlPlugins/Qt6qmlxmllistmodelpluginTargets.cmake:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Qml/QmlPlugins/Qt6qmlxmllistmodelpluginTargets-relwithdebinfo.cmake:
 
@@ -9665,15 +9772,11 @@ qt_mcp_pluginconstants.h:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Qml/QmlPlugins/Qt6qmlwavefrontmeshpluginTargets.cmake:
 
-/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/qsettings.h:
+/Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Qml/QmlPlugins/Qt6qmlwavefrontmeshpluginAdditionalTargetInfo.cmake:
 
-/Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Qml/QmlPlugins/Qt6qmlwavefrontmeshpluginConfig.cmake:
+/Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Qml/QmlPlugins/Qt6qmlshapespluginTargets.cmake:
 
-/Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__algorithm/partial_sort.h:
-
-/Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__functional/mem_fn.h:
-
-/Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Qml/QmlPlugins/Qt6qmlshapespluginConfig.cmake:
+/Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Qml/QmlPlugins/Qt6qmlshapespluginTargets-relwithdebinfo.cmake:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Qml/QmlPlugins/Qt6qmlsettingspluginConfig.cmake:
 
@@ -9942,6 +10045,10 @@ qt_mcp_plugin.cpp:
 /Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Gui/Qt6QICOPluginTargets-relwithdebinfo.cmake:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Gui/Qt6QICOPluginConfig.cmake:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Qml/QmlPlugins/Qt6qquicklayoutspluginAdditionalTargetInfo.cmake:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Gui/Qt6QGifPluginTargets-relwithdebinfo.cmake:
 
 /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/debugger/debuggerconstants.h:
 
@@ -10253,10 +10360,6 @@ Qt_MCP_Plugin.json.in:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtWidgets.framework/Versions/A/Headers/qlayout.h:
 
-/opt/homebrew/share/cmake/Modules/Compiler/Clang.cmake:
-
-/Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Qml/QmlPlugins/Qt6qmlxmllistmodelpluginTargets.cmake:
-
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtWidgets.framework/Versions/A/Headers/qgridlayout.h:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtWidgets.framework/Versions/A/Headers/qdialogbuttonbox.h:
@@ -10272,8 +10375,6 @@ Qt_MCP_Plugin.json.in:
 /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/buildstep.h:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtWidgets.framework/Versions/A/Headers/QTextEdit:
-
-/Users/davec/Developer/Qt/6.9.2/macos/lib/QtNetwork.framework/Versions/A/Headers/qtnetworkglobal.h:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtNetwork.framework/Versions/A/Headers/qtnetworkexports.h:
 
@@ -10293,9 +10394,15 @@ Qt_MCP_Plugin.json.in:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qtextoption.h:
 
+/Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__stop_token/stop_state.h:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qscreen.h:
+
 /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__memory/ranges_uninitialized_algorithms.h:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qregion.h:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qrawfont.h:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6NetworkPrivate/Qt6NetworkPrivateVersionlessAliasTargets.cmake:
 
@@ -10307,11 +10414,19 @@ Qt_MCP_Plugin.json.in:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qkeysequence.h:
 
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qelapsedtimer.h:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qinputdevice.h:
+
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/qtextstream.h:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6PrintSupport/Qt6PrintSupportTargets-relwithdebinfo.cmake:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qimage.h:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtNetwork.framework/Versions/A/Headers/qtnetworkglobal.h:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qguiapplication_platform.h:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qfontmetrics.h:
 
@@ -10337,13 +10452,25 @@ Qt_MCP_Plugin.json.in:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qaction.h:
 
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/QTransform:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/QTextLayout:
+
 /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__stop_token/intrusive_list_view.h:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qglyphrun.h:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Concurrent/Qt6ConcurrentConfigVersionImpl.cmake:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/qcompilerdetection.h:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/QPalette:
+
+/Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__algorithm/ranges_is_sorted_until.h:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/QIcon:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qscreen_platform.h:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/QFont:
 
@@ -10425,11 +10552,15 @@ Qt_MCP_Plugin.json.in:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qpen.h:
 
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qguiapplication.h:
+
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/qshareddata_impl.h:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6QmlWorkerScriptPrivate/Qt6QmlWorkerScriptPrivateConfigVersion.cmake:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/qset.h:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/QSizeF:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Gui/Qt6GuiDependencies.cmake:
 
@@ -10516,6 +10647,12 @@ Qt_MCP_Plugin.json.in:
 /Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Qml/QmlPlugins/Qt6qmlshapespluginAdditionalTargetInfo.cmake:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/qhash.h:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QFile:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Sql/Qt6SqlConfigVersion.cmake:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qpointingdevice.h:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/qfloat16.h:
 
@@ -10641,6 +10778,10 @@ Qt_MCP_Plugin.json.in:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/QStaticPlugin:
 
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qarraydata.h:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/QSize:
+
 Qt_MCP_Plugin_autogen/EWIEGA46WW/moc_mcpserver.cpp:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/QSettings:
@@ -10651,15 +10792,19 @@ Qt_MCP_Plugin_autogen/EWIEGA46WW/moc_mcpserver.cpp:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/QRect:
 
+/Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Qml/QmlPlugins/Qt6qquicklayoutspluginConfig.cmake:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/QMap:
+
 /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__concepts/totally_ordered.h:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/QLoggingCategory:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Qml/QmlPlugins/Qt6qmlfolderlistmodelpluginAdditionalTargetInfo.cmake:
 
-/Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qinputdevice.h:
-
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QPointer:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qinputdevice.h:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Gui/Qt6QSvgIconPluginTargets-relwithdebinfo.cmake:
 
@@ -10680,8 +10825,6 @@ Qt_MCP_Plugin_autogen/EWIEGA46WW/moc_mcpserver.cpp:
 /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__algorithm/ranges_includes.h:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/QJsonArray:
-
-/Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Qml/QmlPlugins/Qt6qmlwavefrontmeshpluginAdditionalTargetInfo.cmake:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/QHashFunctions:
 
@@ -10987,6 +11130,10 @@ CMakeLists.txt:
 
 /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/malloc/_malloc.h:
 
+/Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__algorithm/pstl_backends/cpu_backends/transform_reduce.h:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qvectornd.h:
+
 /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/machine/types.h:
 
 /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__atomic/atomic_flag.h:
@@ -11074,6 +11221,10 @@ CMakeLists.txt:
 /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/optional:
 
 /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/numeric:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qabstractitemmodel.h:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qinputmethod.h:
 
 /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/new:
 
@@ -11571,6 +11722,12 @@ CMakeLists.txt:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Core/Qt6QDarwinContactsPermissionPluginTargets.cmake:
 
+/Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6QuickWidgets/Qt6QuickWidgetsConfig.cmake:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Qml/QmlPlugins/Qt6qquicklayoutspluginTargets.cmake:
+
+/Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__type_traits/integral_constant.h:
+
 /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__thread/formatter.h:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Qml/QmlPlugins/Qt6qtquickcontrols2fusionstyleimplpluginTargets.cmake:
@@ -11677,8 +11834,6 @@ CMakeLists.txt:
 
 /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__split_buffer:
 
-/Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Qml/QmlPlugins/Qt6qmlshapespluginTargets-relwithdebinfo.cmake:
-
 /Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Core/Qt6QDarwinLocationPermissionPluginAdditionalTargetInfo.cmake:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/qshareddata.h:
@@ -11759,6 +11914,10 @@ CMakeLists.txt:
 
 /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__numeric/inner_product.h:
 
+/Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Qml/QmlPlugins/Qt6qmlwavefrontmeshpluginConfig.cmake:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/qsettings.h:
+
 /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__type_traits/disjunction.h:
 
 /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__tuple/tuple_element.h:
@@ -11770,6 +11929,10 @@ CMakeLists.txt:
 /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/Availability.h:
 
 /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__numeric/accumulate.h:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Qml/QmlPlugins/Qt6qtquickcontrols2macosstyleimplpluginTargets-relwithdebinfo.cmake:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qeventpoint.h:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/qline.h:
 
@@ -11871,10 +12034,6 @@ CMakeLists.txt:
 
 /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__iterator/reverse_iterator.h:
 
-/Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__algorithm/ranges_set_difference.h:
-
-/Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Qml/QmlPlugins/Qt6qquickvectorimagepluginConfig.cmake:
-
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/qconstructormacros.h:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6PrintSupport/Qt6PrintSupportAdditionalTargetInfo.cmake:
@@ -11916,8 +12075,6 @@ CMakeLists.txt:
 /Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Qml/QmlPlugins/Qt6quicktoolingConfig.cmake:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6/Qt6ConfigVersion.cmake:
-
-/Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__algorithm/ranges_is_sorted_until.h:
 
 /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__iterator/counted_iterator.h:
 
@@ -12035,6 +12192,12 @@ CMakeLists.txt:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Qml/QmlPlugins/Qt6QmlAssetDownloaderpluginAdditionalTargetInfo.cmake:
 
+/Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6WidgetsTools/Qt6WidgetsToolsAdditionalTargetInfo.cmake:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/qdir.h:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qevent.h:
+
 /Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6QuickWidgets/Qt6QuickWidgetsConfigVersion.cmake:
 
 /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/sys/_types/_u_int32_t.h:
@@ -12083,9 +12246,17 @@ CMakeLists.txt:
 
 /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__functional/mem_fun_ref.h:
 
+/Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Qml/QmlPlugins/Qt6qmlshapespluginConfig.cmake:
+
+/Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__algorithm/partial_sort.h:
+
+/Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__functional/mem_fn.h:
+
 /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__type_traits/result_of.h:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtWidgets.framework/Versions/A/Headers/QMessageBox:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qmetaobject.h:
 
 /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/locale.h:
 
@@ -12831,6 +13002,10 @@ Qt_MCP_Plugin.json:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/qmath.h:
 
+/Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Qml/QmlPlugins/Qt6qquickvectorimagepluginConfig.cmake:
+
+/Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__algorithm/ranges_set_difference.h:
+
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QJsonDocument:
 
 /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__algorithm/ranges_rotate.h:
@@ -13051,9 +13226,9 @@ Qt_MCP_Plugin.json:
 
 /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/vector:
 
-/Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__algorithm/ranges_count_if.h:
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qfontdatabase.h:
 
-/Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6Qml/QmlPlugins/Qt6qmlshapespluginTargets.cmake:
+/Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__algorithm/ranges_count_if.h:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/q17memory.h:
 
@@ -13118,6 +13293,8 @@ Qt_MCP_Plugin.json:
 /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qbitmap.h:
 
 /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__algorithm/in_out_out_result.h:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qvector2d.h:
 
 /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/sys/appleapiopts.h:
 
@@ -13339,8 +13516,6 @@ Qt_MCP_Plugin.json:
 
 /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__algorithm/equal_range.h:
 
-/Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__algorithm/pstl_backends/cpu_backends/transform_reduce.h:
-
 /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__ranges/empty.h:
 
 /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/_locale.h:
@@ -13390,10 +13565,6 @@ Qt_MCP_Plugin.json:
 /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__algorithm/pstl_generate.h:
 
 /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__algorithm/pstl_count.h:
-
-/Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6WidgetsTools/Qt6WidgetsToolsAdditionalTargetInfo.cmake:
-
-/Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/qdir.h:
 
 /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__exception/exception.h:
 
@@ -13510,6 +13681,8 @@ Qt_MCP_Plugin.json:
 /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__functional/operations.h:
 
 /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__algorithm/set_symmetric_difference.h:
+
+/Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qtextlayout.h:
 
 /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/_ctype.h:
 

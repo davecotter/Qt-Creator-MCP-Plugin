@@ -590,6 +590,50 @@ QStringList MCPCommands::listIssues()
     return issues;
 }
 
+QString MCPCommands::getMethodMetadata()
+{
+    QStringList results;
+    results.append("=== METHOD METADATA ===");
+    results.append("");
+    
+    // Get all methods with their current timeout settings
+    QStringList allMethods = {
+        "build", "debug", "runProject", "cleanProject", "loadSession", 
+        "getVersion", "listProjects", "listBuildConfigs", "getCurrentProject", 
+        "getCurrentBuildConfig", "quit", "listOpenFiles", "listSessions", 
+        "getCurrentSession", "saveSession", "listIssues", "getMethodMetadata", 
+        "setMethodMetadata", "stopDebug"
+    };
+    
+    results.append("Available methods and their timeout settings:");
+    results.append("");
+    
+    for (const QString& method : allMethods) {
+        int timeout = getMethodTimeout(method);
+        QString timeoutStr = timeout >= 0 ? QString::number(timeout) + " seconds" : QString("default");
+        results.append(QString("  %1: %2").arg(method, -20).arg(timeoutStr));
+    }
+    
+    results.append("");
+    results.append("=== METHOD DESCRIPTIONS ===");
+    results.append("");
+    
+    // Add descriptions for key methods
+    results.append("build: Compile the current project");
+    results.append("debug: Start debugging the current project");
+    results.append("stopDebug: Stop the current debug session");
+    results.append("runProject: Run the current project");
+    results.append("cleanProject: Clean build artifacts");
+    results.append("listIssues: List current build issues and warnings");
+    results.append("getMethodMetadata: Get metadata about all methods");
+    results.append("setMethodMetadata: Configure timeout values for methods");
+    
+    results.append("");
+    results.append("=== METADATA COMPLETE ===");
+    
+    return results.join("\n");
+}
+
 QString MCPCommands::setMethodMetadata(const QString &method, int timeoutSeconds)
 {
     QStringList results;
@@ -640,17 +684,6 @@ int MCPCommands::getMethodTimeout(const QString &method) const
     return m_methodTimeouts.value(method, -1);
 }
 
-QStringList MCPCommands::testTaskAccess()
-{
-    qDebug() << "Testing task access methods";
-    
-    if (!m_issuesManager) {
-        qDebug() << "IssuesManager not initialized";
-        return QStringList() << "ERROR:Issues manager not initialized";
-    }
-    
-    return m_issuesManager->testTaskAccess();
-}
 
 // handleSessionLoadRequest method removed - using direct session loading instead
 
