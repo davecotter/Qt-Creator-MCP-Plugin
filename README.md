@@ -125,7 +125,6 @@ All command results are displayed in Qt Creator's **General Messages** panel (Vi
 - Look for these directories in your Qt installation:
   - `Qt Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/` (macOS)
   - `Qt Creator/6.9.2/msvc2022_64/include/qtcreator/src/plugins/` (Windows)
-  - `/opt/qtcreator/include/qtcreator/src/plugins/` (Linux)
 
 ## How to Build
 
@@ -348,7 +347,7 @@ start the Qt Creator executable with the following parameters
     -pluginpath <path_to_plugin>
 
 where `<path_to_plugin>` is the path to the resulting plugin library in the build directory
-(`<plugin_build>/lib/qtcreator/plugins` on Windows and Linux,
+(`<plugin_build>/lib/qtcreator/plugins` on Windows,
 `<plugin_build>/Qt Creator.app/Contents/PlugIns` on macOS).
 
 ### Option 2: Using Platform-Specific Scripts
@@ -358,7 +357,7 @@ where `<path_to_plugin>` is the path to the resulting plugin library in the buil
 launch_qtcreator_with_plugin.bat
 ```
 
-**macOS/Linux:**
+**macOS:**
 ```bash
 ./launch_qtcreator_with_plugin.sh
 ```
@@ -370,7 +369,7 @@ instance cannot mess with your user-global Qt Creator settings.
 
 Once Qt Creator is running with the plugin, the MCP server will be available on port 3001 (or the next available port). You can interact with it using JSON-RPC:
 
-### macOS/Linux:
+### macOS:
 ```bash
 # Get plugin version and timeout information
 echo '{"jsonrpc": "2.0", "method": "getVersion", "id": 1}' | nc localhost 3001
@@ -426,7 +425,7 @@ echo {"jsonrpc": "2.0", "method": "debug", "id": 5} | ncat localhost 3001
 
 ### Testing Connectivity
 
-**macOS/Linux:**
+**macOS:**
 ```bash
 # Test if the MCP server is running
 nc -z localhost 3001 && echo "MCP server is running" || echo "MCP server is not running"
@@ -457,14 +456,6 @@ Test-NetConnection -ComputerName localhost -Port 3001
 brew install netcat
 ```
 
-**Linux - Install netcat:**
-```bash
-# Ubuntu/Debian:
-sudo apt-get install netcat
-
-# CentOS/RHEL:
-sudo yum install nc
-```
 
 ## Troubleshooting
 
@@ -473,7 +464,7 @@ sudo yum install nc
 **Build Errors:**
 - **"Could not find QtCreator"**: Make sure you're using the correct `CMAKE_PREFIX_PATH` for your platform
 - **"CMake version too old"**: Update CMake to version 3.16 or later
-- **"Compiler not found"**: Install Visual Studio (Windows), Xcode Command Line Tools (macOS), or GCC/Clang (Linux)
+- **"Compiler not found"**: Install Visual Studio (Windows) or Xcode Command Line Tools (macOS)
 - **"Qt Plugin Development headers not found"**: Reinstall Qt and ensure "Qt Plugin Development" component is selected
 - **"Qt Sources not found"**: Reinstall Qt and ensure "Qt Sources" component is selected
 - **"Version mismatch"**: Ensure Qt Creator and Qt Libraries are both version 6.9.2 or later
