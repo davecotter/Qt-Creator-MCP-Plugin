@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QStringList>
+#include <QMap>
 
 namespace Qt_MCP_Plugin {
 namespace Internal {
@@ -40,6 +41,10 @@ public:
     
     // Issue management commands
     QStringList listIssues();
+    
+    // Method metadata management
+    QString setMethodMetadata(const QString &method, int timeoutSeconds);
+    int getMethodTimeout(const QString &method) const;
 
 signals:
     void sessionLoadRequested(const QString &sessionName);
@@ -50,6 +55,9 @@ private slots:
 private:
     bool hasValidProject() const;
     bool m_sessionLoadResult;
+    
+    // Method timeout storage
+    QMap<QString, int> m_methodTimeouts;
 };
 
 } // namespace Internal

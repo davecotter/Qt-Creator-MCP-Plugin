@@ -962,6 +962,7 @@
   /Applications/Xcode-16.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16/include/__stdarg_va_copy.h \
   /Applications/Xcode-16.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16/include/__stdarg_va_list.h \
   /Applications/Xcode-16.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16/include/stdarg.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/QMap \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/QObject \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/QStringList \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/q17memory.h \
@@ -1011,6 +1012,7 @@
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/qlist.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/qlogging.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/qmalloc.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/qmap.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/qmath.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/qmetacontainer.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/qmetatype.h \
@@ -1027,6 +1029,8 @@
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/qrefcount.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/qscopedpointer.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/qscopeguard.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/qshareddata.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/qshareddata_impl.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/qstdlibdetection.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/qstring.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/qstringalgorithms.h \

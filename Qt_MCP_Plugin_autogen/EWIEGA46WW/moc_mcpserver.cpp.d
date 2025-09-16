@@ -970,6 +970,7 @@
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/QJsonArray \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/QJsonDocument \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/QJsonObject \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/QMap \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/QObject \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/QStringList \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/QTimer \

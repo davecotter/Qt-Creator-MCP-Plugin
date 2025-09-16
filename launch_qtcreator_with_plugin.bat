@@ -39,3 +39,5 @@ start "" "%QTCREATOR_PATH%" -pluginpath "%PLUGIN_PATH%"
 echo Qt Creator launched successfully!
 echo The MCP Plugin should be loaded and available on port 3001 (or next available port)
 
+
+

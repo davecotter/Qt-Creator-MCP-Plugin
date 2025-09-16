@@ -246,6 +246,11 @@ public:
 				.setText(Tr::tr("List Issues"))
 				.addOnTriggered(this, &Qt_MCP_PluginPlugin::executeListIssues);
 
+		ActionBuilder(this, Constants::SET_METHOD_METADATA_ACTION_ID)
+				.addToContainer(Constants::MENU_ID)
+				.setText(Tr::tr("Set Method Metadata"))
+				.addOnTriggered(this, &Qt_MCP_PluginPlugin::executeSetMethodMetadata);
+
 		menu->addSeparator();
 
 		ActionBuilder(this, Constants::BUILD_ACTION_ID)
@@ -372,6 +377,14 @@ private:
 	{
 		QStringList issues = m_commandsP->listIssues();
 		outputMessage(QString("Build Issues: %1").arg(issues.join(", ")));
+	}
+
+	void executeSetMethodMetadata()
+	{
+		outputMessage("Setting method metadata...");
+		// For demonstration, set debug timeout to 120 seconds
+		QString result = m_commandsP->setMethodMetadata("debug", 120);
+		outputMessage(result);
 	}
 
 	void executeBuild()

@@ -815,6 +815,7 @@
   /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/iomanip \
   /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/ios \
   /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/iosfwd \
+  /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/iostream \
   /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/istream \
   /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/iterator \
   /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/limits \
@@ -1008,6 +1009,7 @@
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/QStaticPlugin \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/QString \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/QStringList \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/QTextStream \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/QTimer \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/QUrl \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Versions/A/Headers/QVariant \
@@ -1190,6 +1192,7 @@
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qkeysequence.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qpaintdevice.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qpalette.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qpen.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qpicture.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qpixelformat.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qpixmap.h \
@@ -1197,7 +1200,10 @@
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qregion.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qrgb.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qrgba64.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qtextcursor.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qtextdocument.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qtextformat.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qtextoption.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qtgui-config.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qtguiexports.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Versions/A/Headers/qtguiglobal.h \
@@ -1219,9 +1225,12 @@
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtWidgets.framework/Versions/A/Headers/QMenu \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtWidgets.framework/Versions/A/Headers/QMessageBox \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtWidgets.framework/Versions/A/Headers/QPushButton \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtWidgets.framework/Versions/A/Headers/QScrollArea \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtWidgets.framework/Versions/A/Headers/QTextEdit \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtWidgets.framework/Versions/A/Headers/QVBoxLayout \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtWidgets.framework/Versions/A/Headers/QWidget \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtWidgets.framework/Versions/A/Headers/qabstractbutton.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtWidgets.framework/Versions/A/Headers/qabstractscrollarea.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtWidgets.framework/Versions/A/Headers/qboxlayout.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtWidgets.framework/Versions/A/Headers/qdialog.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtWidgets.framework/Versions/A/Headers/qdialogbuttonbox.h \
@@ -1234,8 +1243,10 @@
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtWidgets.framework/Versions/A/Headers/qmenu.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtWidgets.framework/Versions/A/Headers/qmessagebox.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtWidgets.framework/Versions/A/Headers/qpushbutton.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtWidgets.framework/Versions/A/Headers/qscrollarea.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtWidgets.framework/Versions/A/Headers/qsizepolicy.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtWidgets.framework/Versions/A/Headers/qtabwidget.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtWidgets.framework/Versions/A/Headers/qtextedit.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtWidgets.framework/Versions/A/Headers/qtwidgets-config.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtWidgets.framework/Versions/A/Headers/qtwidgetsexports.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtWidgets.framework/Versions/A/Headers/qtwidgetsglobal.h \
@@ -1267,6 +1278,7 @@
   /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/coreplugin/helpitem.h \
   /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/coreplugin/icontext.h \
   /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/coreplugin/icore.h \
+  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/coreplugin/messagemanager.h \
   /Volumes/Developer/depot/Qt_MCP_Plugin/mcpcommands.h \
   /Volumes/Developer/depot/Qt_MCP_Plugin/mcpserver.h \
   /Volumes/Developer/depot/Qt_MCP_Plugin/qt_mcp_pluginconstants.h \

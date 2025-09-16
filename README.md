@@ -109,6 +109,16 @@ All command results are displayed in Qt Creator's **General Messages** panel (Vi
 - **Xcode Command Line Tools** (`xcode-select --install`)
 - **Git** for cloning the repository
 
+**Linux:**
+- Download Qt from [qt.io](https://www.qt.io/download)
+- During installation, ensure you select:
+  - ✅ Qt Creator 6.9.2
+  - ✅ Qt 6.9.2 (GCC 64-bit)
+  - ✅ Qt Plugin Development
+  - ✅ Qt Sources
+- **CMake** 3.16 or later
+- **GCC** or **Clang** compiler
+- **Git** for cloning the repository
 
 ### Verifying Your Installation
 
@@ -125,6 +135,7 @@ All command results are displayed in Qt Creator's **General Messages** panel (Vi
 - Look for these directories in your Qt installation:
   - `Qt Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/` (macOS)
   - `Qt Creator/6.9.2/msvc2022_64/include/qtcreator/src/plugins/` (Windows)
+  - `/opt/qtcreator/include/qtcreator/src/plugins/` (Linux)
 
 ## How to Build
 
@@ -160,6 +171,11 @@ cmake -DCMAKE_PREFIX_PATH="/Users/$(whoami)/Qt/Qt Creator.app/Contents/Resources
 cmake --build .
 ```
 
+**Linux:**
+```bash
+cmake -DCMAKE_PREFIX_PATH="/opt/qtcreator" -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
+cmake --build .
+```
 
 ### Finding Your Qt Creator Path
 
@@ -171,6 +187,10 @@ cmake --build .
 - `/Users/$(whoami)/Qt/Qt Creator.app/Contents/Resources/`
 - `/Applications/Qt Creator.app/Contents/Resources/`
 
+**Linux:** Look for Qt Creator in:
+- `/opt/qtcreator/`
+- `/usr/local/qtcreator/`
+- `~/Qt/Qt Creator/6.9.2/gcc_64/`
 
 ## How to Install the Plugin
 
@@ -201,6 +221,8 @@ The plugin is installed to user-specific directories that persist across Qt Crea
 **macOS:**
 - `~/Library/Application Support/QtProject/qtcreator/plugins/`
 
+**Linux:**
+- `~/.local/share/data/QtProject/qtcreator/plugins/`
 
 ### ⚠️ CRITICAL: macOS Plugin Loading Limitations
 
@@ -289,6 +311,27 @@ cmake --build . --target InstallPlugin
    AdditionalPlugins=%LOCALAPPDATA%\QtProject\qtcreator\plugins
    ```
 
+#### Linux Configuration
+
+1. **Modify Qt Creator's configuration file:**
+   ```bash
+   # Backup the original configuration
+   cp "/opt/qtcreator/bin/qt.conf" "/opt/qtcreator/bin/qt.conf.backup"
+   
+   # Edit the configuration file
+   nano "/opt/qtcreator/bin/qt.conf"
+   ```
+
+2. **Add the user plugin directory to the configuration:**
+   ```
+   [Paths]
+   Prefix=.
+   Binaries=bin
+   Libraries=lib
+   Plugins=lib/qtcreator/plugins
+   Qml2Imports=qml
+   AdditionalPlugins=/home/$(whoami)/.local/share/data/QtProject/qtcreator/plugins
+   ```
 
 ### Alternative: Command-Line Plugin Loading
 
@@ -301,6 +344,8 @@ If you prefer not to modify Qt Creator's configuration, you can start Qt Creator
 # Windows
 "C:\Qt\Qt Creator\6.9.2\msvc2022_64\bin\qtcreator.exe" -pluginpath "%LOCALAPPDATA%\QtProject\qtcreator\plugins"
 
+# Linux
+/opt/qtcreator/bin/qtcreator -pluginpath ~/.local/share/data/QtProject/qtcreator/plugins
 ```
 
 **Note:** Command-line loading only works when explicitly specified. For automatic loading when users double-click the app, the qt.conf configuration is required.
@@ -320,7 +365,7 @@ If you prefer not to modify Qt Creator's configuration, you can start Qt Creator
    echo '{"jsonrpc": "2.0", "method": "getVersion", "id": 1}' | nc localhost 3001
    ```
 
-#### Windows Verification
+#### Windows/Linux Verification
 
 1. **Start Qt Creator** (normally or with -pluginpath)
 2. **Check Help → About Plugins** to verify "Qt MCP Plugin" is listed
@@ -347,7 +392,7 @@ start the Qt Creator executable with the following parameters
     -pluginpath <path_to_plugin>
 
 where `<path_to_plugin>` is the path to the resulting plugin library in the build directory
-(`<plugin_build>/lib/qtcreator/plugins` on Windows,
+(`<plugin_build>/lib/qtcreator/plugins` on Windows and Linux,
 `<plugin_build>/Qt Creator.app/Contents/PlugIns` on macOS).
 
 ### Option 2: Using Platform-Specific Scripts
@@ -357,7 +402,7 @@ where `<path_to_plugin>` is the path to the resulting plugin library in the buil
 launch_qtcreator_with_plugin.bat
 ```
 
-**macOS:**
+**macOS/Linux:**
 ```bash
 ./launch_qtcreator_with_plugin.sh
 ```
@@ -369,7 +414,7 @@ instance cannot mess with your user-global Qt Creator settings.
 
 Once Qt Creator is running with the plugin, the MCP server will be available on port 3001 (or the next available port). You can interact with it using JSON-RPC:
 
-### macOS:
+### macOS/Linux:
 ```bash
 # Get plugin version and timeout information
 echo '{"jsonrpc": "2.0", "method": "getVersion", "id": 1}' | nc localhost 3001
@@ -425,7 +470,7 @@ echo {"jsonrpc": "2.0", "method": "debug", "id": 5} | ncat localhost 3001
 
 ### Testing Connectivity
 
-**macOS:**
+**macOS/Linux:**
 ```bash
 # Test if the MCP server is running
 nc -z localhost 3001 && echo "MCP server is running" || echo "MCP server is not running"
@@ -456,6 +501,14 @@ Test-NetConnection -ComputerName localhost -Port 3001
 brew install netcat
 ```
 
+**Linux - Install netcat:**
+```bash
+# Ubuntu/Debian:
+sudo apt-get install netcat
+
+# CentOS/RHEL:
+sudo yum install nc
+```
 
 ## Troubleshooting
 
@@ -464,7 +517,7 @@ brew install netcat
 **Build Errors:**
 - **"Could not find QtCreator"**: Make sure you're using the correct `CMAKE_PREFIX_PATH` for your platform
 - **"CMake version too old"**: Update CMake to version 3.16 or later
-- **"Compiler not found"**: Install Visual Studio (Windows) or Xcode Command Line Tools (macOS)
+- **"Compiler not found"**: Install Visual Studio (Windows), Xcode Command Line Tools (macOS), or GCC/Clang (Linux)
 - **"Qt Plugin Development headers not found"**: Reinstall Qt and ensure "Qt Plugin Development" component is selected
 - **"Qt Sources not found"**: Reinstall Qt and ensure "Qt Sources" component is selected
 - **"Version mismatch"**: Ensure Qt Creator and Qt Libraries are both version 6.9.2 or later
@@ -486,6 +539,10 @@ brew install netcat
 - Make sure Qt Creator is in your Applications folder or specify the full path
 - Use the `.app/Contents/Resources` path for Qt Creator
 
+**Linux:**
+- Install development packages: `sudo apt-get install build-essential cmake` (Ubuntu/Debian)
+- Make sure Qt Creator development headers are installed
+- Check that your Qt installation includes the development files
 
 ### Qt Installation Requirements
 
@@ -510,6 +567,7 @@ brew install netcat
 # Check if plugin development headers exist
 ls -la "Qt Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/"  # macOS
 ls -la "C:/Qt/Qt Creator/6.9.2/msvc2022_64/include/qtcreator/src/plugins/"  # Windows
+ls -la "/opt/qtcreator/include/qtcreator/src/plugins/"  # Linux
 ```
 
 ### Getting Help

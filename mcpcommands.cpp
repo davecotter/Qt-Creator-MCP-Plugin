@@ -35,6 +35,13 @@ MCPCommands::MCPCommands(QObject *parent)
     connect(this, &MCPCommands::sessionLoadRequested, 
             this, &MCPCommands::handleSessionLoadRequest, 
             Qt::QueuedConnection);
+    
+    // Initialize default method timeouts (in seconds)
+    m_methodTimeouts["debug"] = 60;
+    m_methodTimeouts["build"] = 1200;  // 20 minutes
+    m_methodTimeouts["runProject"] = 60;
+    m_methodTimeouts["loadSession"] = 30;
+    m_methodTimeouts["cleanProject"] = 300;  // 5 minutes
 }
 
 bool MCPCommands::build()
@@ -645,6 +652,56 @@ QStringList MCPCommands::listIssues()
     
     qDebug() << "Found" << issues.size() << "issues total";
     return issues;
+}
+
+QString MCPCommands::setMethodMetadata(const QString &method, int timeoutSeconds)
+{
+    QStringList results;
+    results.append("=== SET METHOD METADATA ===");
+    
+    if (method.isEmpty()) {
+        results.append("ERROR: Method name cannot be empty");
+        return results.join("\n");
+    }
+    
+    if (timeoutSeconds < 0) {
+        results.append("ERROR: Timeout cannot be negative");
+        return results.join("\n");
+    }
+    
+    // List of valid methods that support timeout configuration
+    QStringList validMethods = {
+        "debug", "build", "runProject", "loadSession", "cleanProject"
+    };
+    
+    if (!validMethods.contains(method)) {
+        results.append("ERROR: Method '" + method + "' does not support timeout configuration");
+        results.append("Valid methods: " + validMethods.join(", "));
+        return results.join("\n");
+    }
+    
+    // Store the new timeout value
+    int oldTimeout = m_methodTimeouts.value(method, -1);
+    m_methodTimeouts[method] = timeoutSeconds;
+    
+    results.append("Method: " + method);
+    results.append("Previous timeout: " + (oldTimeout >= 0 ? QString::number(oldTimeout) + " seconds" : QString("not set")));
+    results.append("New timeout: " + QString::number(timeoutSeconds) + " seconds");
+    results.append("");
+    results.append("Timeout updated successfully!");
+    results.append("Note: This change affects the timeout hints shown in method responses.");
+    results.append("The actual operation timeouts are still controlled by Qt Creator's internal mechanisms.");
+    
+    results.append("");
+    results.append("=== SET METHOD METADATA RESULT ===");
+    results.append("Method metadata update completed.");
+    
+    return results.join("\n");
+}
+
+int MCPCommands::getMethodTimeout(const QString &method) const
+{
+    return m_methodTimeouts.value(method, -1);
 }
 
 // handleSessionLoadRequest method removed - using direct session loading instead

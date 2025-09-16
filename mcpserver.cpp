@@ -183,7 +183,8 @@ void MCPServer::processRequest(QTcpSocket *client, const QJsonObject &request)
         // For long-running operations, provide timeout hints
         QJsonObject buildResult;
         buildResult["success"] = successB;
-        buildResult["message"] = "Build started. This operation may take up to 20 minutes.";
+        int timeout = m_commandsP->getMethodTimeout("build");
+        buildResult["message"] = QString("Build started. This operation may take up to %1 seconds.").arg(timeout);
         buildResult["timeoutInfo"] = "Call getMethodMetadata() for expected operation durations";
         result = buildResult;
     }
@@ -252,7 +253,8 @@ void MCPServer::processRequest(QTcpSocket *client, const QJsonObject &request)
         bool successB = m_commandsP->runProject();
         QJsonObject runResult;
         runResult["success"] = successB;
-        runResult["message"] = "Project run started. This operation may take up to 60 seconds.";
+        int timeout = m_commandsP->getMethodTimeout("runProject");
+        runResult["message"] = QString("Project run started. This operation may take up to %1 seconds.").arg(timeout);
         runResult["timeoutInfo"] = "Call getMethodMetadata() for expected operation durations";
         result = runResult;
     }
@@ -260,7 +262,8 @@ void MCPServer::processRequest(QTcpSocket *client, const QJsonObject &request)
         bool successB = m_commandsP->cleanProject();
         QJsonObject cleanResult;
         cleanResult["success"] = successB;
-        cleanResult["message"] = "Project clean started. This operation may take up to 5 minutes.";
+        int timeout = m_commandsP->getMethodTimeout("cleanProject");
+        cleanResult["message"] = QString("Project clean started. This operation may take up to %1 seconds.").arg(timeout);
         cleanResult["timeoutInfo"] = "Call getMethodMetadata() for expected operation durations";
         result = cleanResult;
     }
@@ -292,7 +295,8 @@ void MCPServer::processRequest(QTcpSocket *client, const QJsonObject &request)
             bool successB = m_commandsP->loadSession(sessionName);
             QJsonObject loadResult;
             loadResult["success"] = successB;
-            loadResult["message"] = "Session loading started. This operation may take up to 30 seconds.";
+            int timeout = m_commandsP->getMethodTimeout("loadSession");
+            loadResult["message"] = QString("Session loading started. This operation may take up to %1 seconds.").arg(timeout);
             loadResult["timeoutInfo"] = "Call getMethodMetadata() for expected operation durations";
             result = loadResult;
         }
@@ -327,23 +331,37 @@ void MCPServer::processRequest(QTcpSocket *client, const QJsonObject &request)
         methods.append("listIssues");
         methods.append("listMethods");
         methods.append("getMethodMetadata");
+        methods.append("setMethodMetadata");
         result = methods;
     }
     else if (method == "getMethodMetadata") {
         QJsonObject metadata;
         
-        // Define expected durations for long-running operations (in seconds)
+        // Get current timeout values from MCPCommands
         QJsonObject methodDurations;
-        methodDurations["debug"] = 60;  // Up to 60 seconds
-        methodDurations["build"] = 1200;  // Up to 20 minutes (1200 seconds)
-        methodDurations["runProject"] = 60;  // Up to 60 seconds
-        methodDurations["loadSession"] = 30;  // Up to 30 seconds
-        methodDurations["cleanProject"] = 300;  // Up to 5 minutes (300 seconds)
+        QStringList methods = {"debug", "build", "runProject", "loadSession", "cleanProject"};
+        for (const QString &methodName : methods) {
+            int timeout = m_commandsP->getMethodTimeout(methodName);
+            if (timeout >= 0) {
+                methodDurations[methodName] = timeout;
+            }
+        }
         
         metadata["expectedDurations"] = methodDurations;
         metadata["description"] = "Provides metadata about MCP methods, including expected operation durations in seconds";
+        metadata["note"] = "Use setMethodMetadata() to customize timeout values";
         
         result = metadata;
+    }
+    else if (method == "setMethodMetadata") {
+        if (!params.isObject()) {
+            errorMessage = "Invalid parameters for setMethodMetadata";
+        } else {
+            QString methodName = params.toObject().value("method").toString();
+            int timeoutSeconds = params.toObject().value("timeoutSeconds").toInt();
+            QString resultStr = m_commandsP->setMethodMetadata(methodName, timeoutSeconds);
+            result = resultStr;
+        }
     }
     else {
         errorMessage = QString("Unknown method: %1").arg(method);
