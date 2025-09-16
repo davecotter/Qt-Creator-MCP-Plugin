@@ -53,6 +53,10 @@ if(CMAKE_INSTALL_COMPONENT STREQUAL "Devel")
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/Qt Creator.app/Contents/Resources/Headers/qtcreator" TYPE FILE FILES "/Volumes/Developer/depot/Qt_MCP_Plugin/mcpcommands.h")
 endif()
 
+if(CMAKE_INSTALL_COMPONENT STREQUAL "Devel")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/Qt Creator.app/Contents/Resources/Headers/qtcreator" TYPE FILE FILES "/Volumes/Developer/depot/Qt_MCP_Plugin/issuesmanager.h")
+endif()
+
 if(CMAKE_INSTALL_COMPONENT STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT)
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/Qt Creator.app/Contents/PlugIns/qtcreator" TYPE SHARED_LIBRARY OPTIONAL FILES "/Volumes/Developer/depot/Qt_MCP_Plugin/Qt Creator.app/Contents/PlugIns/qtcreator/libQt_MCP_Plugin.1.dylib")
   if(EXISTS "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/Qt Creator.app/Contents/PlugIns/qtcreator/libQt_MCP_Plugin.1.dylib" AND

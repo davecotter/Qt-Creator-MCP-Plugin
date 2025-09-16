@@ -1122,6 +1122,12 @@
 			null
 		],
 		[
+			"/Volumes/Developer/depot/Qt_MCP_Plugin/issuesmanager.h",
+			"MU",
+			"EWIEGA46WW/moc_issuesmanager.cpp",
+			null
+		],
+		[
 			"/Volumes/Developer/depot/Qt_MCP_Plugin/mcpcommands.h",
 			"MU",
 			"EWIEGA46WW/moc_mcpcommands.cpp",
@@ -1247,6 +1253,11 @@
 	"SETTINGS_FILE" : "/Volumes/Developer/depot/Qt_MCP_Plugin/CMakeFiles/Qt_MCP_Plugin_autogen.dir/AutogenUsed.txt",
 	"SOURCES" : 
 	[
+		[
+			"/Volumes/Developer/depot/Qt_MCP_Plugin/issuesmanager.cpp",
+			"MU",
+			null
+		],
 		[ "/Volumes/Developer/depot/Qt_MCP_Plugin/mcpcommands.cpp", "MU", null ],
 		[ "/Volumes/Developer/depot/Qt_MCP_Plugin/mcpserver.cpp", "MU", null ],
 		[

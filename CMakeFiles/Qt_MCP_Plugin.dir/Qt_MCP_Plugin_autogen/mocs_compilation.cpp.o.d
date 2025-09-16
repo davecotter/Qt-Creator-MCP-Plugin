@@ -1,7 +1,7 @@
 CMakeFiles/Qt_MCP_Plugin.dir/Qt_MCP_Plugin_autogen/mocs_compilation.cpp.o: \
   /Volumes/Developer/depot/Qt_MCP_Plugin/Qt_MCP_Plugin_autogen/mocs_compilation.cpp \
-  /Volumes/Developer/depot/Qt_MCP_Plugin/Qt_MCP_Plugin_autogen/EWIEGA46WW/moc_mcpcommands.cpp \
-  /Volumes/Developer/depot/Qt_MCP_Plugin/Qt_MCP_Plugin_autogen/EWIEGA46WW/../../mcpcommands.h \
+  /Volumes/Developer/depot/Qt_MCP_Plugin/Qt_MCP_Plugin_autogen/EWIEGA46WW/moc_issuesmanager.cpp \
+  /Volumes/Developer/depot/Qt_MCP_Plugin/Qt_MCP_Plugin_autogen/EWIEGA46WW/../../issuesmanager.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QObject \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qobject.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qobjectdefs.h \
@@ -1109,14 +1109,17 @@ CMakeFiles/Qt_MCP_Plugin.dir/Qt_MCP_Plugin_autogen/mocs_compilation.cpp.o: \
   /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__charconv/from_chars_result.h \
   /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__charconv/to_chars.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QStringList \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QMap \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qmap.h \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qshareddata.h \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qshareddata_impl.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QString \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qtmochelpers.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qtmocconstants.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/q20algorithm.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/q23type_traits.h \
+  /Volumes/Developer/depot/Qt_MCP_Plugin/Qt_MCP_Plugin_autogen/EWIEGA46WW/moc_mcpcommands.cpp \
+  /Volumes/Developer/depot/Qt_MCP_Plugin/Qt_MCP_Plugin_autogen/EWIEGA46WW/../../mcpcommands.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QMap \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qmap.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qshareddata.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qshareddata_impl.h \
   /Volumes/Developer/depot/Qt_MCP_Plugin/Qt_MCP_Plugin_autogen/EWIEGA46WW/moc_mcpserver.cpp \
   /Volumes/Developer/depot/Qt_MCP_Plugin/Qt_MCP_Plugin_autogen/EWIEGA46WW/../../mcpserver.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtNetwork.framework/Headers/QTcpServer \

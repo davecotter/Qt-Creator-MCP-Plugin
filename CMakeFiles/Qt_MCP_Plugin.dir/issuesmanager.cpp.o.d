@@ -1,6 +1,6 @@
-CMakeFiles/Qt_MCP_Plugin.dir/mcpcommands.cpp.o: \
-  /Volumes/Developer/depot/Qt_MCP_Plugin/mcpcommands.cpp \
-  /Volumes/Developer/depot/Qt_MCP_Plugin/mcpcommands.h \
+CMakeFiles/Qt_MCP_Plugin.dir/issuesmanager.cpp.o: \
+  /Volumes/Developer/depot/Qt_MCP_Plugin/issuesmanager.cpp \
+  /Volumes/Developer/depot/Qt_MCP_Plugin/issuesmanager.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QObject \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qobject.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qobjectdefs.h \
@@ -1108,11 +1108,6 @@ CMakeFiles/Qt_MCP_Plugin.dir/mcpcommands.cpp.o: \
   /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__charconv/from_chars_result.h \
   /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__charconv/to_chars.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QStringList \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QMap \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qmap.h \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qshareddata.h \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qshareddata_impl.h \
-  /Volumes/Developer/depot/Qt_MCP_Plugin/issuesmanager.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QString \
   /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/coreplugin/icore.h \
   /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/coreplugin/core_global.h \
@@ -1130,9 +1125,12 @@ CMakeFiles/Qt_MCP_Plugin.dir/mcpcommands.cpp.o: \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qtextstream.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qcontiguouscache.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qsharedpointer.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qshareddata.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qsharedpointer_impl.h \
   /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/set \
   /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/unordered_set \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qmap.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qshareddata_impl.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qset.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qhash.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qvarlengtharray.h \
@@ -1249,88 +1247,21 @@ CMakeFiles/Qt_MCP_Plugin.dir/mcpcommands.cpp.o: \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtWidgets.framework/Headers/qtabwidget.h \
   /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/utils/qtcsettings.h \
   /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/utils/store.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QMap \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QSettings \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qsettings.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QRect \
-  /Volumes/Developer/depot/Qt_MCP_Plugin/version.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/coreplugin/editormanager/editormanager.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/coreplugin/editormanager/../core_global.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/coreplugin/editormanager/../idocument.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/coreplugin/editormanager/documentmodel.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/coreplugin/editormanager/ieditor.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/coreplugin/editormanager/../icontext.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/utils/link.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/utils/textfileformat.h \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtWidgets.framework/Headers/QFileDialog \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtWidgets.framework/Headers/qfiledialog.h \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtWidgets.framework/Headers/qdialog.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/coreplugin/idocument.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/coreplugin/session.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/coreplugin/actionmanager/actionmanager.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/coreplugin/actionmanager/../core_global.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/coreplugin/actionmanager/../coreconstants.h \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QtGlobal \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/coreplugin/actionmanager/../icontext.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/coreplugin/actionmanager/actioncontainer.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/coreplugin/actionmanager/command.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/utils/hostosinfo.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/utils/action.h \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/QAction \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/projectmanager.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/projectexplorer_export.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/task.h \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/QIcon \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/QTextLayout \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qtextlayout.h \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qevent.h \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qcoreevent.h \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qbasictimer.h \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qabstracteventdispatcher.h \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qeventloop.h \
+  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/extensionsystem/pluginmanager.h \
+  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/aggregation/aggregate.h \
+  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/aggregation/aggregation_global.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QReadWriteLock \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qreadwritelock.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qdeadlinetimer.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qelapsedtimer.h \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qeventpoint.h \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qvector2d.h \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qvectornd.h \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qpointingdevice.h \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qinputdevice.h \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qscreen.h \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QSize \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QSizeF \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/QTransform \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qnativeinterface.h \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qscreen_platform.h \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qguiapplication.h \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qcoreapplication.h \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qcoreapplication_platform.h \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qinputmethod.h \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qguiapplication_platform.h \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qglyphrun.h \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qrawfont.h \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qfontdatabase.h \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qtextcursor.h \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qtextdocument.h \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qtextformat.h \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qpen.h \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qtextoption.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/project.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/deploymentdata.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/deployablefile.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/utils/commandline.h \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QPair \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/utils/environment.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/utils/environmentfwd.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/utils/namevaluedictionary.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/utils/namevalueitem.h \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QVariantList \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qvariantlist.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/kit.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/coreplugin/featureprovider.h \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QSet \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/QFileSystemModel \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qfilesystemmodel.h \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qabstractitemmodel.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/target.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QReadLocker \
+  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/buildmanager.h \
+  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/buildstep.h \
+  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/projectexplorer_export.h \
   /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/buildconfiguration.h \
   /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/projectconfiguration.h \
   /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/utils/aspects.h \
@@ -1341,11 +1272,16 @@ CMakeFiles/Qt_MCP_Plugin.dir/mcpcommands.cpp.o: \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtWidgets.framework/Headers/qlabel.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtWidgets.framework/Headers/qframe.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qpicture.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qtextdocument.h \
   /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/utils/pathchooser.h \
   /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/utils/fancylineedit.h \
   /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/utils/completinglineedit.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtWidgets.framework/Headers/QLineEdit \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtWidgets.framework/Headers/qlineedit.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qtextcursor.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qtextformat.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qpen.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qtextoption.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtWidgets.framework/Headers/QAbstractButton \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtWidgets.framework/Headers/qabstractbutton.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QFuture \
@@ -1385,60 +1321,45 @@ CMakeFiles/Qt_MCP_Plugin.dir/mcpcommands.cpp.o: \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtWidgets.framework/Headers/qstyle.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtWidgets.framework/Headers/qtabbar.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtWidgets.framework/Headers/qrubberband.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qabstractitemmodel.h \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/QUndoCommand \
   /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qundostack.h \
   /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/utils/displayname.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/buildmanager.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/buildstep.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/runcontrol.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/devicesupport/idevicefwd.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/runconfiguration.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/buildtargetinfo.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/utils/macroexpander.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/solutions/tasking/tasktreerunner.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/solutions/tasking/tasking_global.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/solutions/tasking/tasktree.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/utils/outputformatter.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/utils/outputformat.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/utils/processhandle.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/utils/processenums.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/debugger/debuggerruncontrol.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/debugger/debugger_global.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/debugger/debuggerconstants.h \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QFlags \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/debugger/debuggerengine.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/debugger/debuggerprotocol.h \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QByteArray \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QJsonValue \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QJsonObject \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QVarLengthArray \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/utils/textutils.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/debugger/breakhandler.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/debugger/breakpoint.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/utils/treemodel.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/utils/indexedcontainerproxyconstiterator.h \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QSortFilterProxyModel \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qsortfilterproxymodel.h \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qabstractproxymodel.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/debugger/threadshandler.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/debugger/threaddata.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/abi.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/texteditor/textmark.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/texteditor/texteditor_global.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/utils/theme/theme.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/utils/theme/../utils_global.h \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/QBrush \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QCoreApplication \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/QStaticText \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qstatictext.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/utils/fileinprojectfinder.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/utils/processinterface.h \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QDeadlineTimer \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QProcess \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qprocess.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/projectexplorerconstants.h \
-  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/utils/fileutils.h \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtWidgets.framework/Headers/QApplication \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtWidgets.framework/Headers/qapplication.h \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QThread \
-  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QFile
+  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/target.h \
+  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/task.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/QIcon \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/QTextLayout \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qtextlayout.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qevent.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qcoreevent.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qbasictimer.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qabstracteventdispatcher.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qeventloop.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qeventpoint.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qvector2d.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qvectornd.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qpointingdevice.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qinputdevice.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qscreen.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QSize \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QSizeF \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/QTransform \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qnativeinterface.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qscreen_platform.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qguiapplication.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qcoreapplication.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qcoreapplication_platform.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qinputmethod.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qguiapplication_platform.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qglyphrun.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qrawfont.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtGui.framework/Headers/qfontdatabase.h \
+  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/utils/environment.h \
+  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/utils/environmentfwd.h \
+  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/utils/namevaluedictionary.h \
+  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/utils/hostosinfo.h \
+  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/libs/utils/namevalueitem.h \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/QVariantList \
+  /Users/davec/Developer/Qt/6.9.2/macos/lib/QtCore.framework/Headers/qvariantlist.h \
+  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/projectexplorer.h \
+  /Users/davec/Developer/Qt/Qt\ Creator.app/Contents/Resources/Headers/qtcreator/src/plugins/projectexplorer/taskhub.h

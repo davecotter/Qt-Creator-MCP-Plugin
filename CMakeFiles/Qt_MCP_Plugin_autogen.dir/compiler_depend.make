@@ -1999,6 +1999,8 @@ Qt_MCP_Plugin_autogen/timestamp: /Applications/Xcode-16.2.0.app/Contents/Develop
   Qt_MCP_Plugin.json \
   Qt_MCP_Plugin.json.in \
   Qt_MCP_Plugin_autogen/moc_predefs.h \
+  issuesmanager.cpp \
+  issuesmanager.h \
   mcpcommands.cpp \
   mcpcommands.h \
   mcpserver.cpp \
@@ -2108,6 +2110,8 @@ Qt_MCP_Plugin_autogen/timestamp: /Applications/Xcode-16.2.0.app/Contents/Develop
 version.h:
 
 mcpcommands.h:
+
+issuesmanager.h:
 
 Qt_MCP_Plugin_autogen/moc_predefs.h:
 
@@ -2732,6 +2736,8 @@ qt_mcp_pluginconstants.h:
 /Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6PrintSupportPrivate/Qt6PrintSupportPrivateConfigVersion.cmake:
 
 /Users/davec/Developer/Qt/6.9.2/macos/lib/cmake/Qt6PrintSupportPrivate/Qt6PrintSupportPrivateAdditionalTargetInfo.cmake:
+
+issuesmanager.cpp:
 
 /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/xlocale/_time.h:
 

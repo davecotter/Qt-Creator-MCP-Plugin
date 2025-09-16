@@ -68,6 +68,8 @@ add_qtc_plugin(Qt_MCP_Plugin
     mcpserver.h
     mcpcommands.cpp
     mcpcommands.h
+    issuesmanager.cpp
+    issuesmanager.h
 )
 
 # Set plugin properties without version in filename

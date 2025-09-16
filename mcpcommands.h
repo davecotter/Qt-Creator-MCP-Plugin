@@ -5,6 +5,13 @@
 #include <QStringList>
 #include <QMap>
 
+// Forward declarations
+namespace Qt_MCP_Plugin {
+namespace Internal {
+class IssuesManager;
+}
+}
+
 namespace Qt_MCP_Plugin {
 namespace Internal {
 
@@ -58,6 +65,9 @@ private:
     
     // Method timeout storage
     QMap<QString, int> m_methodTimeouts;
+    
+    // Issues management
+    IssuesManager *m_issuesManager;
 };
 
 } // namespace Internal

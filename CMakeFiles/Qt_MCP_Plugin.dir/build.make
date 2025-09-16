@@ -135,12 +135,27 @@ CMakeFiles/Qt_MCP_Plugin.dir/mcpcommands.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/Qt_MCP_Plugin.dir/mcpcommands.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Volumes/Developer/depot/Qt_MCP_Plugin/mcpcommands.cpp -o CMakeFiles/Qt_MCP_Plugin.dir/mcpcommands.cpp.s
 
+CMakeFiles/Qt_MCP_Plugin.dir/issuesmanager.cpp.o: CMakeFiles/Qt_MCP_Plugin.dir/flags.make
+CMakeFiles/Qt_MCP_Plugin.dir/issuesmanager.cpp.o: issuesmanager.cpp
+CMakeFiles/Qt_MCP_Plugin.dir/issuesmanager.cpp.o: CMakeFiles/Qt_MCP_Plugin.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Volumes/Developer/depot/Qt_MCP_Plugin/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/Qt_MCP_Plugin.dir/issuesmanager.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/Qt_MCP_Plugin.dir/issuesmanager.cpp.o -MF CMakeFiles/Qt_MCP_Plugin.dir/issuesmanager.cpp.o.d -o CMakeFiles/Qt_MCP_Plugin.dir/issuesmanager.cpp.o -c /Volumes/Developer/depot/Qt_MCP_Plugin/issuesmanager.cpp
+
+CMakeFiles/Qt_MCP_Plugin.dir/issuesmanager.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/Qt_MCP_Plugin.dir/issuesmanager.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Volumes/Developer/depot/Qt_MCP_Plugin/issuesmanager.cpp > CMakeFiles/Qt_MCP_Plugin.dir/issuesmanager.cpp.i
+
+CMakeFiles/Qt_MCP_Plugin.dir/issuesmanager.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/Qt_MCP_Plugin.dir/issuesmanager.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Volumes/Developer/depot/Qt_MCP_Plugin/issuesmanager.cpp -o CMakeFiles/Qt_MCP_Plugin.dir/issuesmanager.cpp.s
+
 # Object files for target Qt_MCP_Plugin
 Qt_MCP_Plugin_OBJECTS = \
 "CMakeFiles/Qt_MCP_Plugin.dir/Qt_MCP_Plugin_autogen/mocs_compilation.cpp.o" \
 "CMakeFiles/Qt_MCP_Plugin.dir/qt_mcp_plugin.cpp.o" \
 "CMakeFiles/Qt_MCP_Plugin.dir/mcpserver.cpp.o" \
-"CMakeFiles/Qt_MCP_Plugin.dir/mcpcommands.cpp.o"
+"CMakeFiles/Qt_MCP_Plugin.dir/mcpcommands.cpp.o" \
+"CMakeFiles/Qt_MCP_Plugin.dir/issuesmanager.cpp.o"
 
 # External object files for target Qt_MCP_Plugin
 Qt_MCP_Plugin_EXTERNAL_OBJECTS =
@@ -149,10 +164,11 @@ Qt\ Creator.app/Contents/PlugIns/qtcreator/libQt_MCP_Plugin.1.dylib: CMakeFiles/
 Qt\ Creator.app/Contents/PlugIns/qtcreator/libQt_MCP_Plugin.1.dylib: CMakeFiles/Qt_MCP_Plugin.dir/qt_mcp_plugin.cpp.o
 Qt\ Creator.app/Contents/PlugIns/qtcreator/libQt_MCP_Plugin.1.dylib: CMakeFiles/Qt_MCP_Plugin.dir/mcpserver.cpp.o
 Qt\ Creator.app/Contents/PlugIns/qtcreator/libQt_MCP_Plugin.1.dylib: CMakeFiles/Qt_MCP_Plugin.dir/mcpcommands.cpp.o
+Qt\ Creator.app/Contents/PlugIns/qtcreator/libQt_MCP_Plugin.1.dylib: CMakeFiles/Qt_MCP_Plugin.dir/issuesmanager.cpp.o
 Qt\ Creator.app/Contents/PlugIns/qtcreator/libQt_MCP_Plugin.1.dylib: CMakeFiles/Qt_MCP_Plugin.dir/build.make
 Qt\ Creator.app/Contents/PlugIns/qtcreator/libQt_MCP_Plugin.1.dylib: /Applications/Xcode-16.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/libcups.tbd
 Qt\ Creator.app/Contents/PlugIns/qtcreator/libQt_MCP_Plugin.1.dylib: CMakeFiles/Qt_MCP_Plugin.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Volumes/Developer/depot/Qt_MCP_Plugin/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Linking CXX shared library \"Qt Creator.app/Contents/PlugIns/qtcreator/libQt_MCP_Plugin.dylib\""
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Volumes/Developer/depot/Qt_MCP_Plugin/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Linking CXX shared library \"Qt Creator.app/Contents/PlugIns/qtcreator/libQt_MCP_Plugin.dylib\""
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/Qt_MCP_Plugin.dir/link.txt --verbose=$(VERBOSE)
 	$(CMAKE_COMMAND) -E cmake_symlink_library "Qt Creator.app/Contents/PlugIns/qtcreator/libQt_MCP_Plugin.1.dylib" "Qt Creator.app/Contents/PlugIns/qtcreator/libQt_MCP_Plugin.1.dylib" "Qt Creator.app/Contents/PlugIns/qtcreator/libQt_MCP_Plugin.dylib"
 

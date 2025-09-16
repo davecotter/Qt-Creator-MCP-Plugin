@@ -1,4 +1,5 @@
 #include "mcpcommands.h"
+#include "issuesmanager.h"
 
 #include <coreplugin/icore.h>
 #include "version.h"
@@ -8,8 +9,6 @@
 #include <coreplugin/editormanager/documentmodel.h>
 #include <coreplugin/session.h>
 #include <coreplugin/actionmanager/actionmanager.h>
-#include <projectexplorer/taskhub.h>
-#include <projectexplorer/task.h>
 #include <projectexplorer/projectmanager.h>
 #include <projectexplorer/project.h>
 #include <projectexplorer/target.h>
@@ -44,6 +43,9 @@ MCPCommands::MCPCommands(QObject *parent)
     m_methodTimeouts["runProject"] = 60;
     m_methodTimeouts["loadSession"] = 30;
     m_methodTimeouts["cleanProject"] = 300;  // 5 minutes
+    
+    // Initialize issues manager
+    m_issuesManager = new IssuesManager(this);
 }
 
 bool MCPCommands::build()
@@ -572,79 +574,16 @@ QStringList MCPCommands::listIssues()
 {
     qDebug() << "Listing issues from Qt Creator's Issues panel";
     
-    QStringList issues;
+    if (!m_issuesManager) {
+        qDebug() << "IssuesManager not initialized";
+        return QStringList() << "ERROR:Issues manager not initialized";
+    }
     
-    // Note: Issues panel integration is complex and requires access to internal Qt Creator APIs
-    // For now, we'll provide project status information and indicate the limitation
+    QStringList issues = m_issuesManager->getCurrentIssues();
     
-    // For now, let's try a different approach - check if there are any recent build results
-    // that might contain issues
+    // Add project status information for context
     if (ProjectExplorer::BuildManager::isBuilding()) {
-        issues.append("INFO:Build in progress - issues may not be current");
-        qDebug() << "Build is currently in progress";
-    }
-    
-    // Get current project information
-    ProjectExplorer::Project *currentProject = ProjectExplorer::ProjectManager::startupProject();
-    if (!currentProject) {
-        issues.append("WARNING:No active project found");
-        qDebug() << "No active project found";
-        return issues;
-    }
-    
-    qDebug() << "Current project:" << currentProject->displayName();
-    
-    // Check if the project has any targets
-    QList<ProjectExplorer::Target*> targets = currentProject->targets();
-    if (targets.isEmpty()) {
-        issues.append("WARNING:Project has no build targets configured");
-        qDebug() << "Project has no build targets";
-        return issues;
-    }
-    
-    // Check the active target
-    ProjectExplorer::Target *activeTarget = currentProject->activeTarget();
-    if (!activeTarget) {
-        issues.append("WARNING:No active build target");
-        qDebug() << "No active build target";
-        return issues;
-    }
-    
-    qDebug() << "Active target:" << activeTarget->displayName();
-    
-    // Check build configurations
-    QList<ProjectExplorer::BuildConfiguration*> buildConfigs = activeTarget->buildConfigurations();
-    if (buildConfigs.isEmpty()) {
-        issues.append("WARNING:No build configurations found");
-        qDebug() << "No build configurations found";
-        return issues;
-    }
-    
-    // Check the active build configuration
-    ProjectExplorer::BuildConfiguration *activeBuildConfig = activeTarget->activeBuildConfiguration();
-    if (!activeBuildConfig) {
-        issues.append("WARNING:No active build configuration");
-        qDebug() << "No active build configuration";
-        return issues;
-    }
-    
-    qDebug() << "Active build config:" << activeBuildConfig->displayName();
-    
-    // Check if build directory exists and is accessible
-    Utils::FilePath buildDir = activeBuildConfig->buildDirectory();
-    if (!buildDir.exists()) {
-        issues.append("WARNING:Build directory does not exist:" + buildDir.toUserOutput());
-        qDebug() << "Build directory does not exist:" << buildDir.toUserOutput();
-    } else {
-        qDebug() << "Build directory exists:" << buildDir.toUserOutput();
-    }
-    
-    // For now, return a message indicating that we need to implement proper Issues panel access
-    if (issues.isEmpty()) {
-        issues.append("INFO:Issues panel integration not yet fully implemented");
-        issues.append("INFO:This command currently shows project status information");
-        issues.append("INFO:To see actual build issues, check the Issues panel in Qt Creator");
-        qDebug() << "Issues panel integration not yet fully implemented";
+        issues.prepend("INFO:Build in progress - issues may not be current");
     }
     
     qDebug() << "Found" << issues.size() << "issues total";

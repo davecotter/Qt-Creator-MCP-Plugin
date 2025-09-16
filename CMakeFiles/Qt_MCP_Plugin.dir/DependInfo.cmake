@@ -10,6 +10,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "" "Qt_MCP_Plugin_autogen/timestamp" "custom" "Qt_MCP_Plugin_autogen/deps"
   "/Volumes/Developer/depot/Qt_MCP_Plugin/Qt_MCP_Plugin_autogen/mocs_compilation.cpp" "CMakeFiles/Qt_MCP_Plugin.dir/Qt_MCP_Plugin_autogen/mocs_compilation.cpp.o" "gcc" "CMakeFiles/Qt_MCP_Plugin.dir/Qt_MCP_Plugin_autogen/mocs_compilation.cpp.o.d"
+  "/Volumes/Developer/depot/Qt_MCP_Plugin/issuesmanager.cpp" "CMakeFiles/Qt_MCP_Plugin.dir/issuesmanager.cpp.o" "gcc" "CMakeFiles/Qt_MCP_Plugin.dir/issuesmanager.cpp.o.d"
   "/Volumes/Developer/depot/Qt_MCP_Plugin/mcpcommands.cpp" "CMakeFiles/Qt_MCP_Plugin.dir/mcpcommands.cpp.o" "gcc" "CMakeFiles/Qt_MCP_Plugin.dir/mcpcommands.cpp.o.d"
   "/Volumes/Developer/depot/Qt_MCP_Plugin/mcpserver.cpp" "CMakeFiles/Qt_MCP_Plugin.dir/mcpserver.cpp.o" "gcc" "CMakeFiles/Qt_MCP_Plugin.dir/mcpserver.cpp.o.d"
   "/Volumes/Developer/depot/Qt_MCP_Plugin/qt_mcp_plugin.cpp" "CMakeFiles/Qt_MCP_Plugin.dir/qt_mcp_plugin.cpp.o" "gcc" "CMakeFiles/Qt_MCP_Plugin.dir/qt_mcp_plugin.cpp.o.d"

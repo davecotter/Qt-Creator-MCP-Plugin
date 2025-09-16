@@ -4,6 +4,8 @@ file(REMOVE_RECURSE
   "Qt_MCP_Plugin_autogen"
   "CMakeFiles/Qt_MCP_Plugin.dir/Qt_MCP_Plugin_autogen/mocs_compilation.cpp.o"
   "CMakeFiles/Qt_MCP_Plugin.dir/Qt_MCP_Plugin_autogen/mocs_compilation.cpp.o.d"
+  "CMakeFiles/Qt_MCP_Plugin.dir/issuesmanager.cpp.o"
+  "CMakeFiles/Qt_MCP_Plugin.dir/issuesmanager.cpp.o.d"
   "CMakeFiles/Qt_MCP_Plugin.dir/mcpcommands.cpp.o"
   "CMakeFiles/Qt_MCP_Plugin.dir/mcpcommands.cpp.o.d"
   "CMakeFiles/Qt_MCP_Plugin.dir/mcpserver.cpp.o"

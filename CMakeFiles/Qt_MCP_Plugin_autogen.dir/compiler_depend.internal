@@ -2000,6 +2000,8 @@
  /Volumes/Developer/depot/Qt_MCP_Plugin/Qt_MCP_Plugin.json
  /Volumes/Developer/depot/Qt_MCP_Plugin/Qt_MCP_Plugin.json.in
  /Volumes/Developer/depot/Qt_MCP_Plugin/Qt_MCP_Plugin_autogen/moc_predefs.h
+ /Volumes/Developer/depot/Qt_MCP_Plugin/issuesmanager.cpp
+ /Volumes/Developer/depot/Qt_MCP_Plugin/issuesmanager.h
  /Volumes/Developer/depot/Qt_MCP_Plugin/mcpcommands.cpp
  /Volumes/Developer/depot/Qt_MCP_Plugin/mcpcommands.h
  /Volumes/Developer/depot/Qt_MCP_Plugin/mcpserver.cpp
