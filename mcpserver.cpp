@@ -332,6 +332,7 @@ void MCPServer::processRequest(QTcpSocket *client, const QJsonObject &request)
         methods.append("listMethods");
         methods.append("getMethodMetadata");
         methods.append("setMethodMetadata");
+        methods.append("testTaskAccess");
         result = methods;
     }
     else if (method == "getMethodMetadata") {
@@ -362,6 +363,10 @@ void MCPServer::processRequest(QTcpSocket *client, const QJsonObject &request)
             QString resultStr = m_commandsP->setMethodMetadata(methodName, timeoutSeconds);
             result = resultStr;
         }
+    }
+    else if (method == "testTaskAccess") {
+        QStringList results = m_commandsP->testTaskAccess();
+        result = QJsonArray::fromStringList(results);
     }
     else {
         errorMessage = QString("Unknown method: %1").arg(method);

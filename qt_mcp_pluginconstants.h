@@ -26,5 +26,6 @@ const char GET_CURRENT_SESSION_ACTION_ID[] = "Qt_MCP_Plugin.GetCurrentSession";
 const char SAVE_SESSION_ACTION_ID[] = "Qt_MCP_Plugin.SaveSession";
 const char LIST_ISSUES_ACTION_ID[] = "Qt_MCP_Plugin.ListIssues";
 const char SET_METHOD_METADATA_ACTION_ID[] = "Qt_MCP_Plugin.SetMethodMetadata";
+const char TEST_TASK_ACCESS_ACTION_ID[] = "Qt_MCP_Plugin.TestTaskAccess";
 
 } // namespace Qt_MCP_Plugin::Constants

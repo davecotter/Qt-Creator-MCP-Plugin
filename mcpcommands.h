@@ -52,6 +52,9 @@ public:
     // Method metadata management
     QString setMethodMetadata(const QString &method, int timeoutSeconds);
     int getMethodTimeout(const QString &method) const;
+    
+    // Test method for debugging task access
+    QStringList testTaskAccess();
 
 signals:
     void sessionLoadRequested(const QString &sessionName);

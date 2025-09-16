@@ -640,6 +640,18 @@ int MCPCommands::getMethodTimeout(const QString &method) const
     return m_methodTimeouts.value(method, -1);
 }
 
+QStringList MCPCommands::testTaskAccess()
+{
+    qDebug() << "Testing task access methods";
+    
+    if (!m_issuesManager) {
+        qDebug() << "IssuesManager not initialized";
+        return QStringList() << "ERROR:Issues manager not initialized";
+    }
+    
+    return m_issuesManager->testTaskAccess();
+}
+
 // handleSessionLoadRequest method removed - using direct session loading instead
 
 } // namespace Internal

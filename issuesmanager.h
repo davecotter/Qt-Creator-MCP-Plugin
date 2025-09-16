@@ -4,6 +4,9 @@
 #include <QStringList>
 #include <QString>
 
+// Include for MOC compilation
+#include <projectexplorer/task.h>
+
 namespace Qt_MCP_Plugin {
 namespace Internal {
 
@@ -28,6 +31,30 @@ public:
      * @return List of formatted issue strings
      */
     QStringList getCurrentIssues() const;
+
+    /**
+     * @brief Tests multiple approaches to access Qt Creator's task data
+     * @return List of test results and findings
+     */
+    QStringList testTaskAccess() const;
+
+private slots:
+    /**
+     * @brief Handles task added signals from TaskHub
+     * @param task The task that was added
+     */
+    void onTaskAdded(const ProjectExplorer::Task &task);
+
+    /**
+     * @brief Handles task removed signals from TaskHub
+     * @param task The task that was removed
+     */
+    void onTaskRemoved(const ProjectExplorer::Task &task);
+
+    /**
+     * @brief Handles tasks changed signal from TaskWindow
+     */
+    void onTasksChanged();
 
     /**
      * @brief Checks if the Issues panel is accessible
@@ -59,7 +86,17 @@ private:
     QString formatTask(const QString &taskType, const QString &description, 
                       const QString &filePath = QString(), int lineNumber = -1) const;
 
+    /**
+     * @brief Connects to TaskHub and TaskWindow signals
+     */
+    void connectSignals();
+
     bool m_accessible = false;
+    
+    // Task tracking
+    QList<ProjectExplorer::Task> m_trackedTasks;
+    QObject* m_taskWindow = nullptr;
+    bool m_signalsConnected = false;
 };
 
 } // namespace Internal

@@ -251,6 +251,11 @@ public:
 				.setText(Tr::tr("Set Method Metadata"))
 				.addOnTriggered(this, &Qt_MCP_PluginPlugin::executeSetMethodMetadata);
 
+		ActionBuilder(this, Constants::TEST_TASK_ACCESS_ACTION_ID)
+				.addToContainer(Constants::MENU_ID)
+				.setText(Tr::tr("Test Task Access (Debug)"))
+				.addOnTriggered(this, &Qt_MCP_PluginPlugin::executeTestTaskAccess);
+
 		menu->addSeparator();
 
 		ActionBuilder(this, Constants::BUILD_ACTION_ID)
@@ -385,6 +390,15 @@ private:
 		// For demonstration, set debug timeout to 120 seconds
 		QString result = m_commandsP->setMethodMetadata("debug", 120);
 		outputMessage(result);
+	}
+
+	void executeTestTaskAccess()
+	{
+		outputMessage("Testing task access methods...");
+		QStringList results = m_commandsP->testTaskAccess();
+		for (const QString& result : results) {
+			outputMessage(result);
+		}
 	}
 
 	void executeBuild()
