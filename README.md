@@ -78,3 +78,7 @@ Standard MCP methods:
 **MCP server not responding?** Ensure Qt Creator is running with plugin loaded
 
 **Need help?** Ask your AI assistant - the build system is fully automated and designed for AI-assisted development.
+
+## License
+
+This project is licensed under the MIT License — see the included LICENSE file for details.
