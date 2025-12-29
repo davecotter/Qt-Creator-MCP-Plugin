@@ -20,7 +20,7 @@ Test the plugin and verify MCP server is working
 
 ## What It Does
 
-The plugin adds a **Tools → MCP Plugin** menu to Qt Creator and runs an MCP server on port 3001. AI assistants can:
+The plugin adds a **Tools → MCP Plugin** menu (with icon) to Qt Creator and runs an MCP server on port 3001. AI assistants can:
 
 - 🔧 **Build & Debug**: Start builds, debug sessions, run projects
 - 📁 **Project Management**: Load sessions, switch build configs, list projects  
@@ -41,11 +41,14 @@ python3 build_main.py
 
 The build script handles everything:
 - ✅ Quits Qt Creator and cleans old versions
-- ✅ Auto-detects Qt version from Qt Creator
+- ✅ Auto-detects Qt version from Qt Creator binary (no manual configuration)
+- ✅ Verifies matching Qt SDK is installed
 - ✅ Builds, installs, and verifies the plugin
-- ✅ **Registers with Cursor IDE automatically**
+- ✅ Registers with Cursor IDE automatically
 
 After a successful build, restart Cursor to enable AI control of Qt Creator.
+
+**For AI Assistants:** See `.cursorrules` for detailed build instructions and troubleshooting.
 
 ## Extending the Plugin
 
