@@ -41,20 +41,20 @@ QStringList IssuesManager::getCurrentIssues() const
     int otherCount = 0;
     
     for (const ProjectExplorer::Task& task : m_trackedTasks) {
-        QString taskType = task.type == ProjectExplorer::Task::Error ? QString("ERROR") :
-                          task.type == ProjectExplorer::Task::Warning ? QString("WARNING") : QString("INFO");
+        QString taskType = task.type() == ProjectExplorer::Task::Error ? QString("ERROR") :
+                          task.type() == ProjectExplorer::Task::Warning ? QString("WARNING") : QString("INFO");
         QString taskInfo = formatTask(
             taskType,
             task.description(),
-            task.file.toUserOutput(),
-            task.line
+            task.file().toUserOutput(),
+            task.line()
         );
         
         issues.append(taskInfo);
         
-        if (task.type == ProjectExplorer::Task::Error) {
+        if (task.type() == ProjectExplorer::Task::Error) {
             errorCount++;
-        } else if (task.type == ProjectExplorer::Task::Warning) {
+        } else if (task.type() == ProjectExplorer::Task::Warning) {
             warningCount++;
         } else {
             otherCount++;
@@ -174,9 +174,11 @@ void IssuesManager::onTaskRemoved(const ProjectExplorer::Task &task)
 {
     qDebug() << "IssuesManager: Task removed:" << task.description();
     
-    // Find and remove the task from our tracked list
+    // Find and remove the task from our tracked list by matching description and file
     for (int i = 0; i < m_trackedTasks.size(); ++i) {
-        if (m_trackedTasks[i].taskId == task.taskId) {
+        if (m_trackedTasks[i].description() == task.description() &&
+            m_trackedTasks[i].file() == task.file() &&
+            m_trackedTasks[i].line() == task.line()) {
             m_trackedTasks.removeAt(i);
             break;
         }

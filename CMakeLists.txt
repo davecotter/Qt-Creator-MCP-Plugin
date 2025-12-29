@@ -80,9 +80,17 @@ add_qtc_plugin(Qt_MCP_Plugin
     httpparser.h
     httpresponse.cpp
     httpresponse.h
+    macos_menu_icon.h
     mcp.png
     mcp.qrc
 )
+
+# Add macOS-specific Objective-C++ source for native menu icons
+if(APPLE)
+    target_sources(Qt_MCP_Plugin PRIVATE macos_menu_icon.mm)
+    # Link against AppKit framework for NSMenu/NSMenuItem access
+    target_link_libraries(Qt_MCP_Plugin PRIVATE "-framework AppKit")
+endif()
 
 # Set plugin properties without version in filename
 set_target_properties(Qt_MCP_Plugin PROPERTIES

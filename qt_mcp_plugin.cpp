@@ -21,6 +21,10 @@
 #include <QMessageBox>
 #include <QDebug>
 #include <QLoggingCategory>
+#include <QTimer>
+
+// Cross-platform menu icon support (handles macOS quirks automatically)
+#include "macos_menu_icon.h"
 #include <iostream>
 #include <QTextStream>
 #include <QDialog>
@@ -214,14 +218,14 @@ public:
 				.arg(m_serverP->getPort()));
 		}
 
-		// Create the MCP icon from resource
-		// Note: Menu icons work on Windows but may not display on macOS due to Apple's HIG
-		QIcon mcpIcon(":/icons/mcp.png");
-
-		// Create the MCP Plugin menu
+		// Create the MCP Plugin menu with icon
 		ActionContainer *menu = ActionManager::createMenu(Constants::MENU_ID);
 		menu->menu()->setTitle(Tr::tr("MCP Plugin"));
-		menu->menu()->setIcon(mcpIcon);  // Add icon to the main menu
+		
+		// Set menu icon BEFORE adding to parent (may matter for macOS)
+		setupMenuIcon(menu->menu(), "MCP Plugin");
+		
+		// Now add to Tools menu
 		ActionManager::actionContainer(Core::Constants::M_TOOLS)->addMenu(menu);
 
 		// Add separator for About
@@ -372,6 +376,37 @@ private:
 	{
 		MCPServerStatusDialog dialog(m_serverP, ICore::dialogParent());
 		dialog.exec();
+	}
+
+	/**
+	 * Set up the menu icon for the MCP Plugin menu.
+	 * 
+	 * This function handles platform differences:
+	 * - Windows/Linux: Qt's icon methods work directly
+	 * - macOS: Qt may not show icons due to Apple HIG; uses native fallback
+	 * 
+	 * @param menu The QMenu to set the icon on
+	 * @param menuTitle The title used to find the menu in native APIs
+	 */
+	void setupMenuIcon(QMenu *menu, const QString &menuTitle)
+	{
+		if (!menu)
+			return;
+		
+		QIcon mcpIcon(":/icons/mcp.png");
+		if (mcpIcon.isNull())
+			return;
+		
+		// Set icon via Qt's standard methods
+		QAction *menuAction = menu->menuAction();
+		if (menuAction) {
+			menuAction->setIcon(mcpIcon);
+			menuAction->setIconVisibleInMenu(true);
+		}
+		menu->setIcon(mcpIcon);
+		
+		// Cross-platform fallback (no-op on Windows/Linux, native API on macOS)
+		setMenuIconWithFallback(menu, mcpIcon, menuTitle);
 	}
 
 	void executeMCPInitialize()

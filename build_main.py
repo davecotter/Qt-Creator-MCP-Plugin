@@ -474,6 +474,191 @@ def bump_version():
     except Exception as e:
         print_error(f" Failed to bump version: {e}")
 
+def detect_qt_library_version(config):
+    """Detect the Qt library version that Qt Creator is linked against"""
+    system = platform.system().lower()
+    
+    if system == "darwin":
+        qt_creator_bin = config.get("qt_creator_bin", "")
+        if os.path.exists(qt_creator_bin):
+            try:
+                result = subprocess.run(["otool", "-L", qt_creator_bin], capture_output=True, text=True)
+                if result.returncode == 0:
+                    import re
+                    # Look for QtCore framework version
+                    match = re.search(r'QtCore\.framework/Versions/A/QtCore \(.*current version (\d+\.\d+\.\d+)\)', result.stdout)
+                    if not match:
+                        match = re.search(r'QtCore\.framework/Versions/A/QtCore \(.*current version (\d+\.\d+)\)', result.stdout)
+                    if match:
+                        version = match.group(1)
+                        print(f"[OK] Detected Qt library version: {version}")
+                        return version
+            except Exception as e:
+                print(f"[WARNING] Could not detect Qt library version: {e}")
+    
+    elif system == "windows":
+        # On Windows, check Qt6Core.dll
+        qt_creator_dir = os.path.dirname(config.get("qt_creator_bin", ""))
+        qt6core = os.path.join(qt_creator_dir, "Qt6Core.dll")
+        if os.path.exists(qt6core):
+            try:
+                # Use file command or check version resource
+                result = subprocess.run(["powershell", "-Command", 
+                    f"(Get-Item '{qt6core}').VersionInfo.FileVersion"], 
+                    capture_output=True, text=True)
+                if result.returncode == 0 and result.stdout.strip():
+                    version = result.stdout.strip()
+                    print(f"[OK] Detected Qt library version: {version}")
+                    return version
+            except Exception as e:
+                print(f"[WARNING] Could not detect Qt library version: {e}")
+    
+    print("[WARNING] Could not detect Qt library version")
+    return None
+
+
+def find_matching_qt_sdk(config, qt_version):
+    """Find a Qt SDK installation matching the required version"""
+    system = platform.system().lower()
+    qt_path = config.get("qt_path", "")
+    
+    if not qt_version or not qt_path:
+        return None
+    
+    # Try exact version first
+    if system == "darwin":
+        sdk_path = os.path.join(qt_path, qt_version, "macos")
+    elif system == "windows":
+        sdk_path = os.path.join(qt_path, qt_version, "msvc2022_64")
+    else:
+        sdk_path = os.path.join(qt_path, qt_version, "gcc_64")
+    
+    if os.path.exists(sdk_path):
+        print(f"[OK] Found matching Qt SDK at: {sdk_path}")
+        return sdk_path
+    
+    # Try finding any installed version that matches major.minor
+    version_parts = qt_version.split('.')
+    if len(version_parts) >= 2:
+        major_minor = f"{version_parts[0]}.{version_parts[1]}"
+        try:
+            for entry in os.listdir(qt_path):
+                if entry.startswith(major_minor) and os.path.isdir(os.path.join(qt_path, entry)):
+                    if system == "darwin":
+                        candidate = os.path.join(qt_path, entry, "macos")
+                    elif system == "windows":
+                        candidate = os.path.join(qt_path, entry, "msvc2022_64")
+                    else:
+                        candidate = os.path.join(qt_path, entry, "gcc_64")
+                    if os.path.exists(candidate):
+                        print(f"[OK] Found compatible Qt SDK at: {candidate}")
+                        return candidate
+        except Exception as e:
+            print(f"[WARNING] Error searching for Qt SDK: {e}")
+    
+    print(f"[WARNING] No matching Qt SDK found for version {qt_version}")
+    return None
+
+
+def detect_qt_creator_version(config):
+    """Detect Qt Creator version from the installation"""
+    system = platform.system().lower()
+    
+    if system == "darwin":
+        # On macOS, check Info.plist in the app bundle
+        info_plist = os.path.join(config.get("qt_creator_app", ""), "Contents", "Info.plist")
+        if os.path.exists(info_plist):
+            try:
+                import plistlib
+                with open(info_plist, 'rb') as f:
+                    plist = plistlib.load(f)
+                    version = plist.get("CFBundleShortVersionString", "")
+                    if version:
+                        print(f"[OK] Detected Qt Creator version: {version}")
+                        return version
+            except Exception as e:
+                print(f"[WARNING] Could not read Info.plist: {e}")
+        
+        # Fallback: check plugin dylib compatibility version using otool
+        try:
+            plugin_dir = os.path.join(config.get("qt_creator_app", ""), "Contents", "PlugIns", "qtcreator")
+            # Find any Qt Creator plugin to check compatibility version
+            for f in os.listdir(plugin_dir):
+                if f.endswith(".dylib") and f.startswith("lib") and "Qt_MCP" not in f:
+                    dylib_path = os.path.join(plugin_dir, f)
+                    result = subprocess.run(["otool", "-L", dylib_path], capture_output=True, text=True)
+                    if result.returncode == 0:
+                        # Look for compatibility version in output
+                        import re
+                        match = re.search(r'compatibility version (\d+\.\d+\.\d+)', result.stdout)
+                        if match:
+                            version = match.group(1)
+                            print(f"[OK] Detected Qt Creator version from plugin: {version}")
+                            return version
+                    break
+        except Exception as e:
+            print(f"[WARNING] Could not detect version from plugins: {e}")
+    
+    elif system == "windows":
+        # On Windows, check version from executable
+        qt_creator_exe = config.get("qt_creator_bin", "")
+        if os.path.exists(qt_creator_exe):
+            try:
+                result = subprocess.run([qt_creator_exe, "--version"], capture_output=True, text=True, timeout=10)
+                if result.returncode == 0:
+                    import re
+                    match = re.search(r'Qt Creator (\d+\.\d+\.\d+)', result.stdout)
+                    if match:
+                        version = match.group(1)
+                        print(f"[OK] Detected Qt Creator version: {version}")
+                        return version
+            except Exception as e:
+                print(f"[WARNING] Could not get version from executable: {e}")
+    
+    print("[WARNING] Could not detect Qt Creator version, using default")
+    return None
+
+
+def update_json_dependencies(qt_creator_version):
+    """Update the JSON template with correct Qt Creator dependency versions"""
+    json_template = "Qt_MCP_Plugin.json.in"
+    
+    if not qt_creator_version:
+        print("[WARNING] No Qt Creator version provided, skipping JSON update")
+        return False
+    
+    try:
+        with open(json_template, 'r') as f:
+            content = f.read()
+        
+        import re
+        # Find and replace core version
+        new_content = re.sub(
+            r'("Id"\s*:\s*"core"\s*,\s*"Version"\s*:\s*")[\d.]+(")',
+            f'\\g<1>{qt_creator_version}\\2',
+            content
+        )
+        # Find and replace projectexplorer version
+        new_content = re.sub(
+            r'("Id"\s*:\s*"projectexplorer"\s*,\s*"Version"\s*:\s*")[\d.]+(")',
+            f'\\g<1>{qt_creator_version}\\2',
+            new_content
+        )
+        
+        if new_content != content:
+            with open(json_template, 'w') as f:
+                f.write(new_content)
+            print(f"[OK] Updated JSON dependencies to version {qt_creator_version}")
+            return True
+        else:
+            print(f"[OK] JSON dependencies already set to version {qt_creator_version}")
+            return True
+            
+    except Exception as e:
+        print_error(f" Failed to update JSON dependencies: {e}")
+        return False
+
+
 def regenerate_version_files():
     """Regenerate version.h from version.cmake after version bump"""
     try:
@@ -836,16 +1021,30 @@ def install_plugin(config):
         if os.path.exists(plugin_binary):
             run_command(["cp", plugin_binary, app_bundle_dir + "/"])
             print(f"[OK] Installed to app bundle: {app_bundle_dir}")
+        else:
+            print_error(f" Plugin binary not found: {plugin_binary}")
+            success = False
         
         if os.path.exists(plugin_json):
             run_command(["cp", plugin_json, app_bundle_dir + "/"])
             print(f"[OK] Installed JSON file to app bundle")
+        else:
+            print_error(f" Plugin JSON not found: {plugin_json}")
+            success = False
         
         if os.path.exists(plugin_discovery):
             run_command(["cp", plugin_discovery, app_bundle_dir + "/"])
             print(f"[OK] Installed discovery file to app bundle")
+        else:
+            print_error(f" Plugin discovery file not found: {plugin_discovery}")
+            success = False
         
-        print("Plugin installation complete!")
+        if success:
+            print("Plugin installation complete!")
+        else:
+            print_error(" Plugin installation failed!")
+        
+        return success
         
     elif system == "windows":
         # Install ONLY to app bundle for auto-loading
@@ -1021,6 +1220,15 @@ def main():
         print_error(" Failed to regenerate version files")
         sys.exit(1)
 
+    # Step 3c: Detect Qt Creator version and update JSON dependencies
+    print("[PROGRESS] Detecting Qt Creator version...")
+    qt_creator_version = detect_qt_creator_version(config)
+    if qt_creator_version:
+        print("[PROGRESS] Updating JSON dependencies...")
+        update_json_dependencies(qt_creator_version)
+    else:
+        print("[WARNING] Could not detect Qt Creator version - JSON dependencies may need manual update")
+
     # Step 4: Set up environment for Windows builds
     env = None
     if system == "windows":
@@ -1097,7 +1305,25 @@ def main():
         else:
             # For macOS, we need both Qt Creator and Qt6 paths
             if system == "darwin":
-                qt6_path = f"{config['qt_path']}/6.9.2/macos"
+                # Dynamically detect Qt library version from Qt Creator
+                qt_lib_version = detect_qt_library_version(config)
+                if not qt_lib_version:
+                    print_error(" Could not detect Qt library version from Qt Creator")
+                    print_error(" Please ensure Qt Creator is properly installed")
+                    sys.exit(1)
+                
+                # Find matching Qt SDK
+                qt6_path = find_matching_qt_sdk(config, qt_lib_version)
+                if not qt6_path:
+                    print_error(f" Qt SDK {qt_lib_version} is not installed")
+                    print("")
+                    print("⛔ ACTION REQUIRED:")
+                    print(f"   1. Open MaintenanceTool.app in {config['qt_path']}")
+                    print("   2. Select 'Add or remove components'")
+                    print(f"   3. Install Qt {qt_lib_version} (including macOS and Qt Plugin Development)")
+                    print("   4. Re-run the build after installation completes")
+                    sys.exit(1)
+                
                 qtcreator_dir = f"{config['qt_creator_path']}/lib/cmake/QtCreator"
                 qt6_dir = f"{qt6_path}/lib/cmake/Qt6"
                 cmake_cmd = [
@@ -1284,6 +1510,11 @@ def main():
     # Step 8: Test installation - MUST verify MCP server responds with version
     if test_installation(config):
         print("")
+        
+        # Step 9: Register with Cursor IDE for automatic MCP discovery
+        register_with_cursor()
+        
+        print("")
         print_section_break()
         print("BUILD SUCCESSFUL!")
         print_section_break()
@@ -1292,8 +1523,10 @@ def main():
         print("[SUCCESS] Qt Creator launched and loaded the plugin")
         print("[SUCCESS] MCP server is responding correctly")
         print("[SUCCESS] Plugin version verified")
+        print("[SUCCESS] Registered with Cursor IDE")
         print("")
         print("The MCP Plugin is now ready to use!")
+        print("Restart Cursor to enable AI control of Qt Creator.")
         print_section_break()
         print("")
         
@@ -1338,6 +1571,67 @@ def main():
         except:
             pass  # Ignore if we can't restore the directory
         sys.exit(1)
+
+def register_with_cursor():
+    """Register the Qt MCP server with Cursor IDE for automatic discovery"""
+    import json
+    
+    print("[CONFIG] Registering Qt MCP server with Cursor...")
+    
+    # Find Cursor's mcp.json configuration file
+    home_dir = os.path.expanduser("~")
+    cursor_mcp_path = os.path.join(home_dir, ".cursor", "mcp.json")
+    
+    # Ensure .cursor directory exists
+    cursor_dir = os.path.dirname(cursor_mcp_path)
+    if not os.path.exists(cursor_dir):
+        print(f"[WARNING] Cursor config directory not found: {cursor_dir}")
+        print("[WARNING] Skipping Cursor MCP registration (Cursor may not be installed)")
+        return False
+    
+    # Define the Qt MCP server configuration
+    qt_mcp_config = {
+        "url": "http://localhost:3001",
+        "description": "Qt Creator MCP Plugin - AI control of Qt Creator IDE"
+    }
+    
+    try:
+        # Read existing config or create new one
+        if os.path.exists(cursor_mcp_path):
+            with open(cursor_mcp_path, 'r') as f:
+                config = json.load(f)
+        else:
+            config = {"mcpServers": {}}
+        
+        # Ensure mcpServers key exists
+        if "mcpServers" not in config:
+            config["mcpServers"] = {}
+        
+        # Check if already registered
+        if "qt-creator" in config["mcpServers"]:
+            existing = config["mcpServers"]["qt-creator"]
+            if existing.get("url") == qt_mcp_config["url"]:
+                print("[OK] Qt MCP server already registered with Cursor")
+                return True
+        
+        # Add or update the Qt MCP server
+        config["mcpServers"]["qt-creator"] = qt_mcp_config
+        
+        # Write back the config
+        with open(cursor_mcp_path, 'w') as f:
+            json.dump(config, f, indent=2)
+            f.write('\n')
+        
+        print(f"[OK] Registered Qt MCP server in {cursor_mcp_path}")
+        print("[INFO] Restart Cursor to activate the MCP connection")
+        return True
+        
+    except Exception as e:
+        print(f"[WARNING] Failed to register with Cursor: {e}")
+        print("[WARNING] You can manually add the following to ~/.cursor/mcp.json:")
+        print('  "qt-creator": {"url": "http://localhost:3001"}')
+        return False
+
 
 if __name__ == "__main__":
     # Store the original working directory at the top level

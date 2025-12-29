@@ -3,36 +3,138 @@
 ## Project Overview
 This is a Qt Creator plugin that implements the Model Context Protocol (MCP) for AI control of Qt Creator.
 
-## Build Process
-The build process is fully automated via CMake. Use these commands:
+---
+## 🟢 HOW TO BUILD 🟢
 
-### Prerequisites Check
-1. Verify Qt Creator is installed with Qt Plugin Development components (version auto-detected)
-2. Check CMake 3.16+ is available
-3. Ensure C++20 compiler is available
-
-### Build Commands
-
-**Recommended: Use the automated build script**
+**To build and install the plugin, run:**
 ```bash
-# Complete lifecycle: quit Qt, uninstall old, build new, install, test
-python3 build.py
+python3 build_main.py
 ```
 
-**Manual build process:**
+This script handles EVERYTHING automatically:
+- ✅ Quits Qt Creator if running
+- ✅ Detects Qt version from Qt Creator
+- ✅ Verifies Qt SDK is installed (prompts if missing)
+- ✅ Cleans old plugin versions
+- ✅ Builds with correct Qt paths
+- ✅ Installs to Qt Creator
+- ✅ Launches Qt Creator
+- ✅ Tests MCP server
+- ✅ Registers with Cursor IDE
+
+**DO NOT manually run cmake or build commands. Always use the build script.**
+
+---
+## 🔴 MANUAL: Detect Qt Version & Verify SDK Installation 🔴
+
+**Only needed if troubleshooting - the build script does this automatically:**
+
+### Step 1: Detect Qt Creator's Qt Library Version
 ```bash
+QT_ROOT="/Users/$(whoami)/Developer/Qt"
+otool -L "$QT_ROOT/Qt Creator.app/Contents/MacOS/Qt Creator" | grep QtCore
+```
+Look for output like: `current version 6.10.1` - this is the Qt version Qt Creator uses.
+
+### Step 2: Check if Matching Qt SDK is Installed
+```bash
+ls -la "$QT_ROOT/" | grep -E "^d.*[0-9]+\.[0-9]+\.[0-9]+"
+```
+The Qt version from Step 1 **MUST** exist in this list with the `macos` subfolder.
+
+### Step 3: If Qt SDK is Missing - STOP AND NOTIFY USER
+**If the required Qt version is NOT installed:**
+```
+⛔ STOP: Qt SDK version X.Y.Z is required but not installed.
+
+Qt Creator uses Qt X.Y.Z but you have: [list installed versions]
+
+ACTION REQUIRED:
+1. Open MaintenanceTool.app in $QT_ROOT
+2. Select "Add or remove components"  
+3. Install Qt X.Y.Z (including macOS and Qt Plugin Development components)
+4. Re-run the build after installation completes
+```
+
+**⚠️ REQUIRED COMPONENTS when installing Qt X.Y.Z:**
+- ✅ Desktop → macOS
+- ✅ Qt Plugin Development (REQUIRED for building Qt Creator plugins)
+
+**DO NOT PROCEED WITH BUILD until the correct Qt SDK is installed.**
+
+---
+## ⚠️ CRITICAL: Plugin Installation Requirements ⚠️
+
+**YOU MUST FOLLOW THESE STEPS IN ORDER - NO EXCEPTIONS:**
+
+1. **QUIT Qt Creator** - The plugin cannot be updated while Qt Creator is running
+2. **DELETE the old plugin** - Remove ALL existing plugin files before installing:
+   ```bash
+   rm -f "$QT_ROOT/Qt Creator.app/Contents/PlugIns/qtcreator/libQt_MCP_Plugin"*
+   rm -f "$QT_ROOT/Qt Creator.app/Contents/PlugIns/qtcreator/Qt_MCP_Plugin"*.json
+   ```
+3. **BUILD the new plugin** - Compile fresh
+4. **INSTALL the new plugin** - Copy new files to Qt Creator
+5. **LAUNCH Qt Creator** - Start fresh to load the new plugin
+6. **TEST the MCP server** - Verify it responds on port 3001
+
+**⛔ FAILURE TO DELETE OLD PLUGIN FIRST WILL CAUSE:**
+- Old plugin cached and loaded instead of new one
+- Version mismatches and dependency errors
+- MCP server not responding or using old version
+- Mysterious "plugin not loading" issues
+
+---
+
+## Qt Installation Location
+**IMPORTANT**: Qt is installed at `/Users/$(whoami)/Developer/Qt`
+
+```bash
+QT_ROOT="/Users/$(whoami)/Developer/Qt"
+```
+
+Key paths (all relative to `$QT_ROOT`):
+- **Qt Creator App**: `$QT_ROOT/Qt Creator.app`
+- **Qt Creator Resources**: `$QT_ROOT/Qt Creator.app/Contents/Resources`
+- **Qt Tools (CMake, Ninja)**: `$QT_ROOT/Tools`
+- **Qt CMake**: `$QT_ROOT/Tools/CMake/CMake.app/Contents/bin/cmake`
+- **Qt Ninja**: `$QT_ROOT/Tools/Ninja/ninja`
+
+**Always use Qt's bundled CMake** from the Tools directory, not system cmake.
+
+## Build Process
+
+### 🟢 ALWAYS USE THE BUILD SCRIPT 🟢
+
+```bash
+python3 build_main.py
+```
+
+**This is the ONLY supported way to build.** The script handles all complexity automatically.
+
+### Prerequisites
+1. Qt Creator installed with Qt Plugin Development components
+2. Matching Qt SDK version (script will detect and prompt if missing)
+3. C++20 compiler available
+
+### Manual Build (NOT RECOMMENDED - for reference only)
+```bash
+# Set Qt root and CMake path (use Qt's bundled CMake, not system cmake)
+QT_ROOT="/Users/$(whoami)/Developer/Qt"
+QT_CMAKE="$QT_ROOT/Tools/CMake/CMake.app/Contents/bin/cmake"
+
 # Configure (only needed once or after cleaning)
-cmake -DCMAKE_PREFIX_PATH="/Users/$(whoami)/Developer/Qt/Qt Creator.app/Contents/Resources" -B build
+$QT_CMAKE -DCMAKE_PREFIX_PATH="$QT_ROOT/Qt Creator.app/Contents/Resources" -B build
 
 # Build and Install (handles cleanup automatically)
-cmake --build build --target InstallPlugin
+$QT_CMAKE --build build --target InstallPlugin
 
 # Test MCP server
 echo '{"jsonrpc":"2.0","method":"initialize","id":1}' | nc localhost 3001
 ```
 
 ### Platform-Specific Paths
-- **macOS**: `/Users/$(whoami)/Developer/Qt/Qt Creator.app/Contents/Resources`
+- **macOS**: `QT_ROOT="/Users/$(whoami)/Developer/Qt"`
 - **Windows**: `C:/Qt/Tools/QtCreator/lib` (Qt version auto-detected)
 - **Linux**: `/opt/qtcreator` or `/usr/lib/qtcreator`
 
@@ -43,14 +145,25 @@ The build script handles the full lifecycle:
 1. **🔄 Quit Qt Creator**: Attempts graceful MCP quit, falls back to force kill
 2. **🧹 Clean old versions**: Removes previous plugin installations
 3. **📈 Auto-bump version**: Version incremented automatically during build
-4. **🔨 Build & Install**: Compiles and installs to correct directories
-5. **🚀 Launch Qt Creator**: Starts Qt Creator automatically
-6. **🧪 Verify installation**: Tests MCP server and confirms correct version
+4. **🔍 Detect Qt version**: Automatically detects Qt Creator version and updates JSON dependencies
+5. **🔨 Build & Install**: Compiles and installs to correct directories
+6. **🚀 Launch Qt Creator**: Starts Qt Creator automatically
+7. **🧪 Verify installation**: Tests MCP server and confirms correct version
+8. **🔗 Register with Cursor**: Automatically configures Cursor IDE for MCP discovery
 
 ### Key Targets
 - `InstallPlugin` - Builds, cleans old versions, and installs plugin
 - `CleanOldPlugins` - Removes previous plugin versions
 - `RunQtCreator` - Launches Qt Creator with plugin
+
+### Build Polling Strategy
+When running builds programmatically (e.g., from AI assistants):
+- **Don't use fixed sleep times** - builds vary in duration
+- **Poll for completion** using sleep intervals (10 seconds recommended)
+- **Check terminal output** or build log files for completion indicators
+- **Loop until build completes** or timeout is reached
+- Look for success indicators: "Built target", "Build successful", exit code 0
+- Look for failure indicators: "Error", "FAILED", non-zero exit code
 
 ### Auto-Installation
 The plugin installs to:
@@ -61,7 +174,27 @@ After installation, the script automatically:
 - ✅ Verifies MCP server responds on port 3001
 - ✅ Tests plugin version is correct
 - ✅ Confirms tools discovery works
+- ✅ Registers with Cursor IDE (`~/.cursor/mcp.json`)
 - ✅ Reports success/failure with clear status
+
+### Cursor IDE Integration
+The build script automatically registers the Qt MCP server with Cursor by adding this to `~/.cursor/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "qt-creator": {
+      "url": "http://localhost:3001",
+      "description": "Qt Creator MCP Plugin - AI control of Qt Creator IDE"
+    }
+  }
+}
+```
+
+**After a successful build:**
+1. Restart Cursor to activate the MCP connection
+2. The Qt Creator tools will be available when Qt Creator is running
+3. Use commands like "build the project" or "list issues" through the AI assistant
 
 ## Common Issues
 - Plugin conflicts: Use `InstallPlugin` target (auto-cleans)
