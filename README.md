@@ -36,10 +36,16 @@ The plugin adds a **Tools → MCP Plugin** menu to Qt Creator and runs an MCP se
 
 **Build & Install:**
 ```bash
-python3 build.py              # Cross-platform Python script
+python3 build_main.py
 ```
 
-The build script handles everything: quits Qt Creator, cleans old versions, builds new plugin, installs, launches, and tests.
+The build script handles everything:
+- ✅ Quits Qt Creator and cleans old versions
+- ✅ Auto-detects Qt version from Qt Creator
+- ✅ Builds, installs, and verifies the plugin
+- ✅ **Registers with Cursor IDE automatically**
+
+After a successful build, restart Cursor to enable AI control of Qt Creator.
 
 ## Extending the Plugin
 
@@ -70,6 +76,30 @@ Standard MCP methods:
 - `tools/call` - Execute tools (build, debug, load sessions, etc.)
 
 **Server runs on:** `localhost:3001`
+
+## Cursor IDE Integration
+
+The build script automatically registers the Qt MCP server with Cursor IDE by adding it to `~/.cursor/mcp.json`. After building:
+
+1. **Restart Cursor** to activate the MCP connection
+2. **Start Qt Creator** (plugin loads automatically)
+3. **Use AI commands** like:
+   - "Build the current Qt project"
+   - "List build errors and warnings"
+   - "Open file main.cpp in Qt Creator"
+   - "Switch to Debug configuration"
+
+**Manual registration** (if needed):
+```json
+// Add to ~/.cursor/mcp.json
+{
+  "mcpServers": {
+    "qt-creator": {
+      "url": "http://localhost:3001"
+    }
+  }
+}
+```
 
 ## Troubleshooting
 

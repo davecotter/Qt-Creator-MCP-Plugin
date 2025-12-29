@@ -56,46 +56,34 @@
     "minimum_version": "3.16",
     "language": "cpp20",
     "dependencies": [
-      "Qt Creator 6.9.2",
-      "Qt 6.9.2",
-      "Qt Plugin Development"
+      "Qt Creator (version auto-detected)",
+      "Qt SDK matching Qt Creator's Qt version (auto-detected)",
+      "Qt Plugin Development components"
     ],
     "commands": {
-      "configure": "cmake -DCMAKE_PREFIX_PATH=\"<qt-creator-path>\" -B build",
-      "build": "cmake --build build --target InstallPlugin",
+      "build": "python3 build_main.py",
       "test": "echo '{\"jsonrpc\":\"2.0\",\"method\":\"initialize\",\"id\":1}' | nc localhost 3001"
     },
     "scripts": {
-      "cross_platform": "python3 build.py"
+      "build": "python3 build_main.py"
     },
     "auto_cleanup": true,
-    "auto_install": true
+    "auto_install": true,
+    "auto_version_detection": true,
+    "auto_cursor_registration": true
   },
   "platforms": {
-    "macos": {
-      "qt_creator_path": "/Users/<username>/Developer/Qt/Qt Creator.app/Contents/Resources",
-      "install_paths": [
-        "/Users/<username>/Developer/Qt/Qt Creator.app/Contents/PlugIns/qtcreator"
-      ]
-    },
-    "windows": {
-      "qt_creator_path": "C:/Qt/Qt Creator/6.9.2/msvc2022_64",
-      "install_paths": [
-        "C:/Qt/Tools/QtCreator/lib/qtcreator/plugins"
-      ]
-    },
-    "linux": {
-      "qt_creator_path": "/opt/qtcreator",
-      "install_paths": [
-        "/usr/lib/qtcreator/plugins"
-      ]
-    }
+    "_note": "These are example paths only. Actual paths are configured in qt_config.py",
+    "macos": { "qt_root": "/Users/<username>/Developer/Qt" },
+    "windows": { "qt_root": "C:/Qt" },
+    "linux": { "qt_root": "/opt" }
   },
   "usage": {
+    "build_command": "python3 build_main.py",
     "prompts": [
-      "Build and install the Qt MCP Plugin. Make sure to clean up any previous versions first.",
+      "Build and install the Qt MCP Plugin using: python3 build_main.py",
       "Test that the plugin loads correctly and the MCP server is responding on port 3001.",
-      "Install the plugin so it loads automatically when I launch Qt Creator normally."
+      "The build script automatically registers with Cursor IDE - restart Cursor after building."
     ]
   }
 }
