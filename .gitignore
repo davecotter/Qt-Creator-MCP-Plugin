@@ -135,3 +135,15 @@ minsizerel/
 *.tmp
 *.temp
 *~
+
+# Build output logs
+build_output.log
+cmake_config.log
+
+# IDE workspace files
+*.code-workspace
+
+# Generated JSON (built from .json.in)
+Qt_MCP_Plugin.json
+Qt_MCP_Plugin_discovery.json
+
