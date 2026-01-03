@@ -110,11 +110,11 @@ if(WIN32)
 endif()
 
 # Generate the plugin JSON file with version substitution
-configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/Qt_MCP_Plugin.json.in
-    ${CMAKE_CURRENT_BINARY_DIR}/Qt_MCP_Plugin.json
-    @ONLY
-)
+# Configure the JSON file with version replacement
+# Read the template and replace version placeholder
+file(READ ${CMAKE_CURRENT_SOURCE_DIR}/Qt_MCP_Plugin.json.in JSON_CONTENT)
+string(REPLACE "@PLUGIN_VERSION@" "${PLUGIN_VERSION}" JSON_CONTENT "${JSON_CONTENT}")
+file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/Qt_MCP_Plugin.json "${JSON_CONTENT}")
 
 # Generate version.h from version.cmake variables
 configure_file(

@@ -2,6 +2,7 @@
 #include "issuesmanager.h"
 
 #include <coreplugin/icore.h>
+#include <coreplugin/ioutputpane.h>
 #include "version.h"
 #include <QTimer>
 #include <coreplugin/editormanager/editormanager.h>
@@ -20,18 +21,26 @@
 #include <debugger/debuggerruncontrol.h>
 #include <utils/fileutils.h>
 #include <utils/id.h>
+#include <extensionsystem/pluginmanager.h>
+#include <QTextEdit>
+#include <QPlainTextEdit>
+#include <QTextDocument>
+#include <QWidget>
+#include <QMetaMethod>
 
 #include <QApplication>
 #include <QDebug>
 #include <QThread>
 #include <QProcess>
 #include <QFile>
+#include <QTimer>
+#include <QEventLoop>
 
 namespace Qt_MCP_Plugin {
 namespace Internal {
 
 MCPCommands::MCPCommands(QObject *parent)
-    : QObject(parent), m_sessionLoadResult(false)
+    : QObject(parent), m_sessionLoadResult(false), m_buildWasInProgress(false)
 {
     // Connect signal-slot for session loading
     connect(this, &MCPCommands::sessionLoadRequested, 
@@ -47,6 +56,22 @@ MCPCommands::MCPCommands(QObject *parent)
     
     // Initialize issues manager
     m_issuesManager = new IssuesManager(this);
+    
+    // Connect to BuildManager signals to track build state
+    ProjectExplorer::BuildManager *buildManager = ProjectExplorer::BuildManager::instance();
+    if (buildManager) {
+        // Connect to build state change signals - use QObject::connect with string-based signals
+        // as BuildManager signals may not be directly accessible
+        connect(buildManager, SIGNAL(buildQueueFinished(bool)), 
+                this, SLOT(onBuildStateChanged()));
+        qDebug() << "MCPCommands: Connected to BuildManager signals for build state tracking";
+    }
+    
+    // Create build monitor timer
+    m_buildMonitorTimer = new QTimer(this);
+    m_buildMonitorTimer->setSingleShot(false);
+    m_buildMonitorTimer->setInterval(500); // Check every 500ms
+    connect(m_buildMonitorTimer, &QTimer::timeout, this, &MCPCommands::onBuildStateChanged);
 }
 
 bool MCPCommands::build()
@@ -76,9 +101,59 @@ bool MCPCommands::build()
 
     qDebug() << "Starting build for project:" << project->displayName();
     
-    // Trigger build
-    ProjectExplorer::BuildManager::buildProjectWithoutDependencies(project);
+    // Mark that we're about to start a build
+    m_buildWasInProgress = false; // Reset, will be set to true when build actually starts
     
+    // Use ActionManager to trigger the "Build" action (more reliable)
+    Core::ActionManager *actionManager = Core::ActionManager::instance();
+    if (!actionManager) {
+        qDebug() << "ActionManager not available, falling back to BuildManager";
+        ProjectExplorer::BuildManager::buildProjectWithoutDependencies(project);
+        // Give it a moment to start
+        QThread::msleep(100);
+        m_buildWasInProgress = ProjectExplorer::BuildManager::isBuilding();
+        return true;
+    }
+    
+    // Try different possible action IDs for building
+    QStringList buildActionIds = {
+        "ProjectExplorer.Build",
+        "ProjectExplorer.BuildProject",
+        "ProjectExplorer.BuildStartupProject"
+    };
+    
+    bool actionTriggered = false;
+    for (const QString &actionId : buildActionIds) {
+        Core::Command *command = actionManager->command(Utils::Id::fromString(actionId));
+        if (command) {
+            qDebug() << "Found build action:" << actionId << "enabled:" << command->action()->isEnabled();
+            if (command->action()->isEnabled()) {
+                qDebug() << "Triggering build action:" << actionId;
+                command->action()->trigger();
+                actionTriggered = true;
+                // Give it a moment to start
+                QThread::msleep(200);
+                m_buildWasInProgress = ProjectExplorer::BuildManager::isBuilding();
+                qDebug() << "After triggering action, isBuilding:" << m_buildWasInProgress;
+                break;
+            } else {
+                qDebug() << "Build action" << actionId << "is disabled";
+            }
+        } else {
+            qDebug() << "Build action" << actionId << "not found";
+        }
+    }
+    
+    if (!actionTriggered) {
+        qDebug() << "No enabled build action found, using BuildManager directly";
+        ProjectExplorer::BuildManager::buildProjectWithoutDependencies(project);
+        // Give it a moment to start
+        QThread::msleep(200);
+        m_buildWasInProgress = ProjectExplorer::BuildManager::isBuilding();
+        qDebug() << "After BuildManager::buildProjectWithoutDependencies, isBuilding:" << m_buildWasInProgress;
+    }
+    
+    qDebug() << "Build triggered, final isBuilding:" << m_buildWasInProgress;
     return true;
 }
 
@@ -244,14 +319,30 @@ QString MCPCommands::getBuildStatus()
     QStringList results;
     results.append("=== BUILD STATUS ===");
     
+    bool currentlyBuilding = ProjectExplorer::BuildManager::isBuilding();
+    bool wasBuilding = m_buildWasInProgress;
+    
     // Check if build is currently running
-    if (ProjectExplorer::BuildManager::isBuilding()) {
+    if (currentlyBuilding) {
         results.append("Building: 50%");
         results.append("Status: Build in progress");
         results.append("Current step: Compiling");
+        m_buildWasInProgress = true;
     } else {
         results.append("Building: 0%");
-        results.append("Status: Not building");
+        if (wasBuilding && !currentlyBuilding) {
+            results.append("Status: Build just completed");
+            m_buildWasInProgress = false;
+        } else {
+            results.append("Status: Not building");
+        }
+    }
+    
+    // Get build task information if available
+    if (ProjectExplorer::BuildManager::tasksAvailable()) {
+        int errorCount = ProjectExplorer::BuildManager::getErrorTaskCount();
+        results.append(QString("Build errors: %1").arg(errorCount));
+        // Note: getWarningTaskCount() doesn't exist in BuildManager API
     }
     
     results.append("");
@@ -259,6 +350,67 @@ QString MCPCommands::getBuildStatus()
     results.append("Build status retrieved successfully.");
     
     return results.join("\n");
+}
+
+bool MCPCommands::isBuildInProgress() const
+{
+    return ProjectExplorer::BuildManager::isBuilding();
+}
+
+bool MCPCommands::waitForBuildCompletion(int timeoutSeconds)
+{
+    qDebug() << "Waiting for build completion, timeout:" << timeoutSeconds << "seconds";
+    
+    // Start monitoring
+    m_buildMonitorTimer->start();
+    m_buildWasInProgress = ProjectExplorer::BuildManager::isBuilding();
+    
+    if (!m_buildWasInProgress) {
+        qDebug() << "No build in progress when waitForBuildCompletion called";
+        m_buildMonitorTimer->stop();
+        return true; // Already not building
+    }
+    
+    // Wait for build to complete
+    QEventLoop loop;
+    QTimer timeoutTimer;
+    timeoutTimer.setSingleShot(true);
+    timeoutTimer.setInterval(timeoutSeconds * 1000);
+    
+    connect(this, &MCPCommands::onBuildStateChanged, &loop, &QEventLoop::quit);
+    connect(&timeoutTimer, &QTimer::timeout, &loop, &QEventLoop::quit);
+    
+    timeoutTimer.start();
+    loop.exec();
+    
+    m_buildMonitorTimer->stop();
+    timeoutTimer.stop();
+    
+    bool completed = !ProjectExplorer::BuildManager::isBuilding();
+    if (completed) {
+        m_buildWasInProgress = false;
+        qDebug() << "Build completed successfully";
+    } else if (timeoutTimer.isActive()) {
+        qDebug() << "Build still in progress after timeout";
+    } else {
+        qDebug() << "Build wait timed out";
+    }
+    
+    return completed;
+}
+
+void MCPCommands::onBuildStateChanged()
+{
+    bool currentlyBuilding = ProjectExplorer::BuildManager::isBuilding();
+    
+    if (m_buildWasInProgress && !currentlyBuilding) {
+        qDebug() << "Build state changed: Build completed";
+        m_buildWasInProgress = false;
+        emit buildStateChanged();
+    } else if (!m_buildWasInProgress && currentlyBuilding) {
+        qDebug() << "Build state changed: Build started";
+        m_buildWasInProgress = true;
+    }
 }
 
 bool MCPCommands::openFile(const QString &path)
@@ -839,6 +991,425 @@ QStringList MCPCommands::listIssues()
     
     qDebug() << "Found" << issues.size() << "issues total";
     return issues;
+}
+
+QString MCPCommands::getCompileOutput()
+{
+    qDebug() << "Retrieving compile output from Qt Creator";
+    
+    QStringList outputLines;
+    outputLines.append("=== COMPILE OUTPUT ===");
+    QString text;
+    
+    // Method 1: Use IOutputPane API - this is the proper way to access output panes
+    QObjectList allObjects = ExtensionSystem::PluginManager::allObjects();
+    for (QObject* obj : allObjects) {
+        Core::IOutputPane* outputPane = qobject_cast<Core::IOutputPane*>(obj);
+        if (outputPane) {
+            QString paneName = QString::fromLatin1(obj->metaObject()->className());
+            qDebug() << "Found IOutputPane:" << paneName;
+            
+            // Look for compile/build output pane
+            if (paneName.contains("Compile", Qt::CaseInsensitive) || 
+                paneName.contains("Build", Qt::CaseInsensitive)) {
+                QWidget* outputWidget = outputPane->outputWidget(nullptr);
+                if (outputWidget) {
+                    qDebug() << "Got output widget from IOutputPane:" << outputWidget->metaObject()->className();
+                    
+                    // Search for text widgets recursively
+                    QList<QPlainTextEdit*> plainTextEdits = outputWidget->findChildren<QPlainTextEdit*>(QString(), Qt::FindChildrenRecursively);
+                    QList<QTextEdit*> textEdits = outputWidget->findChildren<QTextEdit*>(QString(), Qt::FindChildrenRecursively);
+                    
+                    if (!plainTextEdits.isEmpty()) {
+                        text = plainTextEdits.first()->toPlainText();
+                        if (!text.isEmpty()) {
+                            outputLines.append("");
+                            outputLines.append(QString("Output from IOutputPane (%1):").arg(paneName));
+                            outputLines.append(text);
+                            qDebug() << "Retrieved" << text.length() << "characters from IOutputPane" << paneName;
+                            break;
+                        }
+                    } else if (!textEdits.isEmpty()) {
+                        text = textEdits.first()->toPlainText();
+                        if (!text.isEmpty()) {
+                            outputLines.append("");
+                            outputLines.append(QString("Output from IOutputPane (%1):").arg(paneName));
+                            outputLines.append(text);
+                            qDebug() << "Retrieved" << text.length() << "characters from IOutputPane" << paneName;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    // Method 2: Try to find OutputWindow through PluginManager (fallback)
+    if (text.isEmpty()) {
+        QObject* outputWindow = nullptr;
+        
+        for (QObject* obj : allObjects) {
+            if (obj) {
+                QString className = QString::fromLatin1(obj->metaObject()->className());
+                // Look for OutputWindow, CompileOutputWindow, or similar
+                if (className.contains("OutputWindow", Qt::CaseInsensitive) ||
+                    className.contains("CompileOutput", Qt::CaseInsensitive) ||
+                    (className.contains("Output", Qt::CaseInsensitive) && 
+                     className.contains("Window", Qt::CaseInsensitive))) {
+                    outputWindow = obj;
+                    qDebug() << "Found potential output window:" << className;
+                    break;
+                }
+            }
+        }
+    
+        if (outputWindow) {
+            const QMetaObject* metaObj = outputWindow->metaObject();
+        
+            // Method 1: Try casting to QWidget to access child widgets
+        QWidget* widget = qobject_cast<QWidget*>(outputWindow);
+        if (widget) {
+            // Try to find a QTextEdit or QPlainTextEdit child widget (recursive search)
+            QList<QTextEdit*> textEdits = widget->findChildren<QTextEdit*>(QString(), Qt::FindChildrenRecursively);
+            QList<QPlainTextEdit*> plainTextEdits = widget->findChildren<QPlainTextEdit*>(QString(), Qt::FindChildrenRecursively);
+            
+            if (!textEdits.isEmpty()) {
+                QTextEdit* textEdit = textEdits.first();
+                text = textEdit->toPlainText();
+                if (!text.isEmpty()) {
+                    outputLines.append("");
+                    outputLines.append("Output from QTextEdit:");
+                    outputLines.append(text);
+                    qDebug() << "Retrieved" << text.length() << "characters from QTextEdit";
+                }
+            } else if (!plainTextEdits.isEmpty()) {
+                QPlainTextEdit* plainTextEdit = plainTextEdits.first();
+                text = plainTextEdit->toPlainText();
+                if (!text.isEmpty()) {
+                    outputLines.append("");
+                    outputLines.append("Output from QPlainTextEdit:");
+                    outputLines.append(text);
+                    qDebug() << "Retrieved" << text.length() << "characters from QPlainTextEdit";
+                }
+            }
+        }
+        
+        // Method 2: Try using QMetaObject to invoke methods on the object itself
+        if (text.isEmpty()) {
+            // Try invoking plainText() method if it exists
+            int methodIndex = metaObj->indexOfMethod("plainText()");
+            if (methodIndex != -1) {
+                QMetaMethod method = metaObj->method(methodIndex);
+                if (method.invoke(outputWindow, Q_RETURN_ARG(QString, text))) {
+                    if (!text.isEmpty()) {
+                        outputLines.append("");
+                        outputLines.append("Output from plainText() method:");
+                        outputLines.append(text);
+                        qDebug() << "Retrieved" << text.length() << "characters from plainText()";
+                    }
+                }
+            }
+        }
+        
+        // Method 3: Try invoking toPlainText() method
+        if (text.isEmpty()) {
+            int methodIndex = metaObj->indexOfMethod("toPlainText()");
+            if (methodIndex != -1) {
+                QMetaMethod method = metaObj->method(methodIndex);
+                if (method.invoke(outputWindow, Q_RETURN_ARG(QString, text))) {
+                    if (!text.isEmpty()) {
+                        outputLines.append("");
+                        outputLines.append("Output from toPlainText() method:");
+                        outputLines.append(text);
+                        qDebug() << "Retrieved" << text.length() << "characters from toPlainText()";
+                    }
+                }
+            }
+        }
+        
+        // Method 4: Try to get a property that might contain the text
+        if (text.isEmpty()) {
+            int propIndex = metaObj->indexOfProperty("plainText");
+            if (propIndex != -1) {
+                QMetaProperty prop = metaObj->property(propIndex);
+                if (prop.isReadable()) {
+                    QVariant value = prop.read(outputWindow);
+                    if (value.isValid() && value.type() == QVariant::String) {
+                        text = value.toString();
+                        if (!text.isEmpty()) {
+                            outputLines.append("");
+                            outputLines.append("Output from plainText property:");
+                            outputLines.append(text);
+                            qDebug() << "Retrieved" << text.length() << "characters from plainText property";
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Method 5: Try to find QTextDocument as a child
+        if (text.isEmpty() && widget) {
+            QTextDocument* doc = widget->findChild<QTextDocument*>();
+            if (doc) {
+                text = doc->toPlainText();
+                if (!text.isEmpty()) {
+                    outputLines.append("");
+                    outputLines.append("Output from QTextDocument:");
+                    outputLines.append(text);
+                    qDebug() << "Retrieved" << text.length() << "characters from QTextDocument";
+                }
+            }
+        }
+        
+        // Method 6: Try to access children recursively and look for any text-bearing widget
+        if (text.isEmpty() && widget) {
+            QList<QObject*> allChildren = widget->findChildren<QObject*>(QString(), Qt::FindChildrenRecursively);
+            for (QObject* child : allChildren) {
+                QTextEdit* te = qobject_cast<QTextEdit*>(child);
+                if (te) {
+                    QString childText = te->toPlainText();
+                    if (!childText.isEmpty() && childText.length() > text.length()) {
+                        text = childText;
+                    }
+                } else {
+                    QPlainTextEdit* pte = qobject_cast<QPlainTextEdit*>(child);
+                    if (pte) {
+                        QString childText = pte->toPlainText();
+                        if (!childText.isEmpty() && childText.length() > text.length()) {
+                            text = childText;
+                        }
+                    }
+                }
+            }
+            if (!text.isEmpty()) {
+                outputLines.append("");
+                outputLines.append("Output from recursive widget search:");
+                outputLines.append(text);
+                qDebug() << "Retrieved" << text.length() << "characters from recursive search";
+            }
+        }
+        
+        // Method 7: Try to get all properties and look for widget or text properties
+        if (text.isEmpty()) {
+            for (int i = 0; i < metaObj->propertyCount(); ++i) {
+                QMetaProperty prop = metaObj->property(i);
+                if (prop.isReadable()) {
+                    QVariant value = prop.read(outputWindow);
+                    QString propName = QString::fromLatin1(prop.name());
+                    
+                    // Try widget-related properties
+                    if (propName.contains("widget", Qt::CaseInsensitive) || 
+                        propName.contains("editor", Qt::CaseInsensitive) ||
+                        propName.contains("text", Qt::CaseInsensitive)) {
+                        QWidget* outputWidget = qvariant_cast<QWidget*>(value);
+                        if (outputWidget) {
+                            QList<QPlainTextEdit*> plainTextEdits = outputWidget->findChildren<QPlainTextEdit*>(QString(), Qt::FindChildrenRecursively);
+                            QList<QTextEdit*> textEdits = outputWidget->findChildren<QTextEdit*>(QString(), Qt::FindChildrenRecursively);
+                            
+                            if (!plainTextEdits.isEmpty()) {
+                                text = plainTextEdits.first()->toPlainText();
+                            } else if (!textEdits.isEmpty()) {
+                                text = textEdits.first()->toPlainText();
+                            }
+                            
+                            if (!text.isEmpty()) {
+                                outputLines.append("");
+                                outputLines.append(QString("Output from %1 property:").arg(propName));
+                                outputLines.append(text);
+                                qDebug() << "Retrieved" << text.length() << "characters from" << propName << "property";
+                                break;
+                            }
+                        } else if (value.type() == QVariant::String && !value.toString().isEmpty()) {
+                            text = value.toString();
+                            outputLines.append("");
+                            outputLines.append(QString("Output from %1 property:").arg(propName));
+                            outputLines.append(text);
+                            qDebug() << "Retrieved" << text.length() << "characters from" << propName << "property (string)";
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Method 8: Try to get all children objects recursively (even if not QWidget)
+        if (text.isEmpty()) {
+            QList<QObject*> allChildren = outputWindow->findChildren<QObject*>(QString(), Qt::FindChildrenRecursively);
+            for (QObject* child : allChildren) {
+                if (child) {
+                    QWidget* childWidget = qobject_cast<QWidget*>(child);
+                    if (childWidget) {
+                        QPlainTextEdit* pte = qobject_cast<QPlainTextEdit*>(childWidget);
+                        if (pte) {
+                            QString childText = pte->toPlainText();
+                            if (!childText.isEmpty() && childText.length() > text.length()) {
+                                text = childText;
+                            }
+                        } else {
+                            QTextEdit* te = qobject_cast<QTextEdit*>(childWidget);
+                            if (te) {
+                                QString childText = te->toPlainText();
+                                if (!childText.isEmpty() && childText.length() > text.length()) {
+                                    text = childText;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if (!text.isEmpty()) {
+                outputLines.append("");
+                outputLines.append("Output from deep recursive object search:");
+                outputLines.append(text);
+                qDebug() << "Retrieved" << text.length() << "characters from deep recursive search";
+            }
+        }
+        
+        // Method 9: Try to access through IOutputPane interface - find all output panes
+        if (text.isEmpty()) {
+            QObjectList allObjects = ExtensionSystem::PluginManager::allObjects();
+            for (QObject* obj : allObjects) {
+                Core::IOutputPane* outputPane = qobject_cast<Core::IOutputPane*>(obj);
+                if (outputPane) {
+                    QString paneName = QString::fromLatin1(obj->metaObject()->className());
+                    // Look for compile/build output pane
+                    if (paneName.contains("Compile", Qt::CaseInsensitive) || 
+                        paneName.contains("Build", Qt::CaseInsensitive) ||
+                        paneName.contains("Output", Qt::CaseInsensitive)) {
+                        QWidget* outputWidget = outputPane->outputWidget(nullptr);
+                        if (outputWidget) {
+                            QList<QPlainTextEdit*> plainTextEdits = outputWidget->findChildren<QPlainTextEdit*>(QString(), Qt::FindChildrenRecursively);
+                            QList<QTextEdit*> textEdits = outputWidget->findChildren<QTextEdit*>(QString(), Qt::FindChildrenRecursively);
+                            
+                            if (!plainTextEdits.isEmpty()) {
+                                text = plainTextEdits.first()->toPlainText();
+                            } else if (!textEdits.isEmpty()) {
+                                text = textEdits.first()->toPlainText();
+                            }
+                            
+                            if (!text.isEmpty()) {
+                                outputLines.append("");
+                                outputLines.append(QString("Output from IOutputPane (%1):").arg(paneName));
+                                outputLines.append(text);
+                                qDebug() << "Retrieved" << text.length() << "characters from IOutputPane" << paneName;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Method 10: Search through all application widgets for text editors
+        if (text.isEmpty()) {
+            QWidgetList allWidgets = QApplication::allWidgets();
+            for (QWidget* w : allWidgets) {
+                if (w && w->isVisible()) {
+                    QString widgetName = w->objectName();
+                    QString className = QString::fromLatin1(w->metaObject()->className());
+                    
+                    // Look for compile output related widgets
+                    if ((widgetName.contains("compile", Qt::CaseInsensitive) || 
+                         widgetName.contains("build", Qt::CaseInsensitive) ||
+                         widgetName.contains("output", Qt::CaseInsensitive)) ||
+                        (className.contains("Compile", Qt::CaseInsensitive) ||
+                         className.contains("Build", Qt::CaseInsensitive))) {
+                        
+                        QPlainTextEdit* pte = qobject_cast<QPlainTextEdit*>(w);
+                        if (pte) {
+                            QString widgetText = pte->toPlainText();
+                            if (!widgetText.isEmpty() && widgetText.length() > text.length()) {
+                                text = widgetText;
+                            }
+                        } else {
+                            QTextEdit* te = qobject_cast<QTextEdit*>(w);
+                            if (te) {
+                                QString widgetText = te->toPlainText();
+                                if (!widgetText.isEmpty() && widgetText.length() > text.length()) {
+                                    text = widgetText;
+                                }
+                            } else {
+                                // Search children
+                                QList<QPlainTextEdit*> plainTextEdits = w->findChildren<QPlainTextEdit*>(QString(), Qt::FindChildrenRecursively);
+                                QList<QTextEdit*> textEdits = w->findChildren<QTextEdit*>(QString(), Qt::FindChildrenRecursively);
+                                
+                                if (!plainTextEdits.isEmpty()) {
+                                    QString widgetText = plainTextEdits.first()->toPlainText();
+                                    if (!widgetText.isEmpty() && widgetText.length() > text.length()) {
+                                        text = widgetText;
+                                    }
+                                } else if (!textEdits.isEmpty()) {
+                                    QString widgetText = textEdits.first()->toPlainText();
+                                    if (!widgetText.isEmpty() && widgetText.length() > text.length()) {
+                                        text = widgetText;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if (!text.isEmpty()) {
+                outputLines.append("");
+                outputLines.append("Output from application widget search:");
+                outputLines.append(text);
+                qDebug() << "Retrieved" << text.length() << "characters from application widget search";
+            }
+        }
+        
+        if (text.isEmpty()) {
+            outputLines.append("");
+            outputLines.append("WARNING: Found output window object but could not extract text content");
+            outputLines.append("Class name:" + QString::fromLatin1(metaObj->className()));
+            outputLines.append("Available methods:");
+            for (int i = 0; i < metaObj->methodCount() && i < 10; ++i) {
+                QMetaMethod method = metaObj->method(i);
+                if (method.access() == QMetaMethod::Public) {
+                    outputLines.append("  - " + QString::fromLatin1(method.methodSignature()));
+                }
+            }
+        }
+        }
+    } else {
+        outputLines.append("");
+        outputLines.append("WARNING: Could not find compile output window");
+        outputLines.append("Searched through" + QString::number(allObjects.size()) + "plugin objects");
+        
+        // List some potential candidates for debugging
+        outputLines.append("");
+        outputLines.append("Objects containing 'Output' or 'Build':");
+        int count = 0;
+        for (QObject* obj : allObjects) {
+            if (obj && count < 10) {
+                QString className = QString::fromLatin1(obj->metaObject()->className());
+                if (className.contains("Output", Qt::CaseInsensitive) ||
+                    className.contains("Build", Qt::CaseInsensitive)) {
+                    outputLines.append("  - " + className);
+                    count++;
+                }
+            }
+        }
+    }
+    
+    // Method 2: Try BuildManager for build output information
+    if (ProjectExplorer::BuildManager::instance()) {
+        outputLines.append("");
+        outputLines.append("=== BUILD STATUS ===");
+        outputLines.append("Build in progress:" + QString(ProjectExplorer::BuildManager::isBuilding() ? QStringLiteral("Yes") : QStringLiteral("No")));
+        
+        if (ProjectExplorer::BuildManager::tasksAvailable()) {
+            int errorCount = ProjectExplorer::BuildManager::getErrorTaskCount();
+            outputLines.append("Build errors:" + QString::number(errorCount));
+        }
+    }
+    
+    outputLines.append("");
+    outputLines.append("=== END COMPILE OUTPUT ===");
+    
+    QString result = outputLines.join("\n");
+    qDebug() << "Compile output retrieval completed, total length:" << result.length();
+    
+    return result;
 }
 
 QString MCPCommands::getMethodMetadata()

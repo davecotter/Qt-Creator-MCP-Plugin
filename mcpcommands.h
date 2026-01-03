@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QStringList>
 #include <QMap>
+#include <QTimer>
 
 // Forward declarations
 namespace Qt_MCP_Plugin {
@@ -50,6 +51,13 @@ public:
     // Issue management commands
     QStringList listIssues();
     
+    // Build output commands
+    QString getCompileOutput();
+    
+    // Build monitoring
+    bool waitForBuildCompletion(int timeoutSeconds = 300);
+    bool isBuildInProgress() const;
+    
     // Method metadata management
     QString getMethodMetadata();
     QString setMethodMetadata(const QString &method, int timeoutSeconds);
@@ -65,9 +73,11 @@ public:
 
 signals:
     void sessionLoadRequested(const QString &sessionName);
+    void buildStateChanged();
 
 private slots:
     void handleSessionLoadRequest(const QString &sessionName);
+    void onBuildStateChanged();
 
 private:
     bool hasValidProject() const;
@@ -78,6 +88,10 @@ private:
     
     // Issues management
     IssuesManager *m_issuesManager;
+    
+    // Build state tracking
+    bool m_buildWasInProgress;
+    QTimer *m_buildMonitorTimer;
 };
 
 } // namespace Internal

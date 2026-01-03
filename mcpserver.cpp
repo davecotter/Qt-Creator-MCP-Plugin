@@ -402,6 +402,16 @@ QJsonObject MCPServer::processRequest(const QJsonObject &request)
         saveSessionTool["inputSchema"] = saveSessionInputSchema;
         tools.append(saveSessionTool);
         
+        // Get compile output tool
+        QJsonObject getCompileOutputTool;
+        getCompileOutputTool["name"] = "getCompileOutput";
+        getCompileOutputTool["description"] = "Get the compile output from the build output panel";
+        QJsonObject getCompileOutputInputSchema;
+        getCompileOutputInputSchema["type"] = "object";
+        getCompileOutputInputSchema["properties"] = QJsonObject();
+        getCompileOutputTool["inputSchema"] = getCompileOutputInputSchema;
+        tools.append(getCompileOutputTool);
+        
         QJsonObject toolsResult;
         toolsResult["tools"] = tools;
         result = toolsResult;
@@ -414,24 +424,56 @@ QJsonObject MCPServer::processRequest(const QJsonObject &request)
             QString toolName = paramsObj.value("name").toString();
             QJsonValue arguments = paramsObj.value("arguments");
             
+            // Helper function to create MCP content format response
+            auto createContentResponse = [](const QJsonValue &data) -> QJsonObject {
+                QJsonObject contentItem;
+                contentItem["type"] = "text";
+                
+                // Convert data to JSON string for text content
+                if (data.isObject()) {
+                    QJsonDocument doc(data.toObject());
+                    contentItem["text"] = QString::fromUtf8(doc.toJson(QJsonDocument::Compact));
+                } else if (data.isArray()) {
+                    QJsonDocument doc(data.toArray());
+                    contentItem["text"] = QString::fromUtf8(doc.toJson(QJsonDocument::Compact));
+                } else if (data.isString()) {
+                    contentItem["text"] = data.toString();
+                } else if (data.isBool()) {
+                    contentItem["text"] = data.toBool() ? "true" : "false";
+                } else {
+                    contentItem["text"] = data.toVariant().toString();
+                }
+                
+                QJsonArray contentArray;
+                contentArray.append(contentItem);
+                
+                QJsonObject result;
+                result["content"] = contentArray;
+                return result;
+            };
+            
             // Route to appropriate command based on tool name
             if (toolName == "build") {
                 bool successB = m_commandsP->build();
-                result = QJsonObject{{"success", successB}};
+                QJsonObject data{{"success", successB}};
+                result = createContentResponse(data);
             }
             else if (toolName == "getBuildStatus") {
                 QString buildStatusResult = m_commandsP->getBuildStatus();
-                result = QJsonObject{{"result", buildStatusResult}};
+                QJsonObject data{{"result", buildStatusResult}};
+                result = createContentResponse(data);
             }
             else if (toolName == "debug") {
                 QString debugResult = m_commandsP->debug();
-                result = QJsonObject{{"result", debugResult}};
+                QJsonObject data{{"result", debugResult}};
+                result = createContentResponse(data);
             }
             else if (toolName == "openFile") {
                 if (arguments.isObject()) {
                     QString path = arguments.toObject().value("path").toString();
                     bool successB = m_commandsP->openFile(path);
-                    result = QJsonObject{{"success", successB}};
+                    QJsonObject data{{"success", successB}};
+                    result = createContentResponse(data);
                 } else {
                     errorMessage = "Invalid arguments for openFile";
                 }
@@ -442,7 +484,8 @@ QJsonObject MCPServer::processRequest(const QJsonObject &request)
                 for (const QString &project : projects) {
                     projectArray.append(project);
                 }
-                result = QJsonObject{{"projects", projectArray}};
+                QJsonObject data{{"projects", projectArray}};
+                result = createContentResponse(data);
             }
             else if (toolName == "listBuildConfigs") {
                 QStringList configs = m_commandsP->listBuildConfigs();
@@ -450,24 +493,28 @@ QJsonObject MCPServer::processRequest(const QJsonObject &request)
                 for (const QString &config : configs) {
                     configArray.append(config);
                 }
-                result = QJsonObject{{"buildConfigs", configArray}};
+                QJsonObject data{{"buildConfigs", configArray}};
+                result = createContentResponse(data);
             }
             else if (toolName == "switchBuildConfig") {
                 if (arguments.isObject()) {
                     QString name = arguments.toObject().value("name").toString();
                     bool successB = m_commandsP->switchToBuildConfig(name);
-                    result = QJsonObject{{"success", successB}};
+                    QJsonObject data{{"success", successB}};
+                    result = createContentResponse(data);
                 } else {
                     errorMessage = "Invalid arguments for switchBuildConfig";
                 }
             }
             else if (toolName == "runProject") {
                 bool successB = m_commandsP->runProject();
-                result = QJsonObject{{"success", successB}};
+                QJsonObject data{{"success", successB}};
+                result = createContentResponse(data);
             }
             else if (toolName == "cleanProject") {
                 bool successB = m_commandsP->cleanProject();
-                result = QJsonObject{{"success", successB}};
+                QJsonObject data{{"success", successB}};
+                result = createContentResponse(data);
             }
             else if (toolName == "listOpenFiles") {
                 QStringList files = m_commandsP->listOpenFiles();
@@ -475,7 +522,8 @@ QJsonObject MCPServer::processRequest(const QJsonObject &request)
                 for (const QString &file : files) {
                     fileArray.append(file);
                 }
-                result = QJsonObject{{"openFiles", fileArray}};
+                QJsonObject data{{"openFiles", fileArray}};
+                result = createContentResponse(data);
             }
             else if (toolName == "listSessions") {
                 QStringList sessions = m_commandsP->listSessions();
@@ -483,13 +531,15 @@ QJsonObject MCPServer::processRequest(const QJsonObject &request)
                 for (const QString &session : sessions) {
                     sessionArray.append(session);
                 }
-                result = QJsonObject{{"sessions", sessionArray}};
+                QJsonObject data{{"sessions", sessionArray}};
+                result = createContentResponse(data);
             }
             else if (toolName == "loadSession") {
                 if (arguments.isObject()) {
                     QString sessionName = arguments.toObject().value("sessionName").toString();
                     bool successB = m_commandsP->loadSession(sessionName);
-                    result = QJsonObject{{"success", successB}};
+                    QJsonObject data{{"success", successB}};
+                    result = createContentResponse(data);
                 } else {
                     errorMessage = "Invalid arguments for loadSession";
                 }
@@ -500,27 +550,38 @@ QJsonObject MCPServer::processRequest(const QJsonObject &request)
                 for (const QString &issue : issues) {
                     issueArray.append(issue);
                 }
-                result = QJsonObject{{"issues", issueArray}};
+                QJsonObject data{{"issues", issueArray}};
+                result = createContentResponse(data);
             }
             else if (toolName == "quit") {
                 bool successB = m_commandsP->quit();
-                result = QJsonObject{{"success", successB}};
+                QJsonObject data{{"success", successB}};
+                result = createContentResponse(data);
             }
             else if (toolName == "getCurrentProject") {
                 QString project = m_commandsP->getCurrentProject();
-                result = QJsonObject{{"project", project}};
+                QJsonObject data{{"project", project}};
+                result = createContentResponse(data);
             }
             else if (toolName == "getCurrentBuildConfig") {
                 QString config = m_commandsP->getCurrentBuildConfig();
-                result = QJsonObject{{"buildConfig", config}};
+                QJsonObject data{{"buildConfig", config}};
+                result = createContentResponse(data);
             }
             else if (toolName == "getCurrentSession") {
                 QString session = m_commandsP->getCurrentSession();
-                result = QJsonObject{{"session", session}};
+                QJsonObject data{{"session", session}};
+                result = createContentResponse(data);
             }
             else if (toolName == "saveSession") {
                 bool successB = m_commandsP->saveSession();
-                result = QJsonObject{{"success", successB}};
+                QJsonObject data{{"success", successB}};
+                result = createContentResponse(data);
+            }
+            else if (toolName == "getCompileOutput") {
+                QString compileOutput = m_commandsP->getCompileOutput();
+                QJsonObject data{{"output", compileOutput}};
+                result = createContentResponse(data);
             }
             else {
                 // Provide helpful suggestions for common typos
