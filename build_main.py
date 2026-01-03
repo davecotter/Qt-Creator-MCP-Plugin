@@ -1590,8 +1590,10 @@ def register_with_cursor():
         return False
     
     # Define the Qt MCP server configuration
+    # Cursor's MCP client expects HTTP transport with explicit configuration
     qt_mcp_config = {
         "url": "http://localhost:3001",
+        "transport": "http",
         "description": "Qt Creator MCP Plugin - AI control of Qt Creator IDE"
     }
     
