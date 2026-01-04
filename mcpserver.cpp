@@ -412,6 +412,21 @@ QJsonObject MCPServer::processRequest(const QJsonObject &request)
         getCompileOutputTool["inputSchema"] = getCompileOutputInputSchema;
         tools.append(getCompileOutputTool);
         
+        // Wait for build completion tool
+        QJsonObject waitForBuildCompletionTool;
+        waitForBuildCompletionTool["name"] = "waitForBuildCompletion";
+        waitForBuildCompletionTool["description"] = "Wait for the current build to complete. Blocks until build finishes or timeout.";
+        QJsonObject waitForBuildCompletionInputSchema;
+        waitForBuildCompletionInputSchema["type"] = "object";
+        QJsonObject waitForBuildCompletionProps;
+        waitForBuildCompletionProps["timeoutSeconds"] = QJsonObject{
+            {"type", "integer"},
+            {"description", "Maximum seconds to wait (default 300)"}
+        };
+        waitForBuildCompletionInputSchema["properties"] = waitForBuildCompletionProps;
+        waitForBuildCompletionTool["inputSchema"] = waitForBuildCompletionInputSchema;
+        tools.append(waitForBuildCompletionTool);
+        
         QJsonObject toolsResult;
         toolsResult["tools"] = tools;
         result = toolsResult;
@@ -581,6 +596,18 @@ QJsonObject MCPServer::processRequest(const QJsonObject &request)
             else if (toolName == "getCompileOutput") {
                 QString compileOutput = m_commandsP->getCompileOutput();
                 QJsonObject data{{"output", compileOutput}};
+                result = createContentResponse(data);
+            }
+            else if (toolName == "waitForBuildCompletion") {
+                int timeout = 300; // default 5 minutes
+                if (arguments.isObject()) {
+                    timeout = arguments.toObject().value("timeoutSeconds").toInt(300);
+                }
+                bool completed = m_commandsP->waitForBuildCompletion(timeout);
+                QJsonObject data{
+                    {"completed", completed},
+                    {"timedOut", !completed}
+                };
                 result = createContentResponse(data);
             }
             else {

@@ -371,17 +371,21 @@ bool MCPCommands::waitForBuildCompletion(int timeoutSeconds)
         return true; // Already not building
     }
     
-    // Wait for build to complete
+    // Wait for build to complete using event loop
+    // We connect to the buildStateChanged SIGNAL (not the slot) to detect completion
     QEventLoop loop;
     QTimer timeoutTimer;
     timeoutTimer.setSingleShot(true);
     timeoutTimer.setInterval(timeoutSeconds * 1000);
     
-    connect(this, &MCPCommands::onBuildStateChanged, &loop, &QEventLoop::quit);
+    // Connect buildStateChanged SIGNAL to quit the event loop when build completes
+    connect(this, &MCPCommands::buildStateChanged, &loop, &QEventLoop::quit);
     connect(&timeoutTimer, &QTimer::timeout, &loop, &QEventLoop::quit);
     
+    qDebug() << "Starting event loop, waiting for buildStateChanged signal...";
     timeoutTimer.start();
     loop.exec();
+    qDebug() << "Event loop exited";
     
     m_buildMonitorTimer->stop();
     timeoutTimer.stop();
