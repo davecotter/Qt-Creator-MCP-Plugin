@@ -50,6 +50,28 @@ After a successful build, restart Cursor to enable AI control of Qt Creator.
 
 **For AI Assistants:** See `.cursorrules` for detailed build instructions and troubleshooting.
 
+## Architecture
+
+### Cross-Platform Menu Icons
+
+The plugin displays an icon in the **Tools → MCP Plugin** menu. Menu icon handling is platform-specific:
+
+- **macOS**: Uses native AppKit APIs (`macos_menu_icon.mm`) to force icon display, as Qt may hide menu icons per Apple HIG
+- **Windows/Linux**: Uses Qt's native icon support via stub implementation (`platform_menu_icon.cpp`)
+
+### Source Files
+
+| File | Purpose |
+|------|---------|
+| `qt_mcp_plugin.cpp` | Main plugin entry point, menu setup |
+| `mcpserver.cpp/h` | HTTP server on port 3001 |
+| `mcpcommands.cpp/h` | MCP tool implementations |
+| `macos_menu_icon.mm/h` | macOS native menu icon support |
+| `platform_menu_icon.cpp` | Windows/Linux menu icon stub |
+| `issuesmanager.cpp/h` | Build issues tracking |
+| `httpparser.cpp/h` | HTTP request parsing |
+| `httpresponse.cpp/h` | HTTP response generation |
+
 ## Extending the Plugin
 
 **Let AI do the work:** The plugin is designed for AI-assisted development. Simply describe what you want to add and let your AI assistant:
