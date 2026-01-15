@@ -243,6 +243,16 @@ QJsonObject MCPServer::processRequest(const QJsonObject &request)
         debugTool["inputSchema"] = debugInputSchema;
         tools.append(debugTool);
         
+        // Get call stack tool
+        QJsonObject getCallStackTool;
+        getCallStackTool["name"] = "getCallStack";
+        getCallStackTool["description"] = "Get the current call stack when the debugger is paused at a breakpoint. Returns stack frames with function names, file locations, line numbers, and addresses.";
+        QJsonObject getCallStackInputSchema;
+        getCallStackInputSchema["type"] = "object";
+        getCallStackInputSchema["properties"] = QJsonObject();
+        getCallStackTool["inputSchema"] = getCallStackInputSchema;
+        tools.append(getCallStackTool);
+        
         // Open file tool
         QJsonObject openFileTool;
         openFileTool["name"] = "openFile";
@@ -345,12 +355,37 @@ QJsonObject MCPServer::processRequest(const QJsonObject &request)
         // List issues tool
         QJsonObject listIssuesTool;
         listIssuesTool["name"] = "listIssues";
-        listIssuesTool["description"] = "List current issues (warnings and errors)";
+        listIssuesTool["description"] = "List current issues (warnings and errors). Use filter to show only errors or warnings.";
         QJsonObject listIssuesInputSchema;
         listIssuesInputSchema["type"] = "object";
-        listIssuesInputSchema["properties"] = QJsonObject();
+        QJsonObject listIssuesProperties;
+        listIssuesProperties["filter"] = QJsonObject{
+            {"type", "string"}, 
+            {"description", "Filter issues: 'all' (default), 'errors', or 'warnings'"},
+            {"enum", QJsonArray{"all", "errors", "warnings"}}
+        };
+        listIssuesInputSchema["properties"] = listIssuesProperties;
         listIssuesTool["inputSchema"] = listIssuesInputSchema;
         tools.append(listIssuesTool);
+        
+        // Configure issues tool
+        QJsonObject configIssuesTool;
+        configIssuesTool["name"] = "configureIssues";
+        configIssuesTool["description"] = "Configure issue tracking: set error limit (stop accumulating after N errors) and whether to cancel build on limit";
+        QJsonObject configIssuesInputSchema;
+        configIssuesInputSchema["type"] = "object";
+        QJsonObject configIssuesProperties;
+        configIssuesProperties["errorLimit"] = QJsonObject{
+            {"type", "integer"}, 
+            {"description", "Max errors before stopping accumulation (default 20, 0=unlimited)"}
+        };
+        configIssuesProperties["stopBuildOnLimit"] = QJsonObject{
+            {"type", "boolean"}, 
+            {"description", "Cancel build when error limit is reached (default false)"}
+        };
+        configIssuesInputSchema["properties"] = configIssuesProperties;
+        configIssuesTool["inputSchema"] = configIssuesInputSchema;
+        tools.append(configIssuesTool);
         
         // Quit tool
         QJsonObject quitTool;
@@ -411,6 +446,16 @@ QJsonObject MCPServer::processRequest(const QJsonObject &request)
         getCompileOutputInputSchema["properties"] = QJsonObject();
         getCompileOutputTool["inputSchema"] = getCompileOutputInputSchema;
         tools.append(getCompileOutputTool);
+        
+        // Get application output tool
+        QJsonObject getApplicationOutputTool;
+        getApplicationOutputTool["name"] = "getApplicationOutput";
+        getApplicationOutputTool["description"] = "Get the application output (stdout/stderr) from the running or recently run application";
+        QJsonObject getApplicationOutputInputSchema;
+        getApplicationOutputInputSchema["type"] = "object";
+        getApplicationOutputInputSchema["properties"] = QJsonObject();
+        getApplicationOutputTool["inputSchema"] = getApplicationOutputInputSchema;
+        tools.append(getApplicationOutputTool);
         
         // Wait for build completion tool
         QJsonObject waitForBuildCompletionTool;
@@ -481,6 +526,11 @@ QJsonObject MCPServer::processRequest(const QJsonObject &request)
             else if (toolName == "debug") {
                 QString debugResult = m_commandsP->debug();
                 QJsonObject data{{"result", debugResult}};
+                result = createContentResponse(data);
+            }
+            else if (toolName == "getCallStack") {
+                QString callStackResult = m_commandsP->getCallStack();
+                QJsonObject data{{"result", callStackResult}};
                 result = createContentResponse(data);
             }
             else if (toolName == "openFile") {
@@ -560,12 +610,32 @@ QJsonObject MCPServer::processRequest(const QJsonObject &request)
                 }
             }
             else if (toolName == "listIssues") {
-                QStringList issues = m_commandsP->listIssues();
+                QString filter = "all";  // default
+                if (arguments.isObject()) {
+                    filter = arguments.toObject().value("filter").toString("all");
+                }
+                QStringList issues = m_commandsP->listIssues(filter);
                 QJsonArray issueArray;
                 for (const QString &issue : issues) {
                     issueArray.append(issue);
                 }
                 QJsonObject data{{"issues", issueArray}};
+                result = createContentResponse(data);
+            }
+            else if (toolName == "configureIssues") {
+                if (arguments.isObject()) {
+                    QJsonObject args = arguments.toObject();
+                    if (args.contains("errorLimit")) {
+                        m_commandsP->setErrorLimit(args.value("errorLimit").toInt(20));
+                    }
+                    if (args.contains("stopBuildOnLimit")) {
+                        m_commandsP->setStopBuildOnLimit(args.value("stopBuildOnLimit").toBool(false));
+                    }
+                }
+                QJsonObject data{
+                    {"errorLimit", m_commandsP->errorLimit()},
+                    {"stopBuildOnLimit", m_commandsP->stopBuildOnLimit()}
+                };
                 result = createContentResponse(data);
             }
             else if (toolName == "quit") {
@@ -596,6 +666,11 @@ QJsonObject MCPServer::processRequest(const QJsonObject &request)
             else if (toolName == "getCompileOutput") {
                 QString compileOutput = m_commandsP->getCompileOutput();
                 QJsonObject data{{"output", compileOutput}};
+                result = createContentResponse(data);
+            }
+            else if (toolName == "getApplicationOutput") {
+                QString appOutput = m_commandsP->getApplicationOutput();
+                QJsonObject data{{"output", appOutput}};
                 result = createContentResponse(data);
             }
             else if (toolName == "waitForBuildCompletion") {
@@ -731,6 +806,16 @@ QJsonObject MCPServer::callMCPMethod(const QString &method, const QJsonValue &pa
         debugTool["inputSchema"] = debugInputSchema;
         tools.append(debugTool);
         
+        // Get call stack tool
+        QJsonObject getCallStackTool;
+        getCallStackTool["name"] = "getCallStack";
+        getCallStackTool["description"] = "Get the current call stack when the debugger is paused at a breakpoint. Returns stack frames with function names, file locations, line numbers, and addresses.";
+        QJsonObject getCallStackInputSchema;
+        getCallStackInputSchema["type"] = "object";
+        getCallStackInputSchema["properties"] = QJsonObject();
+        getCallStackTool["inputSchema"] = getCallStackInputSchema;
+        tools.append(getCallStackTool);
+        
         // Open file tool
         QJsonObject openFileTool;
         openFileTool["name"] = "openFile";
@@ -833,12 +918,37 @@ QJsonObject MCPServer::callMCPMethod(const QString &method, const QJsonValue &pa
         // List issues tool
         QJsonObject listIssuesTool;
         listIssuesTool["name"] = "listIssues";
-        listIssuesTool["description"] = "List current issues (warnings and errors)";
+        listIssuesTool["description"] = "List current issues (warnings and errors). Use filter to show only errors or warnings.";
         QJsonObject listIssuesInputSchema;
         listIssuesInputSchema["type"] = "object";
-        listIssuesInputSchema["properties"] = QJsonObject();
+        QJsonObject listIssuesProperties;
+        listIssuesProperties["filter"] = QJsonObject{
+            {"type", "string"}, 
+            {"description", "Filter issues: 'all' (default), 'errors', or 'warnings'"},
+            {"enum", QJsonArray{"all", "errors", "warnings"}}
+        };
+        listIssuesInputSchema["properties"] = listIssuesProperties;
         listIssuesTool["inputSchema"] = listIssuesInputSchema;
         tools.append(listIssuesTool);
+        
+        // Configure issues tool
+        QJsonObject configIssuesTool;
+        configIssuesTool["name"] = "configureIssues";
+        configIssuesTool["description"] = "Configure issue tracking: set error limit (stop accumulating after N errors) and whether to cancel build on limit";
+        QJsonObject configIssuesInputSchema;
+        configIssuesInputSchema["type"] = "object";
+        QJsonObject configIssuesProperties;
+        configIssuesProperties["errorLimit"] = QJsonObject{
+            {"type", "integer"}, 
+            {"description", "Max errors before stopping accumulation (default 20, 0=unlimited)"}
+        };
+        configIssuesProperties["stopBuildOnLimit"] = QJsonObject{
+            {"type", "boolean"}, 
+            {"description", "Cancel build when error limit is reached (default false)"}
+        };
+        configIssuesInputSchema["properties"] = configIssuesProperties;
+        configIssuesTool["inputSchema"] = configIssuesInputSchema;
+        tools.append(configIssuesTool);
         
         // Quit tool
         QJsonObject quitTool;

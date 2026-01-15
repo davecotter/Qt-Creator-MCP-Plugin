@@ -27,6 +27,11 @@
 #include <QTextDocument>
 #include <QWidget>
 #include <QMetaMethod>
+#include <QAbstractItemView>
+#include <QAbstractItemModel>
+#include <QTreeView>
+#include <QTableView>
+#include <QRegularExpression>
 
 #include <QApplication>
 #include <QDebug>
@@ -754,6 +759,228 @@ bool MCPCommands::killDebuggedProcesses()
     return true; // Simplified for now - always return true
 }
 
+QString MCPCommands::getCallStack()
+{
+    qDebug() << "Retrieving call stack from Qt Creator debugger";
+    
+    QStringList results;
+    results.append("=== CALL STACK ===");
+    
+    // First, check if debugging is active
+    if (!isDebuggingActive()) {
+        results.append("ERROR: No active debug session");
+        results.append("The debugger is not running. Please start a debug session first.");
+        return results.join("\n");
+    }
+    
+    results.append("Debug session is active.");
+    results.append("");
+    
+    QWidgetList allWidgets = QApplication::allWidgets();
+    
+    // Helper lambda to check if a model looks like a stack trace model
+    auto isStackModel = [](QAbstractItemModel* model) -> bool {
+        if (!model || model->rowCount() == 0) return false;
+        
+        int colCount = model->columnCount();
+        
+        // Check column headers for stack-specific names
+        QStringList stackHeaders = {"level", "function", "file", "line", "address", "from"};
+        QStringList watchHeaders = {"name", "value", "type", "time"}; // Watch view headers to exclude
+        
+        int stackHeaderCount = 0;
+        int watchHeaderCount = 0;
+        
+        for (int col = 0; col < colCount; ++col) {
+            QString header = model->headerData(col, Qt::Horizontal).toString().toLower();
+            
+            for (const QString& sh : stackHeaders) {
+                if (header.contains(sh)) {
+                    stackHeaderCount++;
+                    break;
+                }
+            }
+            for (const QString& wh : watchHeaders) {
+                if (header.contains(wh)) {
+                    watchHeaderCount++;
+                    break;
+                }
+            }
+        }
+        
+        // If it has more watch headers than stack headers, it's probably a watch view
+        if (watchHeaderCount > stackHeaderCount) return false;
+        
+        // If it has at least 2 stack-related headers, it's likely a stack view
+        if (stackHeaderCount >= 2) return true;
+        
+        // Check first row content for stack-like patterns
+        for (int col = 0; col < colCount; ++col) {
+            QString cellText = model->data(model->index(0, col)).toString();
+            // Stack frames often have addresses (0x...) and function names with ::
+            if (cellText.contains(QRegularExpression("^0x[0-9a-fA-F]+$")) ||
+                cellText.contains("::") ||
+                cellText.contains(QRegularExpression("\\.(cpp|c|h|mm|m):\\d+"))) {
+                return true;
+            }
+        }
+        
+        return false;
+    };
+    
+    // Helper lambda to extract stack data from a model
+    auto extractStackFromModel = [&results](QAbstractItemModel* model) -> bool {
+        int rowCount = model->rowCount();
+        int colCount = model->columnCount();
+        
+        if (rowCount == 0) return false;
+        
+        // Get column headers
+        QStringList headers;
+        for (int col = 0; col < colCount; ++col) {
+            QString header = model->headerData(col, Qt::Horizontal).toString();
+            if (!header.isEmpty()) {
+                headers.append(header);
+            }
+        }
+        
+        results.append(QString("Found %1 stack frames:").arg(rowCount));
+        if (!headers.isEmpty()) {
+            results.append("Columns: " + headers.join(" | "));
+        }
+        results.append("");
+        
+        // Extract each row
+        for (int row = 0; row < rowCount && row < 100; ++row) {
+            QStringList rowData;
+            
+            for (int col = 0; col < colCount; ++col) {
+                QModelIndex index = model->index(row, col);
+                QString data = model->data(index, Qt::DisplayRole).toString();
+                if (!data.isEmpty()) {
+                    rowData.append(data);
+                }
+            }
+            
+            if (!rowData.isEmpty()) {
+                results.append(QString("#%1: %2").arg(row).arg(rowData.join(" | ")));
+            }
+        }
+        
+        if (rowCount > 100) {
+            results.append(QString("... and %1 more frames (truncated)").arg(rowCount - 100));
+        }
+        
+        return true;
+    };
+    
+    // First pass: Look for widgets with "Stack" in their object name (most reliable)
+    for (QWidget* widget : allWidgets) {
+        if (!widget || !widget->isVisible()) continue;
+        
+        QString objectName = widget->objectName();
+        
+        // Look specifically for StackWindow or similar
+        if (objectName.contains("Stack", Qt::CaseInsensitive) && 
+            !objectName.contains("Watch", Qt::CaseInsensitive) &&
+            !objectName.contains("Local", Qt::CaseInsensitive)) {
+            
+            qDebug() << "Found stack widget by name:" << objectName;
+            
+            QList<QAbstractItemView*> views = widget->findChildren<QAbstractItemView*>(QString(), Qt::FindChildrenRecursively);
+            for (QAbstractItemView* view : views) {
+                QAbstractItemModel* model = view->model();
+                if (model && isStackModel(model)) {
+                    if (extractStackFromModel(model)) {
+                        results.append("");
+                        results.append("=== END CALL STACK ===");
+                        return results.join("\n");
+                    }
+                }
+            }
+        }
+    }
+    
+    // Second pass: Search all visible views and check their models
+    QList<QPair<int, QAbstractItemView*>> candidateViews; // score, view
+    
+    for (QWidget* widget : allWidgets) {
+        if (!widget || !widget->isVisible()) continue;
+        
+        QAbstractItemView* view = qobject_cast<QAbstractItemView*>(widget);
+        if (!view) continue;
+        
+        QAbstractItemModel* model = view->model();
+        if (!model || model->rowCount() == 0) continue;
+        
+        int score = 0;
+        int colCount = model->columnCount();
+        
+        // Score based on headers
+        for (int col = 0; col < colCount; ++col) {
+            QString header = model->headerData(col, Qt::Horizontal).toString().toLower();
+            if (header.contains("function")) score += 10;
+            if (header.contains("file")) score += 8;
+            if (header.contains("line")) score += 8;
+            if (header.contains("address")) score += 6;
+            if (header.contains("level")) score += 6;
+            if (header.contains("from") || header.contains("module")) score += 4;
+            
+            // Negative scores for watch-like views
+            if (header.contains("value")) score -= 5;
+            if (header.contains("type") && !header.contains("return")) score -= 5;
+            if (header.contains("time")) score -= 10;
+        }
+        
+        // Score based on content
+        if (model->rowCount() > 0) {
+            for (int col = 0; col < colCount && col < 5; ++col) {
+                QString cellText = model->data(model->index(0, col)).toString();
+                if (cellText.contains("0x")) score += 3;
+                if (cellText.contains("::")) score += 5;
+                if (cellText.contains(QRegularExpression("\\.(cpp|c|h|mm|m)"))) score += 4;
+            }
+        }
+        
+        if (score > 5) {
+            candidateViews.append({score, view});
+        }
+    }
+    
+    // Sort by score and try the best candidate
+    std::sort(candidateViews.begin(), candidateViews.end(), 
+              [](const auto& a, const auto& b) { return a.first > b.first; });
+    
+    for (const auto& [score, view] : candidateViews) {
+        qDebug() << "Trying candidate view with score" << score;
+        QAbstractItemModel* model = view->model();
+        if (model && extractStackFromModel(model)) {
+            results.append("");
+            results.append("=== END CALL STACK ===");
+            return results.join("\n");
+        }
+    }
+    
+    // If we couldn't find the stack view, suggest alternatives
+    results.append("Could not automatically extract call stack data.");
+    results.append("");
+    results.append("The debugger is active but the Stack view content is not accessible.");
+    results.append("This may happen if:");
+    results.append("  - The Stack panel is not visible in Qt Creator");
+    results.append("  - The debugger is running (not paused at a breakpoint)");
+    results.append("  - No stack frames are available yet");
+    results.append("");
+    results.append("Suggestions:");
+    results.append("  1. Ensure the debugger is paused at a breakpoint");
+    results.append("  2. Open the Stack panel in Qt Creator (View > Views > Stack)");
+    results.append("  3. Try again after the debugger stops at a breakpoint");
+    
+    results.append("");
+    results.append("=== END CALL STACK ===");
+    
+    return results.join("\n");
+}
+
 QString MCPCommands::getCurrentProject()
 {
     ProjectExplorer::Project *project = ProjectExplorer::ProjectManager::startupProject();
@@ -977,16 +1204,16 @@ bool MCPCommands::saveSession()
     return successB;
 }
 
-QStringList MCPCommands::listIssues()
+QStringList MCPCommands::listIssues(const QString &filter)
 {
-    qDebug() << "Listing issues from Qt Creator's Issues panel";
+    qDebug() << "Listing issues from Qt Creator's Issues panel with filter:" << filter;
     
     if (!m_issuesManager) {
         qDebug() << "IssuesManager not initialized";
         return QStringList() << "ERROR:Issues manager not initialized";
     }
     
-    QStringList issues = m_issuesManager->getCurrentIssues();
+    QStringList issues = m_issuesManager->getCurrentIssues(filter);
     
     // Add project status information for context
     if (ProjectExplorer::BuildManager::isBuilding()) {
@@ -995,6 +1222,30 @@ QStringList MCPCommands::listIssues()
     
     qDebug() << "Found" << issues.size() << "issues total";
     return issues;
+}
+
+void MCPCommands::setErrorLimit(int limit)
+{
+    if (m_issuesManager) {
+        m_issuesManager->setErrorLimit(limit);
+    }
+}
+
+int MCPCommands::errorLimit() const
+{
+    return m_issuesManager ? m_issuesManager->errorLimit() : 20;
+}
+
+void MCPCommands::setStopBuildOnLimit(bool stop)
+{
+    if (m_issuesManager) {
+        m_issuesManager->setStopBuildOnLimit(stop);
+    }
+}
+
+bool MCPCommands::stopBuildOnLimit() const
+{
+    return m_issuesManager ? m_issuesManager->stopBuildOnLimit() : false;
 }
 
 QString MCPCommands::getCompileOutput()
@@ -1412,6 +1663,129 @@ QString MCPCommands::getCompileOutput()
     
     QString result = outputLines.join("\n");
     qDebug() << "Compile output retrieval completed, total length:" << result.length();
+    
+    return result;
+}
+
+QString MCPCommands::getApplicationOutput()
+{
+    qDebug() << "Retrieving application output from Qt Creator";
+    
+    QStringList outputLines;
+    outputLines.append("=== APPLICATION OUTPUT ===");
+    QString text;
+    
+    // Method 1: Use IOutputPane API - look for Application Output pane
+    QObjectList allObjects = ExtensionSystem::PluginManager::allObjects();
+    for (QObject* obj : allObjects) {
+        Core::IOutputPane* outputPane = qobject_cast<Core::IOutputPane*>(obj);
+        if (outputPane) {
+            QString paneName = QString::fromLatin1(obj->metaObject()->className());
+            qDebug() << "Found IOutputPane:" << paneName;
+            
+            // Look for application output pane
+            if (paneName.contains("Application", Qt::CaseInsensitive) || 
+                paneName.contains("AppOutput", Qt::CaseInsensitive)) {
+                QWidget* outputWidget = outputPane->outputWidget(nullptr);
+                if (outputWidget) {
+                    qDebug() << "Got output widget from IOutputPane:" << outputWidget->metaObject()->className();
+                    
+                    // Search for text widgets recursively
+                    QList<QPlainTextEdit*> plainTextEdits = outputWidget->findChildren<QPlainTextEdit*>(QString(), Qt::FindChildrenRecursively);
+                    QList<QTextEdit*> textEdits = outputWidget->findChildren<QTextEdit*>(QString(), Qt::FindChildrenRecursively);
+                    
+                    if (!plainTextEdits.isEmpty()) {
+                        text = plainTextEdits.first()->toPlainText();
+                        if (!text.isEmpty()) {
+                            outputLines.append("");
+                            outputLines.append(QString("Output from IOutputPane (%1):").arg(paneName));
+                            outputLines.append(text);
+                            qDebug() << "Retrieved" << text.length() << "characters from IOutputPane" << paneName;
+                            break;
+                        }
+                    } else if (!textEdits.isEmpty()) {
+                        text = textEdits.first()->toPlainText();
+                        if (!text.isEmpty()) {
+                            outputLines.append("");
+                            outputLines.append(QString("Output from IOutputPane (%1):").arg(paneName));
+                            outputLines.append(text);
+                            qDebug() << "Retrieved" << text.length() << "characters from IOutputPane" << paneName;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    // Method 2: Search all application widgets for Application Output
+    if (text.isEmpty()) {
+        QWidgetList allWidgets = QApplication::allWidgets();
+        for (QWidget* w : allWidgets) {
+            if (w) {
+                QString widgetName = w->objectName();
+                QString className = QString::fromLatin1(w->metaObject()->className());
+                
+                // Look for application output related widgets
+                if ((widgetName.contains("application", Qt::CaseInsensitive) && 
+                     widgetName.contains("output", Qt::CaseInsensitive)) ||
+                    (className.contains("Application", Qt::CaseInsensitive) &&
+                     className.contains("Output", Qt::CaseInsensitive)) ||
+                    className.contains("AppOutput", Qt::CaseInsensitive)) {
+                    
+                    QPlainTextEdit* pte = qobject_cast<QPlainTextEdit*>(w);
+                    if (pte) {
+                        QString widgetText = pte->toPlainText();
+                        if (!widgetText.isEmpty() && widgetText.length() > text.length()) {
+                            text = widgetText;
+                        }
+                    } else {
+                        QTextEdit* te = qobject_cast<QTextEdit*>(w);
+                        if (te) {
+                            QString widgetText = te->toPlainText();
+                            if (!widgetText.isEmpty() && widgetText.length() > text.length()) {
+                                text = widgetText;
+                            }
+                        } else {
+                            // Search children
+                            QList<QPlainTextEdit*> plainTextEdits = w->findChildren<QPlainTextEdit*>(QString(), Qt::FindChildrenRecursively);
+                            QList<QTextEdit*> textEdits = w->findChildren<QTextEdit*>(QString(), Qt::FindChildrenRecursively);
+                            
+                            if (!plainTextEdits.isEmpty()) {
+                                QString widgetText = plainTextEdits.first()->toPlainText();
+                                if (!widgetText.isEmpty() && widgetText.length() > text.length()) {
+                                    text = widgetText;
+                                }
+                            } else if (!textEdits.isEmpty()) {
+                                QString widgetText = textEdits.first()->toPlainText();
+                                if (!widgetText.isEmpty() && widgetText.length() > text.length()) {
+                                    text = widgetText;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (!text.isEmpty()) {
+            outputLines.append("");
+            outputLines.append("Output from application widget search:");
+            outputLines.append(text);
+            qDebug() << "Retrieved" << text.length() << "characters from application widget search";
+        }
+    }
+    
+    if (text.isEmpty()) {
+        outputLines.append("");
+        outputLines.append("No application output found.");
+        outputLines.append("Make sure an application is running or has recently run.");
+    }
+    
+    outputLines.append("");
+    outputLines.append("=== END APPLICATION OUTPUT ===");
+    
+    QString result = outputLines.join("\n");
+    qDebug() << "Application output retrieval completed, total length:" << result.length();
     
     return result;
 }

@@ -3,9 +3,11 @@
 #include <QObject>
 #include <QStringList>
 #include <QString>
+#include <QList>
 
-// Include for MOC compilation
+// Need full type for MOC-generated slot code
 #include <projectexplorer/task.h>
+#include <utils/id.h>
 
 namespace Qt_MCP_Plugin {
 namespace Internal {
@@ -13,10 +15,9 @@ namespace Internal {
 /**
  * @brief Manages access to Qt Creator's Issues panel
  * 
- * This class provides a clean interface for accessing and retrieving
- * issues from Qt Creator's Issues panel. It encapsulates the complexity
- * of accessing internal Qt Creator APIs and provides a simple interface
- * for the MCP plugin.
+ * Uses signal-based tracking to capture tasks as they're added.
+ * Automatically clears the task list when a new build starts.
+ * Stops accumulating when error limit is reached.
  */
 class IssuesManager : public QObject
 {
@@ -27,34 +28,11 @@ public:
     ~IssuesManager() override = default;
 
     /**
-     * @brief Retrieves all current issues from the Issues panel
-     * @return List of formatted issue strings
+     * @brief Retrieves current issues from the tracked task list
+     * @param filter "all" (default), "errors", or "warnings"
+     * @return List of formatted issue strings (errors first, then warnings)
      */
-    QStringList getCurrentIssues() const;
-
-    /**
-     * @brief Tests multiple approaches to access Qt Creator's task data
-     * @return List of test results and findings
-     */
-    QStringList testTaskAccess() const;
-
-private slots:
-    /**
-     * @brief Handles task added signals from TaskHub
-     * @param task The task that was added
-     */
-    void onTaskAdded(const ProjectExplorer::Task &task);
-
-    /**
-     * @brief Handles task removed signals from TaskHub
-     * @param task The task that was removed
-     */
-    void onTaskRemoved(const ProjectExplorer::Task &task);
-
-    /**
-     * @brief Handles tasks changed signal from TaskWindow
-     */
-    void onTasksChanged();
+    QStringList getCurrentIssues(const QString &filter = "all") const;
 
     /**
      * @brief Checks if the Issues panel is accessible
@@ -64,39 +42,61 @@ private slots:
 
     /**
      * @brief Gets the count of current issues
-     * @return Number of issues, or -1 if not accessible
+     * @return Number of issues
      */
     int getIssueCount() const;
+    
+    /**
+     * @brief Sets the maximum number of errors before stopping accumulation
+     * @param limit Maximum errors (0 = unlimited)
+     */
+    void setErrorLimit(int limit);
+    
+    /**
+     * @brief Gets the current error limit
+     * @return Current limit
+     */
+    int errorLimit() const { return m_errorLimit; }
+    
+    /**
+     * @brief Sets whether to stop the build when error limit is reached
+     * @param stop true to stop build on limit
+     */
+    void setStopBuildOnLimit(bool stop) { m_stopBuildOnLimit = stop; }
+    
+    /**
+     * @brief Gets whether build stops on error limit
+     * @return true if build will stop
+     */
+    bool stopBuildOnLimit() const { return m_stopBuildOnLimit; }
+
+private slots:
+    // TaskHub signal handlers
+    void onTaskAdded(const ProjectExplorer::Task &task);
+    void onTaskRemoved(const ProjectExplorer::Task &task);
+    void onTasksCleared(Utils::Id categoryId);
+    
+    // BuildManager signal handler - clears tasks when build starts
+    void onBuildStateChanged();
 
 private:
-    /**
-     * @brief Attempts to access the Issues panel through various methods
-     * @return true if successful, false otherwise
-     */
     bool initializeAccess();
-
-    /**
-     * @brief Formats a task into a readable string
-     * @param taskType The type of task (Error, Warning, etc.)
-     * @param description The task description
-     * @param filePath The file path (if available)
-     * @param lineNumber The line number (if available)
-     * @return Formatted string
-     */
+    void connectSignals();
+    
     QString formatTask(const QString &taskType, const QString &description, 
                       const QString &filePath = QString(), int lineNumber = -1) const;
 
-    /**
-     * @brief Connects to TaskHub and TaskWindow signals
-     */
-    void connectSignals();
-
     bool m_accessible = false;
-    
-    // Task tracking
-    QList<ProjectExplorer::Task> m_trackedTasks;
-    QObject* m_taskWindow = nullptr;
     bool m_signalsConnected = false;
+    
+    // Task tracking - cleared at start of each build
+    QList<ProjectExplorer::Task> m_trackedTasks;
+    
+    // Error limit settings
+    int m_errorLimit = 20;           // Default: stop after 20 errors
+    bool m_stopBuildOnLimit = false; // Whether to cancel build on limit
+    int m_errorCount = 0;            // Current error count
+    bool m_limitReached = false;     // Whether we've hit the limit
 };
 
 } // namespace Internal

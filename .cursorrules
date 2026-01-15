@@ -4,6 +4,86 @@
 This is a Qt Creator plugin that implements the Model Context Protocol (MCP) for AI control of Qt Creator.
 
 ---
+## ⚠️ STEP 1: Configure Your Qt Installation Path ⚠️
+
+**Qt paths are stored in `.qt/qt_path_{platform}.txt` files in the project root.**
+
+### Files:
+- `.qt/qt_path_windows.txt` - Windows Qt path
+- `.qt/qt_path_darwin.txt` - macOS Qt path  
+- `.qt/qt_path_linux.txt` - Linux Qt path
+
+### Auto-Discovery:
+The build script will try to auto-discover Qt from common locations:
+- Windows: `%USERPROFILE%\Developer\Qt`, `C:\Qt`
+- macOS: `~/Developer/Qt`, `/Applications/Qt`
+- Linux: `~/Qt`, `/opt/Qt`
+
+If found, the path is saved to the config file automatically.
+
+### Manual Configuration:
+If auto-discovery fails, edit the appropriate file and paste your Qt path:
+```
+# Example for Windows (.qt/qt_path_windows.txt):
+C:\Users\username\Developer\Qt
+
+# Example for macOS (.qt/qt_path_darwin.txt):
+/Users/username/Developer/Qt
+```
+
+### Finding Your Qt Path:
+```powershell
+# Windows - look for folder containing Tools\QtCreator\:
+dir "$env:USERPROFILE\Developer\Qt"
+dir "C:\Qt"
+
+# macOS - look for folder containing Qt Creator.app:
+ls ~/Developer/Qt/
+ls /Applications/
+```
+
+**QT_ROOT** = The folder containing `Tools\QtCreator\` (Windows) or `Qt Creator.app` (macOS)
+
+---
+## ⚠️ STEP 2: Detect Qt Creator's Qt Version ⚠️
+
+**The Qt SDK version MUST EXACTLY MATCH what Qt Creator was built with.**
+
+### How to detect Qt Creator's Qt version (THE CORRECT WAY):
+
+**Option 1 - Use qtdiag (RECOMMENDED - cross-platform):**
+```bash
+# Windows:
+$QT_ROOT\Tools\QtCreator\bin\qtdiag.exe
+
+# macOS:
+$QT_ROOT/Qt\ Creator.app/Contents/MacOS/qtdiag
+
+# Look for line like: "Qt 6.10.1 (x86_64-little_endian-lp64 shared (dynamic) release build; by MSVC 2022)"
+```
+
+**Option 2 - Qt Creator About dialog:**
+- Open Qt Creator → Help → About Qt Creator
+- Look for: "Based on Qt 6.10.1 (MSVC 2022, x86_64)"
+
+**Option 3 - Command line:**
+```bash
+qtcreator --version
+# Output: "Qt Creator 15.0.0 based on Qt 6.10.1 (MSVC 2022, x86_64)"
+```
+
+### ⛔ DO NOT read version from QtCreatorConfig.cmake!
+The CMake file contains `find_dependency(Qt6 "X.Y.Z")` but this is a **MINIMUM version**, 
+not the actual version. Using this will give you the WRONG version!
+
+### What Qt SDK to install:
+1. Get the Qt version from qtdiag (e.g., "6.10.1")
+2. Get the compiler from qtdiag (e.g., "MSVC 2022" or "Apple Clang")
+3. Install that EXACT version with matching compiler:
+   - Windows: Qt X.Y.Z → msvc2022_64 (or msvc2019_64 if that's what qtdiag shows)
+   - macOS: Qt X.Y.Z → macos
+
+---
 ## 🟢 HOW TO BUILD 🟢
 
 **To build and install the plugin, run:**
@@ -25,40 +105,47 @@ This script handles EVERYTHING automatically:
 **DO NOT manually run cmake or build commands. Always use the build script.**
 
 ---
-## 🔴 MANUAL: Detect Qt Version & Verify SDK Installation 🔴
+## 🔴 MANUAL: Verify SDK Installation (if build script fails) 🔴
 
-**Only needed if troubleshooting - the build script does this automatically:**
+**The build script does this automatically. Only use manually if troubleshooting.**
 
-### Step 1: Detect Qt Creator's Qt Library Version
+### Step 1: Get Qt version from qtdiag (see CRITICAL section above)
+Use `qtdiag` or `qtcreator --version` to find the EXACT Qt version.
+
+### Step 2: Check installed Qt SDKs
 ```bash
-QT_ROOT="/Users/$(whoami)/Developer/Qt"
-otool -L "$QT_ROOT/Qt Creator.app/Contents/MacOS/Qt Creator" | grep QtCore
-```
-Look for output like: `current version 6.10.1` - this is the Qt version Qt Creator uses.
+# Windows:
+dir C:\Users\%USERNAME%\Developer\Qt
 
-### Step 2: Check if Matching Qt SDK is Installed
+# macOS:
+ls -la ~/Developer/Qt/
+```
+Look for folders like `6.10.1`, `6.11.0`, etc.
+
+### Step 3: Verify compiler variant exists
 ```bash
-ls -la "$QT_ROOT/" | grep -E "^d.*[0-9]+\.[0-9]+\.[0-9]+"
-```
-The Qt version from Step 1 **MUST** exist in this list with the `macos` subfolder.
+# Windows - need msvc2022_64 or msvc2019_64:
+dir C:\Users\%USERNAME%\Developer\Qt\6.10.1\
 
-### Step 3: If Qt SDK is Missing - STOP AND NOTIFY USER
+# macOS - need macos:
+ls ~/Developer/Qt/6.10.1/
+```
+
+### Step 4: If Qt SDK is Missing - STOP AND NOTIFY USER
 **If the required Qt version is NOT installed:**
 ```
-⛔ STOP: Qt SDK version X.Y.Z is required but not installed.
+STOP: Qt SDK version X.Y.Z is required but not installed.
 
 Qt Creator uses Qt X.Y.Z but you have: [list installed versions]
 
 ACTION REQUIRED:
-1. Open MaintenanceTool.app in $QT_ROOT
+1. Run MaintenanceTool.exe (Windows) or MaintenanceTool.app (macOS)
 2. Select "Add or remove components"  
-3. Install Qt X.Y.Z (including macOS and Qt Plugin Development components)
+3. Install Qt X.Y.Z with:
+   - Windows: MSVC 2022 64-bit (msvc2022_64) or MSVC 2019 64-bit (msvc2019_64)
+   - macOS: macOS
 4. Re-run the build after installation completes
 ```
-
-**⚠️ REQUIRED COMPONENTS when installing Qt X.Y.Z:**
-- ✅ Desktop → macOS
-- ✅ Qt Plugin Development (REQUIRED for building Qt Creator plugins)
 
 **DO NOT PROCEED WITH BUILD until the correct Qt SDK is installed.**
 
@@ -70,8 +157,12 @@ ACTION REQUIRED:
 1. **QUIT Qt Creator** - The plugin cannot be updated while Qt Creator is running
 2. **DELETE the old plugin** - Remove ALL existing plugin files before installing:
    ```bash
+   # macOS:
    rm -f "$QT_ROOT/Qt Creator.app/Contents/PlugIns/qtcreator/libQt_MCP_Plugin"*
    rm -f "$QT_ROOT/Qt Creator.app/Contents/PlugIns/qtcreator/Qt_MCP_Plugin"*.json
+   
+   # Windows:
+   del "$QT_ROOT\Tools\QtCreator\lib\qtcreator\plugins\Qt_MCP_Plugin*"
    ```
 3. **BUILD the new plugin** - Compile fresh
 4. **INSTALL the new plugin** - Copy new files to Qt Creator
@@ -87,18 +178,18 @@ ACTION REQUIRED:
 ---
 
 ## Qt Installation Location
-**IMPORTANT**: Qt is installed at `/Users/$(whoami)/Developer/Qt`
 
-```bash
-QT_ROOT="/Users/$(whoami)/Developer/Qt"
-```
+**QT_ROOT was determined in STEP 1 above. All paths below are relative to QT_ROOT.**
 
-Key paths (all relative to `$QT_ROOT`):
-- **Qt Creator App**: `$QT_ROOT/Qt Creator.app`
-- **Qt Creator Resources**: `$QT_ROOT/Qt Creator.app/Contents/Resources`
-- **Qt Tools (CMake, Ninja)**: `$QT_ROOT/Tools`
-- **Qt CMake**: `$QT_ROOT/Tools/CMake/CMake.app/Contents/bin/cmake`
-- **Qt Ninja**: `$QT_ROOT/Tools/Ninja/ninja`
+Key paths:
+| Component | Windows | macOS |
+|-----------|---------|-------|
+| Qt Creator | `$QT_ROOT\Tools\QtCreator\` | `$QT_ROOT/Qt Creator.app/` |
+| Qt Creator bin | `$QT_ROOT\Tools\QtCreator\bin\` | `$QT_ROOT/Qt Creator.app/Contents/MacOS/` |
+| Qt SDK (e.g. 6.10.1) | `$QT_ROOT\6.10.1\msvc2022_64\` | `$QT_ROOT/6.10.1/macos/` |
+| CMake | `$QT_ROOT\Tools\CMake_64\bin\` | `$QT_ROOT/Tools/CMake/CMake.app/Contents/bin/` |
+| Ninja | `$QT_ROOT\Tools\Ninja\` | `$QT_ROOT/Tools/Ninja/` |
+| MaintenanceTool | `$QT_ROOT\MaintenanceTool.exe` | `$QT_ROOT/MaintenanceTool.app` |
 
 **Always use Qt's bundled CMake** from the Tools directory, not system cmake.
 
@@ -119,24 +210,26 @@ python3 build_main.py
 
 ### Manual Build (NOT RECOMMENDED - for reference only)
 ```bash
-# Set Qt root and CMake path (use Qt's bundled CMake, not system cmake)
-QT_ROOT="/Users/$(whoami)/Developer/Qt"
-QT_CMAKE="$QT_ROOT/Tools/CMake/CMake.app/Contents/bin/cmake"
+# QT_ROOT must be set first (see STEP 1)
 
-# Configure (only needed once or after cleaning)
-$QT_CMAKE -DCMAKE_PREFIX_PATH="$QT_ROOT/Qt Creator.app/Contents/Resources" -B build
+# macOS:
+$QT_ROOT/Tools/CMake/CMake.app/Contents/bin/cmake \
+  -DCMAKE_PREFIX_PATH="$QT_ROOT/Qt Creator.app/Contents/Resources" -B build
+$QT_ROOT/Tools/CMake/CMake.app/Contents/bin/cmake --build build
 
-# Build and Install (handles cleanup automatically)
-$QT_CMAKE --build build --target InstallPlugin
+# Windows (PowerShell):
+& "$QT_ROOT\Tools\CMake_64\bin\cmake.exe" `
+  -DCMAKE_PREFIX_PATH="$QT_ROOT\Tools\QtCreator" -B build_windows
+& "$QT_ROOT\Tools\CMake_64\bin\cmake.exe" --build build_windows --config Release
 
 # Test MCP server
 echo '{"jsonrpc":"2.0","method":"initialize","id":1}' | nc localhost 3001
 ```
 
-### Platform-Specific Paths
-- **macOS**: `QT_ROOT="/Users/$(whoami)/Developer/Qt"`
-- **Windows**: `C:/Qt/Tools/QtCreator/lib` (Qt version auto-detected)
-- **Linux**: `/opt/qtcreator` or `/usr/lib/qtcreator`
+### Platform-Specific Paths (see STEP 1 for how to find QT_ROOT)
+- **Windows**: `$QT_ROOT` typically `C:\Users\USERNAME\Developer\Qt` or `C:\Qt`
+- **macOS**: `$QT_ROOT` typically `~/Developer/Qt` or contains `Qt Creator.app`
+- **Linux**: `$QT_ROOT` typically `/opt/Qt` or `/usr/lib/qtcreator`
 
 ### Complete Lifecycle Management
 

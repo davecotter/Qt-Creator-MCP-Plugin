@@ -1,17 +1,11 @@
 #include "issuesmanager.h"
 
 #include <coreplugin/icore.h>
-#include <coreplugin/ioutputpane.h>
 #include <extensionsystem/pluginmanager.h>
 #include <projectexplorer/buildmanager.h>
-#include <projectexplorer/projectexplorer.h>
-#include <projectexplorer/task.h>
 #include <projectexplorer/taskhub.h>
-#include <utils/id.h>
 
 #include <QDebug>
-#include <QMetaObject>
-#include <QMetaMethod>
 
 namespace Qt_MCP_Plugin {
 namespace Internal {
@@ -23,26 +17,33 @@ IssuesManager::IssuesManager(QObject *parent)
     connectSignals();
 }
 
-QStringList IssuesManager::getCurrentIssues() const
+QStringList IssuesManager::getCurrentIssues(const QString &filter) const
 {
     QStringList issues;
     
-    if (!m_accessible) {
-        issues.append("ERROR:Issues panel not accessible - cannot retrieve current issues");
-        return issues;
-    }
-
-    // Report on tracked tasks from signals
-    issues.append(QString("=== CURRENT ISSUES (Signal-Based Tracking) ==="));
-    issues.append(QString("Total tracked tasks: %1").arg(m_trackedTasks.size()));
+    // Determine filter mode
+    bool showErrors = (filter == QStringLiteral("all") || filter == QStringLiteral("errors"));
+    bool showWarnings = (filter == QStringLiteral("all") || filter == QStringLiteral("warnings"));
+    
+    QString filterDesc = filter == QStringLiteral("errors") ? QStringLiteral("ERRORS ONLY") : 
+                        filter == QStringLiteral("warnings") ? QStringLiteral("WARNINGS ONLY") : QStringLiteral("ALL ISSUES");
+    issues.append(QString("=== CURRENT BUILD ISSUES (%1) ===").arg(filterDesc));
+    
+    // Separate errors and warnings for ordered output
+    QStringList errorList;
+    QStringList warningList;
+    QStringList otherList;
     
     int errorCount = 0;
     int warningCount = 0;
-    int otherCount = 0;
     
+    // Process tracked tasks - separate by type
     for (const ProjectExplorer::Task& task : m_trackedTasks) {
-        QString taskType = task.type() == ProjectExplorer::Task::Error ? QString("ERROR") :
-                          task.type() == ProjectExplorer::Task::Warning ? QString("WARNING") : QString("INFO");
+        bool isError = (task.type() == ProjectExplorer::Task::Error);
+        bool isWarning = (task.type() == ProjectExplorer::Task::Warning);
+        
+        QString taskType = isError ? QStringLiteral("ERROR") : 
+                          isWarning ? QStringLiteral("WARNING") : QStringLiteral("INFO");
         QString taskInfo = formatTask(
             taskType,
             task.description(),
@@ -50,43 +51,44 @@ QStringList IssuesManager::getCurrentIssues() const
             task.line()
         );
         
-        issues.append(taskInfo);
-        
-        if (task.type() == ProjectExplorer::Task::Error) {
+        if (isError) {
             errorCount++;
-        } else if (task.type() == ProjectExplorer::Task::Warning) {
+            if (showErrors) {
+                errorList.append(taskInfo);
+            }
+        } else if (isWarning) {
             warningCount++;
-        } else {
-            otherCount++;
-        }
-    }
-    
-    if (m_trackedTasks.isEmpty()) {
-        issues.append("No issues currently tracked via signals");
-        
-        // Fallback to BuildManager information
-        if (ProjectExplorer::BuildManager::tasksAvailable()) {
-            int buildErrorCount = ProjectExplorer::BuildManager::getErrorTaskCount();
-            if (buildErrorCount > 0) {
-                issues.append(QString("INFO:BuildManager reports %1 error(s)").arg(buildErrorCount));
-            } else {
-                issues.append("INFO:BuildManager reports no errors");
+            if (showWarnings) {
+                warningList.append(taskInfo);
             }
         } else {
-            issues.append("INFO:No build tasks available via BuildManager");
+            if (filter == QStringLiteral("all")) {
+                otherList.append(taskInfo);
+            }
         }
-    } else {
-        issues.append("");
-        issues.append("=== SUMMARY ===");
-        issues.append(QString("Errors: %1").arg(errorCount));
-        issues.append(QString("Warnings: %1").arg(warningCount));
-        issues.append(QString("Other: %1").arg(otherCount));
     }
     
-    // Add connection status
-    issues.append("");
-    issues.append(QString("Signal connections: %1").arg(m_signalsConnected ? "Active" : "Inactive"));
-    issues.append(QString("TaskWindow found: %1").arg(m_taskWindow ? "Yes" : "No"));
+    // Add errors first, then warnings, then other
+    issues.append(errorList);
+    issues.append(warningList);
+    issues.append(otherList);
+    
+    // Add limit reached notice if applicable
+    if (m_limitReached) {
+        issues.append(QString());
+        issues.append(QString("*** ERROR LIMIT REACHED (%1 errors) - stopped accumulating ***").arg(m_errorLimit));
+    }
+    
+    // Summary
+    if (m_trackedTasks.isEmpty()) {
+        issues.append(QStringLiteral("No issues found"));
+    } else {
+        issues.append(QString());
+        issues.append(QStringLiteral("=== SUMMARY ==="));
+        issues.append(QString("Errors: %1, Warnings: %2").arg(errorCount).arg(warningCount));
+        int shownCount = errorList.size() + warningList.size() + otherList.size();
+        issues.append(QString("Shown: %1 (filter: %2)").arg(shownCount).arg(filter));
+    }
     
     return issues;
 }
@@ -98,38 +100,24 @@ bool IssuesManager::isAccessible() const
 
 int IssuesManager::getIssueCount() const
 {
-    if (!m_accessible) {
-        return -1;
-    }
-    
-    if (ProjectExplorer::BuildManager::tasksAvailable()) {
-        return ProjectExplorer::BuildManager::getErrorTaskCount();
-    }
-    
-    return 0;
+    return m_trackedTasks.size();
+}
+
+void IssuesManager::setErrorLimit(int limit)
+{
+    m_errorLimit = limit;
+    qDebug() << "IssuesManager: Error limit set to" << limit;
 }
 
 bool IssuesManager::initializeAccess()
 {
-    // Check if we can access the BuildManager
     if (ProjectExplorer::BuildManager::instance()) {
         m_accessible = true;
-        qDebug() << "IssuesManager: Successfully initialized with BuildManager access";
-        
-        // Find and store the TaskWindow object
-        QObjectList allObjects = ExtensionSystem::PluginManager::allObjects();
-        for (QObject* obj : allObjects) {
-            if (obj && QString::fromLatin1(obj->metaObject()->className()).contains("TaskWindow")) {
-                m_taskWindow = obj;
-                qDebug() << "IssuesManager: Found TaskWindow object";
-                break;
-            }
-        }
-        
+        qDebug() << "IssuesManager: Initialized (error limit:" << m_errorLimit << ")";
         return true;
     }
     
-    qDebug() << "IssuesManager: Failed to initialize - BuildManager not accessible";
+    qDebug() << "IssuesManager: BuildManager not accessible";
     return false;
 }
 
@@ -139,148 +127,101 @@ void IssuesManager::connectSignals()
         return;
     }
     
-    // Connect to TaskHub signals
-    try {
-        ProjectExplorer::TaskHub& hub = ProjectExplorer::taskHub();
-        
-        // Connect to task added/removed signals
-        connect(&hub, &ProjectExplorer::TaskHub::taskAdded,
-                this, &IssuesManager::onTaskAdded);
-        connect(&hub, &ProjectExplorer::TaskHub::taskRemoved,
-                this, &IssuesManager::onTaskRemoved);
-        
-        qDebug() << "IssuesManager: Connected to TaskHub signals";
-        
-        // Connect to TaskWindow signals if available
-        if (m_taskWindow) {
-            connect(m_taskWindow, SIGNAL(tasksChanged()),
-                    this, SLOT(onTasksChanged()));
-            qDebug() << "IssuesManager: Connected to TaskWindow tasksChanged signal";
-        }
-        
-        m_signalsConnected = true;
-    } catch (...) {
-        qDebug() << "IssuesManager: Failed to connect to TaskHub signals";
-    }
+    // Connect to TaskHub signals for task tracking
+    ProjectExplorer::TaskHub& hub = ProjectExplorer::taskHub();
+    
+    connect(&hub, &ProjectExplorer::TaskHub::taskAdded,
+            this, &IssuesManager::onTaskAdded);
+    connect(&hub, &ProjectExplorer::TaskHub::taskRemoved,
+            this, &IssuesManager::onTaskRemoved);
+    connect(&hub, &ProjectExplorer::TaskHub::tasksCleared,
+            this, &IssuesManager::onTasksCleared);
+    
+    qDebug() << "IssuesManager: Connected to TaskHub signals";
+    
+    // Connect to BuildManager to detect build start
+    connect(ProjectExplorer::BuildManager::instance(), 
+            &ProjectExplorer::BuildManager::buildStateChanged,
+            this, &IssuesManager::onBuildStateChanged);
+    
+    qDebug() << "IssuesManager: Connected to BuildManager::buildStateChanged";
+    
+    m_signalsConnected = true;
 }
 
 void IssuesManager::onTaskAdded(const ProjectExplorer::Task &task)
 {
-    qDebug() << "IssuesManager: Task added:" << task.description();
+    // Don't accumulate if we've hit the error limit
+    if (m_limitReached) {
+        return;
+    }
+    
+    bool isError = (task.type() == ProjectExplorer::Task::Error);
+    
+    // Track the task
     m_trackedTasks.append(task);
+    
+    // Count errors
+    if (isError) {
+        m_errorCount++;
+        
+        qDebug() << "IssuesManager: Error" << m_errorCount << "/" << m_errorLimit 
+                 << "-" << task.description().left(60);
+        
+        // Check if we've hit the limit
+        if (m_errorLimit > 0 && m_errorCount >= m_errorLimit) {
+            m_limitReached = true;
+            qDebug() << "IssuesManager: ERROR LIMIT REACHED (" << m_errorLimit << " errors)";
+            
+            // Optionally stop the build
+            if (m_stopBuildOnLimit && ProjectExplorer::BuildManager::isBuilding()) {
+                qDebug() << "IssuesManager: Cancelling build due to error limit";
+                ProjectExplorer::BuildManager::cancel();
+            }
+        }
+    } else if (task.type() == ProjectExplorer::Task::Warning) {
+        qDebug() << "IssuesManager: Warning -" << task.description().left(60);
+    }
 }
 
 void IssuesManager::onTaskRemoved(const ProjectExplorer::Task &task)
 {
-    qDebug() << "IssuesManager: Task removed:" << task.description();
-    
-    // Find and remove the task from our tracked list by matching description and file
+    // Find and remove by matching key fields
     for (int i = 0; i < m_trackedTasks.size(); ++i) {
-        if (m_trackedTasks[i].description() == task.description() &&
-            m_trackedTasks[i].file() == task.file() &&
-            m_trackedTasks[i].line() == task.line()) {
+        const ProjectExplorer::Task& t = m_trackedTasks[i];
+        if (t.description() == task.description() &&
+            t.file() == task.file() &&
+            t.line() == task.line()) {
+            
+            // Adjust error count if removing an error
+            if (t.type() == ProjectExplorer::Task::Error && m_errorCount > 0) {
+                m_errorCount--;
+            }
+            
             m_trackedTasks.removeAt(i);
             break;
         }
     }
 }
 
-void IssuesManager::onTasksChanged()
+void IssuesManager::onTasksCleared(Utils::Id categoryId)
 {
-    qDebug() << "IssuesManager: TaskWindow reports tasks changed";
+    Q_UNUSED(categoryId);
+    qDebug() << "IssuesManager: Tasks cleared";
+    m_trackedTasks.clear();
+    m_errorCount = 0;
+    m_limitReached = false;
 }
 
-QStringList IssuesManager::testTaskAccess() const
+void IssuesManager::onBuildStateChanged()
 {
-    QStringList results;
-    results.append("=== COMPREHENSIVE TASK ACCESS TEST ===");
-    
-    // Test 1: Try to access TaskWindow through PluginManager
-    results.append("");
-    results.append("Test 1: ExtensionSystem::PluginManager::getObject<TaskWindow>");
-    results.append("SKIPPED: TaskWindow is internal class, symbols not exported");
-    
-    // Test 2: Try to access TaskWindow through IOutputPane
-    results.append("");
-    results.append("Test 2: Core::IOutputPane access");
-    try {
-        auto* outputPane = ExtensionSystem::PluginManager::getObject<Core::IOutputPane>();
-        if (outputPane) {
-            results.append("SUCCESS: IOutputPane found");
-            results.append(QString("IOutputPane class: %1").arg(outputPane->metaObject()->className()));
-        } else {
-            results.append("FAILED: IOutputPane not found");
-        }
-    } catch (...) {
-        results.append("EXCEPTION: Error accessing IOutputPane");
+    // Clear when a build starts
+    if (ProjectExplorer::BuildManager::isBuilding()) {
+        qDebug() << "IssuesManager: Build started - clearing previous tasks";
+        m_trackedTasks.clear();
+        m_errorCount = 0;
+        m_limitReached = false;
     }
-    
-    // Test 3: Try to access TaskHub
-    results.append("");
-    results.append("Test 3: TaskHub access");
-    try {
-        ProjectExplorer::TaskHub& hub = ProjectExplorer::taskHub();
-        results.append("SUCCESS: TaskHub reference obtained");
-        results.append(QString("TaskHub object: %1").arg(reinterpret_cast<quintptr>(&hub), 0, 16));
-        
-        // Check if TaskHub has any useful methods we can call
-        const QMetaObject* metaObj = hub.metaObject();
-        results.append(QString("TaskHub class: %1").arg(metaObj->className()));
-        results.append("TaskHub methods:");
-        for (int i = 0; i < metaObj->methodCount(); ++i) {
-            QMetaMethod method = metaObj->method(i);
-            if (method.access() == QMetaMethod::Public) {
-                results.append(QString("  - %1").arg(QString::fromLatin1(method.methodSignature())));
-            }
-        }
-    } catch (...) {
-        results.append("EXCEPTION: Error accessing TaskHub");
-    }
-    
-    // Test 4: Try to access TaskModel through PluginManager
-    results.append("");
-    results.append("Test 4: TaskModel access via PluginManager");
-    results.append("SKIPPED: TaskModel is internal class, symbols not exported");
-    
-    // Test 5: BuildManager task information
-    results.append("");
-    results.append("Test 5: BuildManager task information");
-    try {
-        bool tasksAvailable = ProjectExplorer::BuildManager::tasksAvailable();
-        int errorCount = ProjectExplorer::BuildManager::getErrorTaskCount();
-        results.append(QString("BuildManager tasks available: %1").arg(tasksAvailable ? "YES" : "NO"));
-        results.append(QString("BuildManager error count: %1").arg(errorCount));
-    } catch (...) {
-        results.append("EXCEPTION: Error accessing BuildManager");
-    }
-    
-    // Test 6: List all objects in PluginManager
-    results.append("");
-    results.append("Test 6: All PluginManager objects (first 20)");
-    try {
-        QObjectList allObjects = ExtensionSystem::PluginManager::allObjects();
-        results.append(QString("Total objects in PluginManager: %1").arg(allObjects.size()));
-        
-        for (int i = 0; i < qMin(20, allObjects.size()); ++i) {
-            QObject* obj = allObjects[i];
-            if (obj) {
-                QString className = QString::fromLatin1(obj->metaObject()->className());
-                if (className.contains("Task", Qt::CaseInsensitive) || 
-                    className.contains("Issue", Qt::CaseInsensitive) ||
-                    className.contains("Output", Qt::CaseInsensitive)) {
-                    results.append(QString("  [%1] %2 (%3)").arg(i).arg(className)
-                        .arg(reinterpret_cast<quintptr>(obj), 0, 16));
-                }
-            }
-        }
-    } catch (...) {
-        results.append("EXCEPTION: Error listing PluginManager objects");
-    }
-    
-    results.append("");
-    results.append("=== END COMPREHENSIVE TASK ACCESS TEST ===");
-    
-    return results;
 }
 
 QString IssuesManager::formatTask(const QString &taskType, const QString &description, 
@@ -293,7 +234,7 @@ QString IssuesManager::formatTask(const QString &taskType, const QString &descri
         if (lineNumber > 0) {
             formatted += QString(":%1").arg(lineNumber);
         }
-        formatted += "]";
+        formatted += QStringLiteral("]");
     }
     
     return formatted;
