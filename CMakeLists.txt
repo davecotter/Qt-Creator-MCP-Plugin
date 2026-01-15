@@ -58,6 +58,7 @@ add_qtc_plugin(Qt_MCP_Plugin
   PLUGIN_DEPENDS
     QtCreator::Core
     QtCreator::ProjectExplorer
+    QtCreator::Debugger
          DEPENDS
            Qt::Widgets
            Qt::Network

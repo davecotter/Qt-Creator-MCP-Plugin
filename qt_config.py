@@ -4,7 +4,8 @@
 Qt MCP Plugin - Qt Installation Configuration
 Cross-platform configuration for Qt installation paths.
 
-Users should modify this file if their Qt installation is not in the standard locations.
+Qt path is read from .qt/qt_path_{platform}.txt files.
+If the file is empty/missing, auto-discovery is attempted.
 """
 
 import os
@@ -14,32 +15,183 @@ import subprocess
 import re
 
 # =============================================================================
-# CUSTOM QT INSTALLATION PATHS - MODIFY THESE FOR YOUR SYSTEM
+# QT PATH CONFIGURATION
 # =============================================================================
 # 
-# If your Qt installation is not in the standard locations, modify the paths 
-# below to match your system. These paths will be used when the hostname 
-# contains "pandora" (indicating a custom installation).
+# Qt paths are stored in .qt/qt_path_{platform}.txt files:
+#   - .qt/qt_path_windows.txt
+#   - .qt/qt_path_darwin.txt  
+#   - .qt/qt_path_linux.txt
 #
-# For other systems, you can modify the hostname detection logic below or
-# add your own hostname to the custom_path condition.
+# Edit the appropriate file for your platform to set your Qt installation path.
 #
 # =============================================================================
 
-    # Custom Qt installation base paths for different platforms
-CUSTOM_QT_PATHS = {
-    "windows": "C:/Users/davec/Developer/Qt",  # Windows custom Qt path
-    "darwin": "/Users/davec/Developer/Qt",     # macOS custom Qt path  
-    "linux": "/opt"                           # Linux custom Qt path
-}
+def get_script_dir():
+    """Get the directory containing this script"""
+    return os.path.dirname(os.path.abspath(__file__))
 
-# Custom hostname detection - add your hostname here if needed
-CUSTOM_HOSTNAMES = ["pandora"]  # List of hostnames that should use custom paths
+def read_qt_path_from_file():
+    """
+    Read Qt path from .qt/qt_path_{platform}.txt
+    
+    Returns:
+        str: Qt path from file, or None if not configured
+    """
+    system = platform.system().lower()
+    script_dir = get_script_dir()
+    
+    # Map platform to filename
+    platform_files = {
+        "windows": "qt_path_windows.txt",
+        "darwin": "qt_path_darwin.txt",
+        "linux": "qt_path_linux.txt"
+    }
+    
+    filename = platform_files.get(system)
+    if not filename:
+        return None
+    
+    filepath = os.path.join(script_dir, ".qt", filename)
+    
+    if not os.path.exists(filepath):
+        return None
+    
+    try:
+        with open(filepath, 'r') as f:
+            for line in f:
+                line = line.strip()
+                # Skip empty lines and comments
+                if line and not line.startswith('#'):
+                    # Normalize path separators
+                    return line.replace('\\', '/')
+    except Exception:
+        pass
+    
+    return None
 
-# Note: No fallback version - Qt Creator installation is required
+def auto_discover_qt_path():
+    """
+    Attempt to auto-discover Qt installation path
+    
+    Returns:
+        str: Discovered Qt path, or None if not found
+    """
+    system = platform.system().lower()
+    
+    # Common Qt installation locations to check
+    if system == "windows":
+        candidates = [
+            os.path.expandvars(r"$USERPROFILE\Developer\Qt"),
+            os.path.expandvars(r"$USERPROFILE\Qt"),
+            r"C:\Qt",
+            r"C:\Program Files\Qt",
+        ]
+    elif system == "darwin":
+        candidates = [
+            os.path.expanduser("~/Developer/Qt"),
+            os.path.expanduser("~/Qt"),
+            "/Applications/Qt",
+            "/opt/Qt",
+        ]
+    else:  # linux
+        candidates = [
+            os.path.expanduser("~/Qt"),
+            "/opt/Qt",
+            "/usr/local/Qt",
+        ]
+    
+    for path in candidates:
+        if os.path.exists(path):
+            # Verify it looks like a Qt installation
+            if system == "windows":
+                if os.path.exists(os.path.join(path, "Tools", "QtCreator")):
+                    return path.replace('\\', '/')
+            elif system == "darwin":
+                if os.path.exists(os.path.join(path, "Qt Creator.app")):
+                    return path
+            else:
+                if os.path.exists(os.path.join(path, "Tools", "QtCreator")):
+                    return path
+    
+    return None
+
+def get_qt_path_config_file():
+    """Get the path to the Qt path config file for the current platform"""
+    system = platform.system().lower()
+    script_dir = get_script_dir()
+    
+    platform_files = {
+        "windows": "qt_path_windows.txt",
+        "darwin": "qt_path_darwin.txt",
+        "linux": "qt_path_linux.txt"
+    }
+    
+    filename = platform_files.get(system, "qt_path_linux.txt")
+    return os.path.join(script_dir, ".qt", filename)
+
+def get_qt_base_path():
+    """
+    Get the Qt installation base path.
+    
+    Priority:
+    1. Read from .qt/qt_path_{platform}.txt
+    2. Auto-discover from common locations
+    3. Fail with instructions to edit the config file
+    
+    Returns:
+        str: Qt installation path
+        
+    Raises:
+        RuntimeError: If Qt path cannot be determined
+    """
+    # First, try to read from config file
+    qt_path = read_qt_path_from_file()
+    if qt_path and os.path.exists(qt_path):
+        return qt_path
+    
+    # Second, try auto-discovery
+    qt_path = auto_discover_qt_path()
+    if qt_path:
+        # Save discovered path to config file for future use
+        config_file = get_qt_path_config_file()
+        try:
+            os.makedirs(os.path.dirname(config_file), exist_ok=True)
+            with open(config_file, 'w') as f:
+                f.write(qt_path + '\n')
+            print(f"[OK] Auto-discovered Qt path: {qt_path}")
+            print(f"[OK] Saved to: {config_file}")
+        except Exception:
+            pass
+        return qt_path
+    
+    # Failed - show error with instructions
+    config_file = get_qt_path_config_file()
+    print("=" * 80)
+    print("[ERROR] Qt installation path not configured!")
+    print("=" * 80)
+    print("")
+    print("Please edit the following file and paste your Qt installation path:")
+    print(f"  {config_file}")
+    print("")
+    print("The path should point to the folder containing:")
+    print("  - Tools/QtCreator/ (Windows) or Qt Creator.app (macOS)")
+    print("  - Version folders like 6.10.1/")
+    print("  - MaintenanceTool.exe or MaintenanceTool.app")
+    print("")
+    print("Example paths:")
+    print("  Windows: C:\\Users\\username\\Developer\\Qt")
+    print("  macOS:   /Users/username/Developer/Qt")
+    print("  Linux:   /opt/Qt")
+    print("=" * 80)
+    raise RuntimeError(f"Qt path not configured. Edit: {config_file}")
+
+# Legacy compatibility - these are no longer used but kept for reference
+CUSTOM_QT_PATHS = {}  # Deprecated - use .qt/qt_path_{platform}.txt instead
+CUSTOM_HOSTNAMES = []  # Deprecated - no longer needed
 
 # =============================================================================
-# END OF CUSTOM CONFIGURATION
+# END OF PATH CONFIGURATION  
 # =============================================================================
 
 # Constants to eliminate duplicate strings
@@ -152,23 +304,9 @@ def get_qt_config():
         RuntimeError: If Qt Creator is not found or Qt version cannot be discovered
     """
     system = platform.system().lower()
-    hostname = socket.gethostname()
     
-    # Check if current hostname should use custom paths
-    custom_path = any(custom_hostname.lower() in hostname.lower() for custom_hostname in CUSTOM_HOSTNAMES)
-    
-    # Standard installation paths
-    standard_paths = {
-        "windows": "C:/Qt",
-        "darwin": "/Applications", 
-        "linux": "/opt"
-    }
-    
-    # Choose base path based on hostname detection
-    if custom_path:
-        base_path = CUSTOM_QT_PATHS[system]
-    else:
-        base_path = standard_paths[system]
+    # Get Qt base path from .qt/qt_path_{platform}.txt or auto-discovery
+    base_path = get_qt_base_path()
     
     # Build paths using helper functions
     qt_creator_path = build_qt_creator_path(base_path, system)
@@ -177,7 +315,7 @@ def get_qt_config():
     # CRITICAL: Check if Qt Creator binary exists before proceeding
     if not os.path.exists(qt_creator_bin):
         print("=" * 80)
-        print("❌ ERROR: Qt Creator not found!")
+        print("[ERROR] Qt Creator not found!")
         print("=" * 80)
         print(f"Expected Qt Creator binary at: {qt_creator_bin}")
         print(f"Current hostname: {hostname}")
@@ -202,7 +340,7 @@ def get_qt_config():
     # Check if Qt Creator lib directory exists
     if not os.path.exists(qt_creator_path):
         print("=" * 80)
-        print("❌ ERROR: Qt Creator lib directory not found!")
+        print("[ERROR] Qt Creator lib directory not found!")
         print("=" * 80)
         print(f"Expected Qt Creator lib directory at: {qt_creator_path}")
         print(f"Qt Creator binary found at: {qt_creator_bin}")
@@ -220,7 +358,7 @@ def get_qt_config():
     qt_version = discover_qt_version(qt_creator_bin)
     if qt_version is None:
         print("=" * 80)
-        print("❌ ERROR: Could not discover Qt version!")
+        print("[ERROR] Could not discover Qt version!")
         print("=" * 80)
         print(f"Qt Creator binary found at: {qt_creator_bin}")
         print(f"Qt Creator lib directory found at: {qt_creator_path}")

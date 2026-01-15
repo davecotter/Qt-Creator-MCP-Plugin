@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 """
 Qt MCP Plugin - Cross-Platform Build Script
@@ -16,6 +17,7 @@ import glob
 import signal
 import threading
 import logging
+import re
 
 # Import Qt configuration
 try:
@@ -37,8 +39,8 @@ def print_section_break(length=80):
     print("-" * length)
 
 def print_error(message):
-    """Print an error message with red-x emoji"""
-    print(f"❌ [ERROR] {message}")
+    """Print an error message"""
+    print(f"[ERROR] {message}")
 
 def get_plugin_paths():
     """Get the correct plugin paths based on current working directory and platform"""
@@ -103,14 +105,18 @@ _should_continue = True
 
 # Set up logging - pipe to console for real-time monitoring
 logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s - %(levelname)s - %(message)s',
+    level=logging.WARNING,  # Only show warnings and errors on console
+    format='%(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler('build.log'),
-        logging.StreamHandler(sys.stdout)  # Ensure output goes to stdout
+        logging.StreamHandler(sys.stdout)
     ]
 )
 logger = logging.getLogger(__name__)
+# File handler gets DEBUG level for troubleshooting
+for handler in logger.handlers:
+    if isinstance(handler, logging.FileHandler):
+        handler.setLevel(logging.DEBUG)
 
 # Ensure all print statements are flushed immediately for real-time viewing
 import functools
@@ -473,6 +479,75 @@ def bump_version():
             
     except Exception as e:
         print_error(f" Failed to bump version: {e}")
+
+def get_required_qt_version(config):
+    """
+    Get the Qt version that Qt Creator was built with.
+    Uses qtdiag.exe to get the actual Qt version, not the minimum from CMake files.
+    
+    Returns:
+        str: Required Qt version (e.g., "6.10.1") or None if not found
+    """
+    # Use the existing discover_qt_version function which calls qtdiag.exe
+    # This returns the ACTUAL Qt version Qt Creator was built with
+    return qt_config.discover_qt_version(config["qt_creator_bin"])
+
+
+def get_installed_qt_versions(config):
+    """
+    Get list of Qt versions installed on the system
+    
+    Returns:
+        list: List of installed Qt version strings (e.g., ["6.5.3", "6.11.0"])
+    """
+    system = platform.system().lower()
+    qt_base = config.get("qt_path", "")
+    
+    if not qt_base or not os.path.exists(qt_base):
+        return []
+    
+    versions = []
+    try:
+        for entry in os.listdir(qt_base):
+            # Check if directory name looks like a version number (e.g., 6.5.3, 6.11.0)
+            if re.match(r'^\d+\.\d+', entry) and os.path.isdir(os.path.join(qt_base, entry)):
+                versions.append(entry)
+    except Exception:
+        pass
+    
+    return sorted(versions)
+
+
+def check_qt_version_compatibility(config):
+    """
+    Check if the required Qt version for Qt Creator is installed.
+    This is the FIRST check that should run before any build steps.
+    
+    Returns:
+        tuple: (is_compatible, required_version, installed_versions)
+    """
+    required_version = get_required_qt_version(config)
+    installed_versions = get_installed_qt_versions(config)
+    
+    if required_version is None:
+        # Could not determine required version - proceed with caution
+        return True, None, installed_versions
+    
+    # Check if required version is installed
+    # We need exact major.minor.patch match
+    if required_version in installed_versions:
+        return True, required_version, installed_versions
+    
+    # Check for compatible version (same major.minor)
+    required_parts = required_version.split('.')
+    if len(required_parts) >= 2:
+        required_major_minor = f"{required_parts[0]}.{required_parts[1]}"
+        for installed in installed_versions:
+            if installed.startswith(required_major_minor):
+                return True, required_version, installed_versions
+    
+    return False, required_version, installed_versions
+
 
 def detect_qt_library_version(config):
     """Detect the Qt library version that Qt Creator is linked against"""
@@ -840,10 +915,10 @@ def send_mcp_command(config, command):
 
 def quit_qt_creator_gracefully(config):
     """Attempt to quit Qt Creator via MCP using unified socket communication"""
-    print("🔄 Attempting to quit Qt Creator via MCP...")
+    print("[QUIT] Attempting to quit Qt Creator via MCP...")
 
     if test_mcp_connection(config):
-        print("📡 MCP server responding, sending quit command...")
+        print("[MCP] MCP server responding, sending quit command...")
         quit_cmd = '{"jsonrpc":"2.0","method":"tools/call","params":{"name":"quit","arguments":{}},"id":1}\n'
 
         # Send quit command using unified socket communication
@@ -1166,6 +1241,51 @@ def main():
         print("   Please install Qt Creator or update the path in this script")
         sys.exit(1)
 
+    # =========================================================================
+    # CRITICAL FIRST CHECK: Qt Version Compatibility
+    # =========================================================================
+    # This MUST be the first check before any build steps.
+    # Qt Creator requires a specific Qt SDK version to build plugins.
+    # =========================================================================
+    print("")
+    print("[CHECK] Verifying Qt SDK compatibility...")
+    is_compatible, required_version, installed_versions = check_qt_version_compatibility(config)
+    
+    if required_version:
+        print(f" Qt Creator requires: Qt {required_version}")
+    if installed_versions:
+        print(f" Installed Qt versions: {', '.join(installed_versions)}")
+    else:
+        print(" Installed Qt versions: None found")
+    
+    if not is_compatible:
+        print("")
+        print_section_break()
+        print("[ERROR] BUILD FAILED - QT VERSION MISMATCH")
+        print_section_break()
+        print("")
+        print(f"Qt Creator was built with Qt {required_version}")
+        print(f"but you only have: {', '.join(installed_versions) if installed_versions else 'no Qt SDK installed'}")
+        print("")
+        print("The Qt SDK version MUST match what Qt Creator was built with.")
+        print("")
+        print("ACTION REQUIRED:")
+        print(f"1. Run the Qt MaintenanceTool:")
+        if platform.system().lower() == "windows":
+            print(f"   {config['qt_path']}\\MaintenanceTool.exe")
+        else:
+            print(f"   {config['qt_path']}/MaintenanceTool.app")
+        print("2. Select 'Add or remove components'")
+        print(f"3. Find and install Qt {required_version}")
+        print("   - Include the msvc2022_64 (Windows) or macos (Mac) component")
+        print("4. Re-run this build script after installation")
+        print("")
+        print_section_break()
+        sys.exit(1)
+    
+    print("[OK] Qt SDK version compatible")
+    print("")
+
     # Step 1: ALWAYS ensure Qt Creator is NOT running before starting
     print("[SEARCH] Checking for running Qt Creator...")
     if is_process_running(config["process_name"]):
@@ -1284,14 +1404,26 @@ def main():
             qt_creator_root = os.path.dirname(config["qt_creator_path"])  # Remove /lib from path
             
             # Get Qt6 path for Windows - use the actual Qt installation
-            hostname = socket.gethostname()
-            customPath = "pandora" in hostname
-            if customPath:
-                qtPath = os.path.expanduser("~/Developer")
-            else:
-                qtPath = "C:"
-            qt_dir = qtPath + "/Qt"
-            qt6_path = qt_dir + f"/{qt_version}/msvc2022_64"
+            qt_dir = config["qt_path"]
+            
+            # Try msvc2022_64 first, then msvc2019_64
+            qt6_path = None
+            for msvc_version in ["msvc2022_64", "msvc2019_64"]:
+                candidate = f"{qt_dir}/{qt_version}/{msvc_version}"
+                if os.path.exists(candidate):
+                    qt6_path = candidate
+                    print(f"[OK] Found Qt SDK at: {qt6_path}")
+                    break
+            
+            if not qt6_path:
+                print_error(f" Qt SDK {qt_version} not found")
+                print_error(f" Looked for: {qt_dir}/{qt_version}/msvc2022_64")
+                print_error(f"         or: {qt_dir}/{qt_version}/msvc2019_64")
+                print("")
+                print("ACTION REQUIRED:")
+                print(f"1. Run the Qt MaintenanceTool: {qt_dir}/MaintenanceTool.exe")
+                print("2. Install Qt {qt_version} with MSVC 2022 64-bit or MSVC 2019 64-bit")
+                sys.exit(1)
             
             # Combine Qt Creator and Qt6 paths
             cmake_prefix_path = qt_creator_root + ";" + qt6_path
@@ -1317,7 +1449,7 @@ def main():
                 if not qt6_path:
                     print_error(f" Qt SDK {qt_lib_version} is not installed")
                     print("")
-                    print("⛔ ACTION REQUIRED:")
+                    print("[ACTION REQUIRED]")
                     print(f"   1. Open MaintenanceTool.app in {config['qt_path']}")
                     print("   2. Select 'Add or remove components'")
                     print(f"   3. Install Qt {qt_lib_version} (including macOS and Qt Plugin Development)")
@@ -1339,7 +1471,14 @@ def main():
         
         # Convert list to string for shell execution with proper quoting
         if system == "windows":
-            cmake_cmd_str = " ".join(cmake_cmd)
+            # On Windows, quote arguments containing semicolons or spaces
+            cmake_cmd_quoted = []
+            for arg in cmake_cmd:
+                if ";" in arg or " " in arg:
+                    cmake_cmd_quoted.append(f'"{arg}"')
+                else:
+                    cmake_cmd_quoted.append(arg)
+            cmake_cmd_str = " ".join(cmake_cmd_quoted)
         else:
             # For Unix systems, quote paths with spaces
             cmake_cmd_quoted = []
@@ -1514,6 +1653,9 @@ def main():
         # Step 9: Register with Cursor IDE for automatic MCP discovery
         register_with_cursor()
         
+        # Step 10: Build standalone installer app (macOS only)
+        installer_success = build_installer_app()
+        
         print("")
         print_section_break()
         print("BUILD SUCCESSFUL!")
@@ -1524,9 +1666,15 @@ def main():
         print("[SUCCESS] MCP server is responding correctly")
         print("[SUCCESS] Plugin version verified")
         print("[SUCCESS] Registered with Cursor IDE")
+        if installer_success and platform.system().lower() == "darwin":
+            print("[SUCCESS] Standalone installer app created")
         print("")
         print("The MCP Plugin is now ready to use!")
         print("Restart Cursor to enable AI control of Qt Creator.")
+        if installer_success and platform.system().lower() == "darwin":
+            print("")
+            print("A standalone installer app has been created at:")
+            print(f"  {os.path.dirname(os.path.abspath(__file__))}/Qt MCP Plugin Installer.app")
         print_section_break()
         print("")
         
@@ -1571,6 +1719,49 @@ def main():
         except:
             pass  # Ignore if we can't restore the directory
         sys.exit(1)
+
+def build_installer_app():
+    """Build the standalone installer app bundle"""
+    system = platform.system().lower()
+    
+    # Only build installer on macOS for now
+    if system != "darwin":
+        print("[INFO] Installer app building is only supported on macOS")
+        return True  # Not a failure, just skip
+    
+    print("")
+    print_section_break()
+    print("Building Installer App")
+    print_section_break()
+    
+    # Get the path to the installer build script
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    installer_script = os.path.join(script_dir, "installer", "build_installer.py")
+    
+    if not os.path.exists(installer_script):
+        print_error(f" Installer build script not found: {installer_script}")
+        return False
+    
+    try:
+        # Run the installer build script
+        result = subprocess.run(
+            [sys.executable, installer_script],
+            cwd=script_dir,
+            capture_output=False,  # Show output in real-time
+            text=True
+        )
+        
+        if result.returncode == 0:
+            print("[OK] Installer app built successfully")
+            return True
+        else:
+            print_error(" Installer app build failed")
+            return False
+            
+    except Exception as e:
+        print_error(f" Failed to build installer app: {e}")
+        return False
+
 
 def register_with_cursor():
     """Register the Qt MCP server with Cursor IDE for automatic discovery"""
