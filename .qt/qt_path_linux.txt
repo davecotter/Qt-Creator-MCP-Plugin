@@ -1,0 +1,4 @@
+# Qt installation path for Linux
+# Paste your Qt installation path below (the folder containing qtcreator and version folders like 6.10.1/)
+# Example: /opt/Qt
+

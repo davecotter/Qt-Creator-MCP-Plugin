@@ -1,0 +1,4 @@
+# Qt installation path for macOS
+# Paste your Qt installation path below (the folder containing Qt Creator.app and version folders like 6.10.1/)
+# Example: /Users/username/Developer/Qt
+/Users/davec/Developer/Qt
