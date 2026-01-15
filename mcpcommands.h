@@ -49,10 +49,18 @@ public:
     bool saveSession();
     
     // Issue management commands
-    QStringList listIssues();
+    // filter: "all" (default), "errors", or "warnings"
+    QStringList listIssues(const QString &filter = "all");
+    
+    // Configure error limit for issue tracking
+    void setErrorLimit(int limit);
+    int errorLimit() const;
+    void setStopBuildOnLimit(bool stop);
+    bool stopBuildOnLimit() const;
     
     // Build output commands
     QString getCompileOutput();
+    QString getApplicationOutput();
     
     // Build monitoring
     bool waitForBuildCompletion(int timeoutSeconds = 300);
@@ -69,6 +77,9 @@ public:
     bool killDebuggedProcesses();
     void performDebuggingCleanup();
     bool performDebuggingCleanupSync();
+    
+    // Debugger state inspection
+    QString getCallStack();
     
 
 signals:
