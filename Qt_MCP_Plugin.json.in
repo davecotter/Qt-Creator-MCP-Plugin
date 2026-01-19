@@ -12,6 +12,7 @@
     "DocumentationUrl" : "https://github.com/davecotter/Qt-Creator-MCP-Plugin",
     "Dependencies" : [
         { "Id" : "core", "Version" : "18.0.1" },
-        { "Id" : "projectexplorer", "Version" : "18.0.1" }
+        { "Id" : "projectexplorer", "Version" : "18.0.1" },
+        { "Id" : "debugger", "Version" : "18.0.1" }
     ]
 }

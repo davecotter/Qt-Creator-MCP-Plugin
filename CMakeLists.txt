@@ -58,11 +58,12 @@ add_qtc_plugin(Qt_MCP_Plugin
   PLUGIN_DEPENDS
     QtCreator::Core
     QtCreator::ProjectExplorer
-         DEPENDS
-           Qt::Widgets
-           Qt::Network
-           QtCreator::ExtensionSystem
-           QtCreator::Utils
+    QtCreator::Debugger
+  DEPENDS
+    Qt::Widgets
+    Qt::Network
+    QtCreator::ExtensionSystem
+    QtCreator::Utils
   SOURCES
     .github/workflows/build_cmake.yml
     .github/workflows/README.md

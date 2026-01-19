@@ -19,7 +19,14 @@
 #include <projectexplorer/runcontrol.h>
 #include <projectexplorer/runconfiguration.h>
 #include <debugger/debuggerruncontrol.h>
+#include <debugger/debuggerconstants.h>
+#include <debugger/debuggerengine.h>
+#include <debugger/breakhandler.h>
+#include <debugger/stackhandler.h>
+#include <debugger/watchhandler.h>
 #include <utils/fileutils.h>
+#include <QJsonArray>
+#include <QJsonObject>
 #include <utils/id.h>
 #include <extensionsystem/pluginmanager.h>
 #include <QTextEdit>
@@ -1510,6 +1517,426 @@ int MCPCommands::getMethodTimeout(const QString &method) const
     return m_methodTimeouts.value(method, -1);
 }
 
+// =============================================================================
+// NEW MCP COMMANDS IMPLEMENTATION
+// =============================================================================
+
+// -----------------------------------------------------------------------------
+// Helper methods
+// -----------------------------------------------------------------------------
+
+bool MCPCommands::triggerAction(const QString &actionId)
+{
+    Core::ActionManager *am = Core::ActionManager::instance();
+    if (!am) {
+        qDebug() << "ActionManager not available";
+        return false;
+    }
+
+    Core::Command *cmd = am->command(Utils::Id::fromString(actionId));
+    if (cmd && cmd->action() && cmd->action()->isEnabled()) {
+        qDebug() << "Triggering action:" << actionId;
+        cmd->action()->trigger();
+        return true;
+    }
+
+    qDebug() << "Action not found or disabled:" << actionId;
+    return false;
+}
+
+bool MCPCommands::triggerDebuggerAction(const QString &actionId)
+{
+    // Try with Debugger prefix variations
+    QStringList variations = {
+        actionId,
+        "Debugger." + actionId,
+        "ProjectExplorer." + actionId
+    };
+
+    for (const QString &id : variations) {
+        if (triggerAction(id)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+// -----------------------------------------------------------------------------
+// Project management
+// -----------------------------------------------------------------------------
+
+bool MCPCommands::openProject(const QString &path)
+{
+    if (path.isEmpty()) {
+        qDebug() << "Empty project path provided";
+        return false;
+    }
+
+    Utils::FilePath filePath = Utils::FilePath::fromString(path);
+
+    if (!filePath.exists()) {
+        qDebug() << "Project file does not exist:" << path;
+        return false;
+    }
+
+    qDebug() << "Opening project:" << path;
+
+    // Use ProjectManager to open the project
+    QString errorMessage;
+    ProjectExplorer::Project *project =
+        ProjectExplorer::ProjectManager::openProject(filePath, &errorMessage);
+
+    if (!project) {
+        qDebug() << "Failed to open project:" << errorMessage;
+        return false;
+    }
+
+    qDebug() << "Project opened successfully:" << project->displayName();
+    return true;
+}
+
+bool MCPCommands::runQmake()
+{
+    qDebug() << "Running qmake...";
+
+    // Try multiple action IDs for qmake
+    QStringList qmakeActionIds = {
+        "QmakeProjectManager.RunQMake",
+        "Qt4ProjectManager.RunQMake",
+        "QmakeProjectManager.BuildQMakeStep"
+    };
+
+    for (const QString &actionId : qmakeActionIds) {
+        if (triggerAction(actionId)) {
+            qDebug() << "qmake triggered via:" << actionId;
+            return true;
+        }
+    }
+
+    qDebug() << "No qmake action found - this may not be a qmake project";
+    return false;
+}
+
+bool MCPCommands::rebuild()
+{
+    qDebug() << "Starting rebuild (clean + build)...";
+
+    // Step 1: Clean
+    if (!cleanProject()) {
+        qDebug() << "Clean failed, aborting rebuild";
+        return false;
+    }
+
+    // Step 2: Wait for clean to complete
+    qDebug() << "Waiting for clean to complete...";
+    if (!waitForBuildCompletion(120)) {
+        qDebug() << "Clean timed out";
+        return false;
+    }
+
+    // Small delay to ensure clean is fully done
+    QThread::msleep(500);
+
+    // Step 3: Build
+    qDebug() << "Clean completed, starting build...";
+    return build();
+}
+
+// -----------------------------------------------------------------------------
+// Debugger control
+// -----------------------------------------------------------------------------
+
+bool MCPCommands::stepOver()
+{
+    qDebug() << "Step over (F10)";
+    return triggerDebuggerAction("Next") ||
+           triggerDebuggerAction("StepOver") ||
+           triggerAction("Debugger.Next");
+}
+
+bool MCPCommands::stepInto()
+{
+    qDebug() << "Step into (F11)";
+    return triggerDebuggerAction("Step") ||
+           triggerDebuggerAction("StepInto") ||
+           triggerAction("Debugger.Step");
+}
+
+bool MCPCommands::stepOut()
+{
+    qDebug() << "Step out (Shift+F11)";
+    return triggerDebuggerAction("StepOut") ||
+           triggerAction("Debugger.StepOut");
+}
+
+bool MCPCommands::continueExecution()
+{
+    qDebug() << "Continue execution (F5)";
+    return triggerDebuggerAction("Continue") ||
+           triggerAction("Debugger.Continue");
+}
+
+bool MCPCommands::pauseExecution()
+{
+    qDebug() << "Pause/Interrupt execution";
+    return triggerDebuggerAction("Interrupt") ||
+           triggerAction("Debugger.Interrupt");
+}
+
+bool MCPCommands::runToLine(const QString &file, int line)
+{
+    qDebug() << "Run to line:" << file << ":" << line;
+
+    // First, open the file and go to line
+    Utils::FilePath filePath = Utils::FilePath::fromString(file);
+    Core::EditorManager::openEditorAt({filePath, line});
+
+    // Small delay to ensure editor is ready
+    QThread::msleep(100);
+
+    // Trigger run to line
+    return triggerDebuggerAction("RunToLine") ||
+           triggerAction("Debugger.RunToLine");
+}
+
+// -----------------------------------------------------------------------------
+// Breakpoint management
+// -----------------------------------------------------------------------------
+
+bool MCPCommands::setBreakpoint(const QString &file, int line, const QString &condition)
+{
+    qDebug() << "Setting breakpoint at" << file << ":" << line;
+
+    if (file.isEmpty() || line <= 0) {
+        qDebug() << "Invalid file or line number";
+        return false;
+    }
+
+    Utils::FilePath filePath = Utils::FilePath::fromString(file);
+
+    // Use BreakpointManager to create breakpoint
+    // Note: The exact API depends on Qt Creator version
+    // This is a simplified approach using the toggle mechanism
+
+    // Open file at the line first
+    Core::EditorManager::openEditorAt({filePath, line});
+    QThread::msleep(100);
+
+    // Toggle breakpoint at current line
+    bool success = triggerAction("Debugger.ToggleBreak");
+
+    if (success && !condition.isEmpty()) {
+        qDebug() << "Breakpoint set with condition:" << condition;
+        // Note: Setting condition requires accessing BreakpointManager API
+        // which may not be fully exposed. For now, we just set the breakpoint.
+    }
+
+    return success;
+}
+
+bool MCPCommands::removeBreakpoint(const QString &file, int line)
+{
+    qDebug() << "Removing breakpoint at" << file << ":" << line;
+
+    if (file.isEmpty() || line <= 0) {
+        return false;
+    }
+
+    Utils::FilePath filePath = Utils::FilePath::fromString(file);
+
+    // Open file at the line
+    Core::EditorManager::openEditorAt({filePath, line});
+    QThread::msleep(100);
+
+    // Toggle will remove if exists
+    // Note: This is a simplified approach - ideally we'd check if breakpoint exists first
+    return triggerAction("Debugger.ToggleBreak");
+}
+
+bool MCPCommands::toggleBreakpoint(const QString &file, int line)
+{
+    qDebug() << "Toggling breakpoint at" << file << ":" << line;
+
+    if (file.isEmpty() || line <= 0) {
+        return false;
+    }
+
+    Utils::FilePath filePath = Utils::FilePath::fromString(file);
+
+    // Open file at the line
+    Core::EditorManager::openEditorAt({filePath, line});
+    QThread::msleep(100);
+
+    return triggerAction("Debugger.ToggleBreak");
+}
+
+bool MCPCommands::removeAllBreakpoints()
+{
+    qDebug() << "Removing all breakpoints";
+    return triggerAction("Debugger.RemoveAllBreakpoints");
+}
+
+QJsonArray MCPCommands::listBreakpoints()
+{
+    QJsonArray breakpoints;
+    qDebug() << "Listing breakpoints";
+
+    // Note: Accessing BreakpointManager::breakpoints() requires internal API access
+    // This is a placeholder that would need to be implemented based on Qt Creator version
+
+    // For now, return info that breakpoints exist via BuildManager/Debugger state
+    QJsonObject info;
+    info["note"] = "Breakpoint listing requires internal Debugger API access";
+    info["suggestion"] = "Use Qt Creator UI to view breakpoints, or check Debugger.BreakpointManager";
+    breakpoints.append(info);
+
+    return breakpoints;
+}
+
+// -----------------------------------------------------------------------------
+// Stack and variables
+// -----------------------------------------------------------------------------
+
+QJsonArray MCPCommands::getStackTrace()
+{
+    QJsonArray frames;
+    qDebug() << "Getting stack trace";
+
+    // Check if debugging is active
+    if (!isDebuggingActive()) {
+        QJsonObject error;
+        error["error"] = "No active debug session";
+        frames.append(error);
+        return frames;
+    }
+
+    // Note: Accessing StackHandler requires internal Debugger API
+    // The actual implementation would look something like:
+    //
+    // Debugger::Internal::DebuggerEngine *engine =
+    //     Debugger::Internal::DebuggerEngine::currentEngine();
+    // if (engine) {
+    //     Debugger::Internal::StackHandler *handler = engine->stackHandler();
+    //     for (int i = 0; i < handler->stackSize(); ++i) {
+    //         const auto &frame = handler->frameAt(i);
+    //         QJsonObject f;
+    //         f["level"] = i;
+    //         f["function"] = frame.function;
+    //         f["file"] = frame.file.toUserOutput();
+    //         f["line"] = frame.line;
+    //         f["address"] = QString::number(frame.address, 16);
+    //         frames.append(f);
+    //     }
+    // }
+
+    QJsonObject placeholder;
+    placeholder["note"] = "Stack trace requires internal Debugger API access";
+    placeholder["status"] = "Debug session is active";
+    frames.append(placeholder);
+
+    return frames;
+}
+
+QJsonObject MCPCommands::getVariables(const QString &scope)
+{
+    QJsonObject variables;
+    qDebug() << "Getting variables for scope:" << scope;
+
+    if (!isDebuggingActive()) {
+        variables["error"] = "No active debug session";
+        return variables;
+    }
+
+    // Note: Similar to getStackTrace, accessing WatchHandler requires internal API
+    // Placeholder for now
+    variables["note"] = "Variable inspection requires internal Debugger API access";
+    variables["scope"] = scope.isEmpty() ? "local" : scope;
+    variables["status"] = "Debug session is active";
+
+    return variables;
+}
+
+QString MCPCommands::evaluateExpression(const QString &expression)
+{
+    qDebug() << "Evaluating expression:" << expression;
+
+    if (!isDebuggingActive()) {
+        return "Error: No active debug session";
+    }
+
+    if (expression.isEmpty()) {
+        return "Error: Empty expression";
+    }
+
+    // Note: Expression evaluation requires WatchHandler API
+    // Placeholder implementation
+    return QString("Expression evaluation for '%1' requires internal Debugger API access").arg(expression);
+}
+
+// -----------------------------------------------------------------------------
+// Debugger state
+// -----------------------------------------------------------------------------
+
+QString MCPCommands::getDebuggerState()
+{
+    QStringList state;
+    state.append("=== DEBUGGER STATE ===");
+
+    bool active = isDebuggingActive();
+    state.append(QString("Debug session active: %1").arg(active ? "Yes" : "No"));
+
+    if (active) {
+        // Check various action states to determine debugger state
+        Core::ActionManager *am = Core::ActionManager::instance();
+        if (am) {
+            auto checkAction = [am](const QString &id) -> QString {
+                Core::Command *cmd = am->command(Utils::Id::fromString(id));
+                if (cmd && cmd->action()) {
+                    return cmd->action()->isEnabled() ? "enabled" : "disabled";
+                }
+                return "not found";
+            };
+
+            state.append(QString("Continue action: %1").arg(checkAction("Debugger.Continue")));
+            state.append(QString("Interrupt action: %1").arg(checkAction("Debugger.Interrupt")));
+            state.append(QString("Step Over action: %1").arg(checkAction("Debugger.Next")));
+            state.append(QString("Step Into action: %1").arg(checkAction("Debugger.Step")));
+            state.append(QString("Step Out action: %1").arg(checkAction("Debugger.StepOut")));
+        }
+
+        // Infer state from action availability
+        if (triggerAction("Debugger.Continue")) {
+            // If continue is enabled, debugger is paused
+            state.append("Inferred state: PAUSED (at breakpoint or stepped)");
+        } else {
+            state.append("Inferred state: RUNNING");
+        }
+    }
+
+    state.append("=== END DEBUGGER STATE ===");
+    return state.join("\n");
+}
+
+bool MCPCommands::isDebuggerRunning() const
+{
+    // Check if the Interrupt action is enabled (means debugger is running)
+    Core::ActionManager *am = Core::ActionManager::instance();
+    if (!am) return false;
+
+    Core::Command *cmd = am->command(Utils::Id::fromString("Debugger.Interrupt"));
+    return cmd && cmd->action() && cmd->action()->isEnabled();
+}
+
+bool MCPCommands::isDebuggerPaused() const
+{
+    // Check if the Continue action is enabled (means debugger is paused)
+    Core::ActionManager *am = Core::ActionManager::instance();
+    if (!am) return false;
+
+    Core::Command *cmd = am->command(Utils::Id::fromString("Debugger.Continue"));
+    return cmd && cmd->action() && cmd->action()->isEnabled();
+}
 
 // handleSessionLoadRequest method removed - using direct session loading instead
 

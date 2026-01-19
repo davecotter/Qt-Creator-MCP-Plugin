@@ -5,6 +5,8 @@
 #include <QStringList>
 #include <QMap>
 #include <QTimer>
+#include <QJsonArray>
+#include <QJsonObject>
 
 // Forward declarations
 namespace Qt_MCP_Plugin {
@@ -69,7 +71,38 @@ public:
     bool killDebuggedProcesses();
     void performDebuggingCleanup();
     bool performDebuggingCleanupSync();
-    
+
+    // === NEW MCP COMMANDS ===
+
+    // Project management
+    bool openProject(const QString &path);
+    bool runQmake();
+    bool rebuild();
+
+    // Debugger control
+    bool stepOver();
+    bool stepInto();
+    bool stepOut();
+    bool continueExecution();
+    bool pauseExecution();
+    bool runToLine(const QString &file, int line);
+
+    // Breakpoint management
+    bool setBreakpoint(const QString &file, int line, const QString &condition = QString());
+    bool removeBreakpoint(const QString &file, int line);
+    bool toggleBreakpoint(const QString &file, int line);
+    bool removeAllBreakpoints();
+    QJsonArray listBreakpoints();
+
+    // Stack and variables
+    QJsonArray getStackTrace();
+    QJsonObject getVariables(const QString &scope = QString());
+    QString evaluateExpression(const QString &expression);
+
+    // Debugger state
+    QString getDebuggerState();
+    bool isDebuggerRunning() const;
+    bool isDebuggerPaused() const;
 
 signals:
     void sessionLoadRequested(const QString &sessionName);
@@ -81,6 +114,9 @@ private slots:
 
 private:
     bool hasValidProject() const;
+    bool triggerAction(const QString &actionId);
+    bool triggerDebuggerAction(const QString &actionId);
+
     bool m_sessionLoadResult;
     
     // Method timeout storage

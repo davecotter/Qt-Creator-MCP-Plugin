@@ -426,7 +426,224 @@ QJsonObject MCPServer::processRequest(const QJsonObject &request)
         waitForBuildCompletionInputSchema["properties"] = waitForBuildCompletionProps;
         waitForBuildCompletionTool["inputSchema"] = waitForBuildCompletionInputSchema;
         tools.append(waitForBuildCompletionTool);
-        
+
+        // =====================================================================
+        // NEW MCP TOOLS
+        // =====================================================================
+
+        // --- Project Management ---
+
+        // Open project tool
+        QJsonObject openProjectTool;
+        openProjectTool["name"] = "openProject";
+        openProjectTool["description"] = "Open a Qt project file (.pro or CMakeLists.txt)";
+        QJsonObject openProjectInputSchema;
+        openProjectInputSchema["type"] = "object";
+        QJsonObject openProjectProps;
+        openProjectProps["path"] = QJsonObject{{"type", "string"}, {"description", "Path to the project file (.pro or CMakeLists.txt)"}};
+        openProjectInputSchema["properties"] = openProjectProps;
+        openProjectInputSchema["required"] = QJsonArray{"path"};
+        openProjectTool["inputSchema"] = openProjectInputSchema;
+        tools.append(openProjectTool);
+
+        // Run qmake tool
+        QJsonObject runQmakeTool;
+        runQmakeTool["name"] = "runQmake";
+        runQmakeTool["description"] = "Run qmake to regenerate Makefile (for qmake projects)";
+        QJsonObject runQmakeInputSchema;
+        runQmakeInputSchema["type"] = "object";
+        runQmakeInputSchema["properties"] = QJsonObject();
+        runQmakeTool["inputSchema"] = runQmakeInputSchema;
+        tools.append(runQmakeTool);
+
+        // Rebuild tool
+        QJsonObject rebuildTool;
+        rebuildTool["name"] = "rebuild";
+        rebuildTool["description"] = "Clean and rebuild the project (clean + build)";
+        QJsonObject rebuildInputSchema;
+        rebuildInputSchema["type"] = "object";
+        rebuildInputSchema["properties"] = QJsonObject();
+        rebuildTool["inputSchema"] = rebuildInputSchema;
+        tools.append(rebuildTool);
+
+        // --- Debugger Control ---
+
+        // Step over tool
+        QJsonObject stepOverTool;
+        stepOverTool["name"] = "stepOver";
+        stepOverTool["description"] = "Step over to next line (F10) - executes current line without entering functions";
+        QJsonObject stepOverInputSchema;
+        stepOverInputSchema["type"] = "object";
+        stepOverInputSchema["properties"] = QJsonObject();
+        stepOverTool["inputSchema"] = stepOverInputSchema;
+        tools.append(stepOverTool);
+
+        // Step into tool
+        QJsonObject stepIntoTool;
+        stepIntoTool["name"] = "stepInto";
+        stepIntoTool["description"] = "Step into function (F11) - enters the function being called";
+        QJsonObject stepIntoInputSchema;
+        stepIntoInputSchema["type"] = "object";
+        stepIntoInputSchema["properties"] = QJsonObject();
+        stepIntoTool["inputSchema"] = stepIntoInputSchema;
+        tools.append(stepIntoTool);
+
+        // Step out tool
+        QJsonObject stepOutTool;
+        stepOutTool["name"] = "stepOut";
+        stepOutTool["description"] = "Step out of function (Shift+F11) - continues until current function returns";
+        QJsonObject stepOutInputSchema;
+        stepOutInputSchema["type"] = "object";
+        stepOutInputSchema["properties"] = QJsonObject();
+        stepOutTool["inputSchema"] = stepOutInputSchema;
+        tools.append(stepOutTool);
+
+        // Continue tool
+        QJsonObject continueTool;
+        continueTool["name"] = "continue";
+        continueTool["description"] = "Continue execution (F5) - resumes program until next breakpoint";
+        QJsonObject continueInputSchema;
+        continueInputSchema["type"] = "object";
+        continueInputSchema["properties"] = QJsonObject();
+        continueTool["inputSchema"] = continueInputSchema;
+        tools.append(continueTool);
+
+        // Pause tool
+        QJsonObject pauseTool;
+        pauseTool["name"] = "pause";
+        pauseTool["description"] = "Pause/interrupt execution - stops the running program";
+        QJsonObject pauseInputSchema;
+        pauseInputSchema["type"] = "object";
+        pauseInputSchema["properties"] = QJsonObject();
+        pauseTool["inputSchema"] = pauseInputSchema;
+        tools.append(pauseTool);
+
+        // Run to line tool
+        QJsonObject runToLineTool;
+        runToLineTool["name"] = "runToLine";
+        runToLineTool["description"] = "Run to a specific line - continues execution until the specified line";
+        QJsonObject runToLineInputSchema;
+        runToLineInputSchema["type"] = "object";
+        QJsonObject runToLineProps;
+        runToLineProps["file"] = QJsonObject{{"type", "string"}, {"description", "File path"}};
+        runToLineProps["line"] = QJsonObject{{"type", "integer"}, {"description", "Line number"}};
+        runToLineInputSchema["properties"] = runToLineProps;
+        runToLineInputSchema["required"] = QJsonArray{"file", "line"};
+        runToLineTool["inputSchema"] = runToLineInputSchema;
+        tools.append(runToLineTool);
+
+        // --- Breakpoint Management ---
+
+        // Set breakpoint tool
+        QJsonObject setBreakpointTool;
+        setBreakpointTool["name"] = "setBreakpoint";
+        setBreakpointTool["description"] = "Set a breakpoint at a specific file and line";
+        QJsonObject setBreakpointInputSchema;
+        setBreakpointInputSchema["type"] = "object";
+        QJsonObject setBreakpointProps;
+        setBreakpointProps["file"] = QJsonObject{{"type", "string"}, {"description", "File path"}};
+        setBreakpointProps["line"] = QJsonObject{{"type", "integer"}, {"description", "Line number"}};
+        setBreakpointProps["condition"] = QJsonObject{{"type", "string"}, {"description", "Optional condition expression"}};
+        setBreakpointInputSchema["properties"] = setBreakpointProps;
+        setBreakpointInputSchema["required"] = QJsonArray{"file", "line"};
+        setBreakpointTool["inputSchema"] = setBreakpointInputSchema;
+        tools.append(setBreakpointTool);
+
+        // Remove breakpoint tool
+        QJsonObject removeBreakpointTool;
+        removeBreakpointTool["name"] = "removeBreakpoint";
+        removeBreakpointTool["description"] = "Remove a breakpoint at a specific file and line";
+        QJsonObject removeBreakpointInputSchema;
+        removeBreakpointInputSchema["type"] = "object";
+        QJsonObject removeBreakpointProps;
+        removeBreakpointProps["file"] = QJsonObject{{"type", "string"}, {"description", "File path"}};
+        removeBreakpointProps["line"] = QJsonObject{{"type", "integer"}, {"description", "Line number"}};
+        removeBreakpointInputSchema["properties"] = removeBreakpointProps;
+        removeBreakpointInputSchema["required"] = QJsonArray{"file", "line"};
+        removeBreakpointTool["inputSchema"] = removeBreakpointInputSchema;
+        tools.append(removeBreakpointTool);
+
+        // Toggle breakpoint tool
+        QJsonObject toggleBreakpointTool;
+        toggleBreakpointTool["name"] = "toggleBreakpoint";
+        toggleBreakpointTool["description"] = "Toggle a breakpoint at a specific file and line (add if absent, remove if present)";
+        QJsonObject toggleBreakpointInputSchema;
+        toggleBreakpointInputSchema["type"] = "object";
+        QJsonObject toggleBreakpointProps;
+        toggleBreakpointProps["file"] = QJsonObject{{"type", "string"}, {"description", "File path"}};
+        toggleBreakpointProps["line"] = QJsonObject{{"type", "integer"}, {"description", "Line number"}};
+        toggleBreakpointInputSchema["properties"] = toggleBreakpointProps;
+        toggleBreakpointInputSchema["required"] = QJsonArray{"file", "line"};
+        toggleBreakpointTool["inputSchema"] = toggleBreakpointInputSchema;
+        tools.append(toggleBreakpointTool);
+
+        // Remove all breakpoints tool
+        QJsonObject removeAllBreakpointsTool;
+        removeAllBreakpointsTool["name"] = "removeAllBreakpoints";
+        removeAllBreakpointsTool["description"] = "Remove all breakpoints from the project";
+        QJsonObject removeAllBreakpointsInputSchema;
+        removeAllBreakpointsInputSchema["type"] = "object";
+        removeAllBreakpointsInputSchema["properties"] = QJsonObject();
+        removeAllBreakpointsTool["inputSchema"] = removeAllBreakpointsInputSchema;
+        tools.append(removeAllBreakpointsTool);
+
+        // List breakpoints tool
+        QJsonObject listBreakpointsTool;
+        listBreakpointsTool["name"] = "listBreakpoints";
+        listBreakpointsTool["description"] = "List all current breakpoints";
+        QJsonObject listBreakpointsInputSchema;
+        listBreakpointsInputSchema["type"] = "object";
+        listBreakpointsInputSchema["properties"] = QJsonObject();
+        listBreakpointsTool["inputSchema"] = listBreakpointsInputSchema;
+        tools.append(listBreakpointsTool);
+
+        // --- Stack and Variables ---
+
+        // Get stack trace tool
+        QJsonObject getStackTraceTool;
+        getStackTraceTool["name"] = "getStackTrace";
+        getStackTraceTool["description"] = "Get the current call stack trace (when debugger is paused)";
+        QJsonObject getStackTraceInputSchema;
+        getStackTraceInputSchema["type"] = "object";
+        getStackTraceInputSchema["properties"] = QJsonObject();
+        getStackTraceTool["inputSchema"] = getStackTraceInputSchema;
+        tools.append(getStackTraceTool);
+
+        // Get variables tool
+        QJsonObject getVariablesTool;
+        getVariablesTool["name"] = "getVariables";
+        getVariablesTool["description"] = "Get local/global variables in current scope (when debugger is paused)";
+        QJsonObject getVariablesInputSchema;
+        getVariablesInputSchema["type"] = "object";
+        QJsonObject getVariablesProps;
+        getVariablesProps["scope"] = QJsonObject{{"type", "string"}, {"description", "Scope: 'local', 'global', or empty for all"}};
+        getVariablesInputSchema["properties"] = getVariablesProps;
+        getVariablesTool["inputSchema"] = getVariablesInputSchema;
+        tools.append(getVariablesTool);
+
+        // Evaluate expression tool
+        QJsonObject evaluateExpressionTool;
+        evaluateExpressionTool["name"] = "evaluateExpression";
+        evaluateExpressionTool["description"] = "Evaluate an expression in the current debug context";
+        QJsonObject evaluateExpressionInputSchema;
+        evaluateExpressionInputSchema["type"] = "object";
+        QJsonObject evaluateExpressionProps;
+        evaluateExpressionProps["expression"] = QJsonObject{{"type", "string"}, {"description", "Expression to evaluate (e.g., 'myVariable', 'ptr->value', 'array[0]')"}};
+        evaluateExpressionInputSchema["properties"] = evaluateExpressionProps;
+        evaluateExpressionInputSchema["required"] = QJsonArray{"expression"};
+        evaluateExpressionTool["inputSchema"] = evaluateExpressionInputSchema;
+        tools.append(evaluateExpressionTool);
+
+        // Get debugger state tool
+        QJsonObject getDebuggerStateTool;
+        getDebuggerStateTool["name"] = "getDebuggerState";
+        getDebuggerStateTool["description"] = "Get the current debugger state (running, paused, stopped)";
+        QJsonObject getDebuggerStateInputSchema;
+        getDebuggerStateInputSchema["type"] = "object";
+        getDebuggerStateInputSchema["properties"] = QJsonObject();
+        getDebuggerStateTool["inputSchema"] = getDebuggerStateInputSchema;
+        tools.append(getDebuggerStateTool);
+
         QJsonObject toolsResult;
         toolsResult["tools"] = tools;
         result = toolsResult;
@@ -610,6 +827,156 @@ QJsonObject MCPServer::processRequest(const QJsonObject &request)
                 };
                 result = createContentResponse(data);
             }
+            // =================================================================
+            // NEW MCP TOOL HANDLERS
+            // =================================================================
+
+            // --- Project Management ---
+            else if (toolName == "openProject") {
+                if (arguments.isObject()) {
+                    QString path = arguments.toObject().value("path").toString();
+                    bool successB = m_commandsP->openProject(path);
+                    QJsonObject data{{"success", successB}, {"path", path}};
+                    result = createContentResponse(data);
+                } else {
+                    errorMessage = "Invalid arguments for openProject - 'path' is required";
+                }
+            }
+            else if (toolName == "runQmake") {
+                bool successB = m_commandsP->runQmake();
+                QJsonObject data{{"success", successB}};
+                result = createContentResponse(data);
+            }
+            else if (toolName == "rebuild") {
+                bool successB = m_commandsP->rebuild();
+                QJsonObject data{{"success", successB}};
+                result = createContentResponse(data);
+            }
+
+            // --- Debugger Control ---
+            else if (toolName == "stepOver") {
+                bool successB = m_commandsP->stepOver();
+                QJsonObject data{{"success", successB}};
+                result = createContentResponse(data);
+            }
+            else if (toolName == "stepInto") {
+                bool successB = m_commandsP->stepInto();
+                QJsonObject data{{"success", successB}};
+                result = createContentResponse(data);
+            }
+            else if (toolName == "stepOut") {
+                bool successB = m_commandsP->stepOut();
+                QJsonObject data{{"success", successB}};
+                result = createContentResponse(data);
+            }
+            else if (toolName == "continue") {
+                bool successB = m_commandsP->continueExecution();
+                QJsonObject data{{"success", successB}};
+                result = createContentResponse(data);
+            }
+            else if (toolName == "pause") {
+                bool successB = m_commandsP->pauseExecution();
+                QJsonObject data{{"success", successB}};
+                result = createContentResponse(data);
+            }
+            else if (toolName == "runToLine") {
+                if (arguments.isObject()) {
+                    QString file = arguments.toObject().value("file").toString();
+                    int line = arguments.toObject().value("line").toInt();
+                    bool successB = m_commandsP->runToLine(file, line);
+                    QJsonObject data{{"success", successB}, {"file", file}, {"line", line}};
+                    result = createContentResponse(data);
+                } else {
+                    errorMessage = "Invalid arguments for runToLine - 'file' and 'line' are required";
+                }
+            }
+
+            // --- Breakpoint Management ---
+            else if (toolName == "setBreakpoint") {
+                if (arguments.isObject()) {
+                    QString file = arguments.toObject().value("file").toString();
+                    int line = arguments.toObject().value("line").toInt();
+                    QString condition = arguments.toObject().value("condition").toString();
+                    bool successB = m_commandsP->setBreakpoint(file, line, condition);
+                    QJsonObject data{{"success", successB}, {"file", file}, {"line", line}};
+                    if (!condition.isEmpty()) {
+                        data["condition"] = condition;
+                    }
+                    result = createContentResponse(data);
+                } else {
+                    errorMessage = "Invalid arguments for setBreakpoint - 'file' and 'line' are required";
+                }
+            }
+            else if (toolName == "removeBreakpoint") {
+                if (arguments.isObject()) {
+                    QString file = arguments.toObject().value("file").toString();
+                    int line = arguments.toObject().value("line").toInt();
+                    bool successB = m_commandsP->removeBreakpoint(file, line);
+                    QJsonObject data{{"success", successB}, {"file", file}, {"line", line}};
+                    result = createContentResponse(data);
+                } else {
+                    errorMessage = "Invalid arguments for removeBreakpoint - 'file' and 'line' are required";
+                }
+            }
+            else if (toolName == "toggleBreakpoint") {
+                if (arguments.isObject()) {
+                    QString file = arguments.toObject().value("file").toString();
+                    int line = arguments.toObject().value("line").toInt();
+                    bool successB = m_commandsP->toggleBreakpoint(file, line);
+                    QJsonObject data{{"success", successB}, {"file", file}, {"line", line}};
+                    result = createContentResponse(data);
+                } else {
+                    errorMessage = "Invalid arguments for toggleBreakpoint - 'file' and 'line' are required";
+                }
+            }
+            else if (toolName == "removeAllBreakpoints") {
+                bool successB = m_commandsP->removeAllBreakpoints();
+                QJsonObject data{{"success", successB}};
+                result = createContentResponse(data);
+            }
+            else if (toolName == "listBreakpoints") {
+                QJsonArray breakpoints = m_commandsP->listBreakpoints();
+                QJsonObject data{{"breakpoints", breakpoints}};
+                result = createContentResponse(data);
+            }
+
+            // --- Stack and Variables ---
+            else if (toolName == "getStackTrace") {
+                QJsonArray frames = m_commandsP->getStackTrace();
+                QJsonObject data{{"frames", frames}};
+                result = createContentResponse(data);
+            }
+            else if (toolName == "getVariables") {
+                QString scope;
+                if (arguments.isObject()) {
+                    scope = arguments.toObject().value("scope").toString();
+                }
+                QJsonObject variables = m_commandsP->getVariables(scope);
+                result = createContentResponse(variables);
+            }
+            else if (toolName == "evaluateExpression") {
+                if (arguments.isObject()) {
+                    QString expression = arguments.toObject().value("expression").toString();
+                    QString evalResult = m_commandsP->evaluateExpression(expression);
+                    QJsonObject data{{"expression", expression}, {"result", evalResult}};
+                    result = createContentResponse(data);
+                } else {
+                    errorMessage = "Invalid arguments for evaluateExpression - 'expression' is required";
+                }
+            }
+            else if (toolName == "getDebuggerState") {
+                QString state = m_commandsP->getDebuggerState();
+                bool isRunning = m_commandsP->isDebuggerRunning();
+                bool isPaused = m_commandsP->isDebuggerPaused();
+                QJsonObject data{
+                    {"state", state},
+                    {"isRunning", isRunning},
+                    {"isPaused", isPaused},
+                    {"isActive", m_commandsP->isDebuggingActive()}
+                };
+                result = createContentResponse(data);
+            }
+
             else {
                 // Provide helpful suggestions for common typos
                 QString suggestion = "";
