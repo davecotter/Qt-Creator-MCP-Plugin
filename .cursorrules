@@ -296,3 +296,12 @@ The build script automatically registers the Qt MCP server with Cursor by adding
 
 ## MCP Protocol
 Implements standard MCP methods: `initialize`, `tools/list`, `tools/call`
+
+## Internal MCP Tooling Requirement
+- Always use the internal `mcp_qt-creator_*` tools for all Qt Creator interactions.
+- If any internal MCP tool call fails or is unavailable, report the failure immediately and do not attempt any alternative approach or workaround.
+
+## Required Tools – Check First, No Workarounds
+- **Check for required tools first** (e.g. Qt Creator Plugin Development SDK at the official location) before running builds or suggesting fixes.
+- **If the tools are not installed:** say so clearly and stop. Do not attempt workarounds, alternative paths, or custom discovery.
+- Official Plugin Development SDK location (from Qt Creator source): **macOS** `Qt Creator.app/Contents/Resources/lib/cmake/QtCreator/` (contains `QtCreatorConfig.cmake`).

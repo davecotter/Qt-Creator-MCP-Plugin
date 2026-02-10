@@ -95,6 +95,10 @@
       "description": "List current issues (warnings and errors)"
     },
     {
+      "name": "getBuildDiagnostics",
+      "description": "Get structured build diagnostics (JSON array) for Cursor Problems panel"
+    },
+    {
       "name": "quit",
       "description": "Quit Qt Creator"
     },

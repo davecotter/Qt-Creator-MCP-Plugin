@@ -6,6 +6,8 @@
 #include <projectexplorer/taskhub.h>
 
 #include <QDebug>
+#include <QJsonArray>
+#include <QJsonObject>
 
 namespace Qt_MCP_Plugin {
 namespace Internal {
@@ -91,6 +93,36 @@ QStringList IssuesManager::getCurrentIssues(const QString &filter) const
     }
     
     return issues;
+}
+
+QJsonArray IssuesManager::getCurrentIssuesStructured(const QString &filter) const
+{
+    QJsonArray out;
+    bool showErrors = (filter == QStringLiteral("all") || filter == QStringLiteral("errors"));
+    bool showWarnings = (filter == QStringLiteral("all") || filter == QStringLiteral("warnings"));
+
+    for (const ProjectExplorer::Task &task : m_trackedTasks) {
+        bool isError = (task.type() == ProjectExplorer::Task::Error);
+        bool isWarning = (task.type() == ProjectExplorer::Task::Warning);
+        if (isError && !showErrors) continue;
+        if (isWarning && !showWarnings) continue;
+        if (!isError && !isWarning && filter != QStringLiteral("all")) continue;
+
+        QString severity = isError ? QStringLiteral("error") : (isWarning ? QStringLiteral("warning") : QStringLiteral("info"));
+        QString path = task.file().toUserOutput();
+        int line = task.line();
+        if (line < 1) line = 1;
+
+        QJsonObject obj;
+        obj.insert(QStringLiteral("file"), path);
+        obj.insert(QStringLiteral("line"), line);
+        obj.insert(QStringLiteral("column"), 0);
+        obj.insert(QStringLiteral("message"), task.description());
+        obj.insert(QStringLiteral("severity"), severity);
+        obj.insert(QStringLiteral("code"), QStringLiteral("unknown"));
+        out.append(obj);
+    }
+    return out;
 }
 
 bool IssuesManager::isAccessible() const

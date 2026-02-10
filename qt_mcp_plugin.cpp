@@ -294,6 +294,11 @@ public:
 				.setText(Tr::tr("⚠️ List Issues"))
 				.addOnTriggered(this, &Qt_MCP_PluginPlugin::executeListIssues);
 
+		ActionBuilder(this, Constants::GET_BUILD_DIAGNOSTICS_ACTION_ID)
+				.addToContainer(Constants::MENU_ID)
+				.setText(Tr::tr("📋 Get Build Diagnostics (JSON)"))
+				.addOnTriggered(this, &Qt_MCP_PluginPlugin::executeGetBuildDiagnostics);
+
 		ActionBuilder(this, Constants::GET_METHOD_METADATA_ACTION_ID)
 				.addToContainer(Constants::MENU_ID)
 				.setText(Tr::tr("📊 Get Method Metadata"))
@@ -556,7 +561,13 @@ private:
 		outputMessage(QString("Build Issues: %1").arg(issues.join(", ")));
 	}
 
-	void executeGetMethodMetadata()
+	void executeGetBuildDiagnostics()
+	{
+		QString json = m_commandsP->getBuildDiagnostics(QStringLiteral("all"));
+		outputMessage(QString("Build Diagnostics (JSON): %1").arg(json));
+	}
+
+		void executeGetMethodMetadata()
 	{
 		outputMessage("Getting method metadata...");
 		// Get metadata for all methods

@@ -60,6 +60,8 @@ public:
     
     // Build output commands
     QString getCompileOutput();
+    /** Structured build diagnostics (JSON array) for Cursor Problems panel; filter: "all", "errors", "warnings" */
+    QString getBuildDiagnostics(const QString &filter = "all");
     QString getApplicationOutput();
     
     // Build monitoring
@@ -80,6 +82,9 @@ public:
     
     // Debugger state inspection
     QString getCallStack();
+
+    // Preferences dialog helpers
+    bool openPreferencesPanel(const QString &panelName);
     
 
 signals:

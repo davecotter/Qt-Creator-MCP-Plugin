@@ -265,6 +265,21 @@ QJsonObject MCPServer::processRequest(const QJsonObject &request)
         openFileInputSchema["required"] = QJsonArray{"path"};
         openFileTool["inputSchema"] = openFileInputSchema;
         tools.append(openFileTool);
+
+        // Open preferences panel tool
+        QJsonObject openPrefsTool;
+        openPrefsTool["name"] = "openPreferencesPanel";
+        openPrefsTool["description"] = "Open Preferences/Options dialog and optionally switch to a panel by name or index";
+        QJsonObject openPrefsInputSchema;
+        openPrefsInputSchema["type"] = "object";
+        QJsonObject openPrefsProperties;
+        openPrefsProperties["panelName"] = QJsonObject{
+            {"type", "string"},
+            {"description", "Panel name (partial match) or numeric index as string"}
+        };
+        openPrefsInputSchema["properties"] = openPrefsProperties;
+        openPrefsTool["inputSchema"] = openPrefsInputSchema;
+        tools.append(openPrefsTool);
         
         // List projects tool
         QJsonObject listProjectsTool;
@@ -367,6 +382,22 @@ QJsonObject MCPServer::processRequest(const QJsonObject &request)
         listIssuesInputSchema["properties"] = listIssuesProperties;
         listIssuesTool["inputSchema"] = listIssuesInputSchema;
         tools.append(listIssuesTool);
+        
+        // Get build diagnostics (structured JSON for Cursor Problems panel)
+        QJsonObject getBuildDiagnosticsTool;
+        getBuildDiagnosticsTool["name"] = "getBuildDiagnostics";
+        getBuildDiagnosticsTool["description"] = "Get structured build diagnostics as a JSON array (file, line, column, message, severity, code) for use by Cursor Problems panel or problem matchers.";
+        QJsonObject getBuildDiagnosticsInputSchema;
+        getBuildDiagnosticsInputSchema["type"] = "object";
+        QJsonObject getBuildDiagnosticsProperties;
+        getBuildDiagnosticsProperties["filter"] = QJsonObject{
+            {"type", "string"},
+            {"description", "Filter: 'all' (default), 'errors', or 'warnings'"},
+            {"enum", QJsonArray{"all", "errors", "warnings"}}
+        };
+        getBuildDiagnosticsInputSchema["properties"] = getBuildDiagnosticsProperties;
+        getBuildDiagnosticsTool["inputSchema"] = getBuildDiagnosticsInputSchema;
+        tools.append(getBuildDiagnosticsTool);
         
         // Configure issues tool
         QJsonObject configIssuesTool;
@@ -543,6 +574,15 @@ QJsonObject MCPServer::processRequest(const QJsonObject &request)
                     errorMessage = "Invalid arguments for openFile";
                 }
             }
+            else if (toolName == "openPreferencesPanel") {
+                QString panelName;
+                if (arguments.isObject()) {
+                    panelName = arguments.toObject().value("panelName").toString();
+                }
+                bool successB = m_commandsP->openPreferencesPanel(panelName);
+                QJsonObject data{{"success", successB}};
+                result = createContentResponse(data);
+            }
             else if (toolName == "listProjects") {
                 QStringList projects = m_commandsP->listProjects();
                 QJsonArray projectArray;
@@ -620,6 +660,16 @@ QJsonObject MCPServer::processRequest(const QJsonObject &request)
                     issueArray.append(issue);
                 }
                 QJsonObject data{{"issues", issueArray}};
+                result = createContentResponse(data);
+            }
+            else if (toolName == "getBuildDiagnostics") {
+                QString filter = "all";
+                if (arguments.isObject()) {
+                    filter = arguments.toObject().value("filter").toString("all");
+                }
+                QString jsonStr = m_commandsP->getBuildDiagnostics(filter);
+                QJsonArray arr = QJsonDocument::fromJson(jsonStr.toUtf8()).array();
+                QJsonObject data{{"diagnostics", arr}};
                 result = createContentResponse(data);
             }
             else if (toolName == "configureIssues") {
@@ -700,6 +750,11 @@ QJsonObject MCPServer::processRequest(const QJsonObject &request)
                 errorMessage = "Unknown tool: " + toolName + suggestion;
             }
         }
+    }
+    else if (method == "prompts/list") {
+        // Return empty prompts list to satisfy clients expecting prompt discovery.
+        QJsonArray prompts;
+        result = QJsonObject{{"prompts", prompts}};
     }
     else {
         errorMessage = QString("Unknown method: %1").arg(method);
@@ -828,6 +883,21 @@ QJsonObject MCPServer::callMCPMethod(const QString &method, const QJsonValue &pa
         openFileInputSchema["required"] = QJsonArray{"path"};
         openFileTool["inputSchema"] = openFileInputSchema;
         tools.append(openFileTool);
+
+        // Open preferences panel tool
+        QJsonObject openPrefsTool;
+        openPrefsTool["name"] = "openPreferencesPanel";
+        openPrefsTool["description"] = "Open Preferences/Options dialog and optionally switch to a panel by name or index";
+        QJsonObject openPrefsInputSchema;
+        openPrefsInputSchema["type"] = "object";
+        QJsonObject openPrefsProperties;
+        openPrefsProperties["panelName"] = QJsonObject{
+            {"type", "string"},
+            {"description", "Panel name (partial match) or numeric index as string"}
+        };
+        openPrefsInputSchema["properties"] = openPrefsProperties;
+        openPrefsTool["inputSchema"] = openPrefsInputSchema;
+        tools.append(openPrefsTool);
         
         // List projects tool
         QJsonObject listProjectsTool;
@@ -930,6 +1000,23 @@ QJsonObject MCPServer::callMCPMethod(const QString &method, const QJsonValue &pa
         listIssuesInputSchema["properties"] = listIssuesProperties;
         listIssuesTool["inputSchema"] = listIssuesInputSchema;
         tools.append(listIssuesTool);
+        
+        // Get build diagnostics (structured JSON for Cursor Problems panel)
+        QJsonObject getBuildDiagnosticsTool;
+        getBuildDiagnosticsTool["name"] = "getBuildDiagnostics";
+        getBuildDiagnosticsTool["description"] = "Get structured build diagnostics as a JSON array (file, line, column, message, severity, code) for use by Cursor Problems panel or problem matchers.";
+        QJsonObject getBuildDiagnosticsInputSchema;
+        getBuildDiagnosticsInputSchema["type"] = "object";
+        QJsonObject getBuildDiagnosticsProperties;
+        getBuildDiagnosticsProperties["filter"] = QJsonObject{
+            {"type", "string"},
+            {"description", "Filter: 'all' (default), 'errors', or 'warnings'"},
+            {"enum", QJsonArray{"all", "errors", "warnings"}}
+        };
+        getBuildDiagnosticsInputSchema["properties"] = getBuildDiagnosticsProperties;
+        getBuildDiagnosticsTool["inputSchema"] = getBuildDiagnosticsInputSchema;
+        tools.append(getBuildDiagnosticsTool);
+        
         
         // Configure issues tool
         QJsonObject configIssuesTool;

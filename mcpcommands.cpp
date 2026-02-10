@@ -26,6 +26,11 @@
 #include <QPlainTextEdit>
 #include <QTextDocument>
 #include <QWidget>
+#include <QDialog>
+#include <QListWidget>
+#include <QListWidgetItem>
+#include <QCoreApplication>
+#include <QMetaType>
 #include <QMetaMethod>
 #include <QAbstractItemView>
 #include <QAbstractItemModel>
@@ -40,6 +45,8 @@
 #include <QFile>
 #include <QTimer>
 #include <QEventLoop>
+#include <QJsonDocument>
+#include <QJsonArray>
 
 namespace Qt_MCP_Plugin {
 namespace Internal {
@@ -981,6 +988,119 @@ QString MCPCommands::getCallStack()
     return results.join("\n");
 }
 
+bool MCPCommands::openPreferencesPanel(const QString &panelName)
+{
+    Core::ActionManager *actionManager = Core::ActionManager::instance();
+    if (!actionManager) {
+        qDebug() << "ActionManager not available";
+        return false;
+    }
+
+    QStringList actionIds = {
+        "Core.Options",
+        "Core.Settings",
+        "Core.Preferences",
+        "Preferences"
+    };
+
+    bool actionTriggeredB = false;
+    for (const QString &actionId : actionIds) {
+        Core::Command *command = actionManager->command(Utils::Id::fromString(actionId));
+        if (command && command->action()->isEnabled()) {
+            qDebug() << "Triggering preferences action:" << actionId;
+            command->action()->trigger();
+            actionTriggeredB = true;
+            break;
+        }
+    }
+
+    if (!actionTriggeredB) {
+        qDebug() << "No enabled preferences action found";
+        return false;
+    }
+
+    // Wait for the preferences dialog to appear
+    QDialog *prefsDialogP = nullptr;
+    for (int i = 0; i < 40 && !prefsDialogP; ++i) {
+        QCoreApplication::processEvents(QEventLoop::AllEvents, 25);
+        QWidgetList topLevelWidgets = QApplication::topLevelWidgets();
+        for (QWidget *widget : topLevelWidgets) {
+            QDialog *dialogP = qobject_cast<QDialog *>(widget);
+            if (!dialogP || !dialogP->isVisible()) {
+                continue;
+            }
+
+            QString titleStr = dialogP->windowTitle();
+            if (titleStr.contains("Preferences", Qt::CaseInsensitive)
+                || titleStr.contains("Options", Qt::CaseInsensitive)) {
+                prefsDialogP = dialogP;
+                break;
+            }
+        }
+        if (!prefsDialogP) {
+            QThread::msleep(25);
+        }
+    }
+
+    if (!prefsDialogP) {
+        qDebug() << "Preferences dialog not found";
+        return false;
+    }
+
+    if (panelName.isEmpty()) {
+        return true;
+    }
+
+    bool okB = false;
+    int targetIndexI = panelName.toInt(&okB);
+
+    QList<QListWidget *> listWidgets = prefsDialogP->findChildren<QListWidget *>(QString(), Qt::FindChildrenRecursively);
+    if (!listWidgets.isEmpty()) {
+        QListWidget *listP = listWidgets.front();
+
+        if (okB) {
+            if (targetIndexI >= 0 && targetIndexI < listP->count()) {
+                listP->setCurrentRow(targetIndexI);
+                return true;
+            }
+        } else {
+            for (int i = 0; i < listP->count(); ++i) {
+                QListWidgetItem *itemP = listP->item(i);
+                if (itemP && itemP->text().contains(panelName, Qt::CaseInsensitive)) {
+                    listP->setCurrentRow(i);
+                    return true;
+                }
+            }
+        }
+    }
+
+    QList<QTreeView *> treeViews = prefsDialogP->findChildren<QTreeView *>(QString(), Qt::FindChildrenRecursively);
+    for (QTreeView *treeP : treeViews) {
+        QAbstractItemModel *modelP = treeP->model();
+        if (!modelP) {
+            continue;
+        }
+
+        int rowCount = modelP->rowCount();
+        for (int row = 0; row < rowCount; ++row) {
+            QModelIndex index = modelP->index(row, 0);
+            QString text = modelP->data(index, Qt::DisplayRole).toString();
+            if (okB) {
+                if (row == targetIndexI) {
+                    treeP->setCurrentIndex(index);
+                    return true;
+                }
+            } else if (text.contains(panelName, Qt::CaseInsensitive)) {
+                treeP->setCurrentIndex(index);
+                return true;
+            }
+        }
+    }
+
+    qDebug() << "Preferences panel not found:" << panelName;
+    return false;
+}
+
 QString MCPCommands::getCurrentProject()
 {
     ProjectExplorer::Project *project = ProjectExplorer::ProjectManager::startupProject();
@@ -1255,6 +1375,49 @@ QString MCPCommands::getCompileOutput()
     QStringList outputLines;
     outputLines.append("=== COMPILE OUTPUT ===");
     QString text;
+
+    auto extractFromItemView = [&](QAbstractItemView* view, const QString& sourceLabel) -> bool {
+        if (!view) {
+            return false;
+        }
+        QAbstractItemModel* model = view->model();
+        if (!model) {
+            return false;
+        }
+        int rowCount = model->rowCount();
+        int colCount = model->columnCount();
+        if (rowCount == 0 || colCount == 0) {
+            return false;
+        }
+
+        QStringList modelLines;
+        int maxRows = qMin(rowCount, 200);
+        int maxCols = qMin(colCount, 6);
+        for (int row = 0; row < maxRows; ++row) {
+            QStringList rowParts;
+            for (int col = 0; col < maxCols; ++col) {
+                QModelIndex index = model->index(row, col);
+                QString cellText = model->data(index, Qt::DisplayRole).toString();
+                if (!cellText.isEmpty()) {
+                    rowParts.append(cellText);
+                }
+            }
+            if (!rowParts.isEmpty()) {
+                modelLines.append(rowParts.join(" | "));
+            }
+        }
+
+        if (modelLines.isEmpty()) {
+            return false;
+        }
+
+        text = modelLines.join("\n");
+        outputLines.append("");
+        outputLines.append(QString("Output from %1 model view:").arg(sourceLabel));
+        outputLines.append(text);
+        qDebug() << "Retrieved" << text.length() << "characters from model view";
+        return true;
+    };
     
     // Method 1: Use IOutputPane API - this is the proper way to access output panes
     QObjectList allObjects = ExtensionSystem::PluginManager::allObjects();
@@ -1271,6 +1434,30 @@ QString MCPCommands::getCompileOutput()
                 if (outputWidget) {
                     qDebug() << "Got output widget from IOutputPane:" << outputWidget->metaObject()->className();
                     
+                    // Check if the output widget itself is a text widget
+                    QPlainTextEdit* directPlainText = qobject_cast<QPlainTextEdit*>(outputWidget);
+                    QTextEdit* directTextEdit = qobject_cast<QTextEdit*>(outputWidget);
+
+                    if (directPlainText) {
+                        text = directPlainText->toPlainText();
+                        if (!text.isEmpty()) {
+                            outputLines.append("");
+                            outputLines.append(QString("Output from IOutputPane (%1):").arg(paneName));
+                            outputLines.append(text);
+                            qDebug() << "Retrieved" << text.length() << "characters from IOutputPane" << paneName;
+                            break;
+                        }
+                    } else if (directTextEdit) {
+                        text = directTextEdit->toPlainText();
+                        if (!text.isEmpty()) {
+                            outputLines.append("");
+                            outputLines.append(QString("Output from IOutputPane (%1):").arg(paneName));
+                            outputLines.append(text);
+                            qDebug() << "Retrieved" << text.length() << "characters from IOutputPane" << paneName;
+                            break;
+                        }
+                    }
+
                     // Search for text widgets recursively
                     QList<QPlainTextEdit*> plainTextEdits = outputWidget->findChildren<QPlainTextEdit*>(QString(), Qt::FindChildrenRecursively);
                     QList<QTextEdit*> textEdits = outputWidget->findChildren<QTextEdit*>(QString(), Qt::FindChildrenRecursively);
@@ -1291,6 +1478,18 @@ QString MCPCommands::getCompileOutput()
                             outputLines.append(QString("Output from IOutputPane (%1):").arg(paneName));
                             outputLines.append(text);
                             qDebug() << "Retrieved" << text.length() << "characters from IOutputPane" << paneName;
+                            break;
+                        }
+                    }
+
+                    if (text.isEmpty()) {
+                        QList<QAbstractItemView*> itemViews = outputWidget->findChildren<QAbstractItemView*>(QString(), Qt::FindChildrenRecursively);
+                        for (QAbstractItemView* view : itemViews) {
+                            if (extractFromItemView(view, paneName)) {
+                                break;
+                            }
+                        }
+                        if (!text.isEmpty()) {
                             break;
                         }
                     }
@@ -1324,27 +1523,59 @@ QString MCPCommands::getCompileOutput()
             // Method 1: Try casting to QWidget to access child widgets
         QWidget* widget = qobject_cast<QWidget*>(outputWindow);
         if (widget) {
-            // Try to find a QTextEdit or QPlainTextEdit child widget (recursive search)
-            QList<QTextEdit*> textEdits = widget->findChildren<QTextEdit*>(QString(), Qt::FindChildrenRecursively);
-            QList<QPlainTextEdit*> plainTextEdits = widget->findChildren<QPlainTextEdit*>(QString(), Qt::FindChildrenRecursively);
-            
-            if (!textEdits.isEmpty()) {
-                QTextEdit* textEdit = textEdits.first();
-                text = textEdit->toPlainText();
+            // Check if the widget itself is a text widget
+            QPlainTextEdit* directPlainText = qobject_cast<QPlainTextEdit*>(widget);
+            QTextEdit* directTextEdit = qobject_cast<QTextEdit*>(widget);
+            if (directPlainText) {
+                text = directPlainText->toPlainText();
+                if (!text.isEmpty()) {
+                    outputLines.append("");
+                    outputLines.append("Output from QPlainTextEdit:");
+                    outputLines.append(text);
+                    qDebug() << "Retrieved" << text.length() << "characters from QPlainTextEdit";
+                }
+            } else if (directTextEdit) {
+                text = directTextEdit->toPlainText();
                 if (!text.isEmpty()) {
                     outputLines.append("");
                     outputLines.append("Output from QTextEdit:");
                     outputLines.append(text);
                     qDebug() << "Retrieved" << text.length() << "characters from QTextEdit";
                 }
-            } else if (!plainTextEdits.isEmpty()) {
-                QPlainTextEdit* plainTextEdit = plainTextEdits.first();
-                text = plainTextEdit->toPlainText();
-                if (!text.isEmpty()) {
-                    outputLines.append("");
-                    outputLines.append("Output from QPlainTextEdit:");
-                    outputLines.append(text);
-                    qDebug() << "Retrieved" << text.length() << "characters from QPlainTextEdit";
+            }
+
+            // Try to find a QTextEdit or QPlainTextEdit child widget (recursive search)
+            if (text.isEmpty()) {
+                QList<QTextEdit*> textEdits = widget->findChildren<QTextEdit*>(QString(), Qt::FindChildrenRecursively);
+                QList<QPlainTextEdit*> plainTextEdits = widget->findChildren<QPlainTextEdit*>(QString(), Qt::FindChildrenRecursively);
+
+                if (!textEdits.isEmpty()) {
+                    QTextEdit* textEdit = textEdits.first();
+                    text = textEdit->toPlainText();
+                    if (!text.isEmpty()) {
+                        outputLines.append("");
+                        outputLines.append("Output from QTextEdit:");
+                        outputLines.append(text);
+                        qDebug() << "Retrieved" << text.length() << "characters from QTextEdit";
+                    }
+                } else if (!plainTextEdits.isEmpty()) {
+                    QPlainTextEdit* plainTextEdit = plainTextEdits.first();
+                    text = plainTextEdit->toPlainText();
+                    if (!text.isEmpty()) {
+                        outputLines.append("");
+                        outputLines.append("Output from QPlainTextEdit:");
+                        outputLines.append(text);
+                        qDebug() << "Retrieved" << text.length() << "characters from QPlainTextEdit";
+                    }
+                }
+            }
+
+            if (text.isEmpty()) {
+                QList<QAbstractItemView*> itemViews = widget->findChildren<QAbstractItemView*>(QString(), Qt::FindChildrenRecursively);
+                for (QAbstractItemView* view : itemViews) {
+                    if (extractFromItemView(view, QString::fromLatin1(metaObj->className()))) {
+                        break;
+                    }
                 }
             }
         }
@@ -1389,7 +1620,7 @@ QString MCPCommands::getCompileOutput()
                 QMetaProperty prop = metaObj->property(propIndex);
                 if (prop.isReadable()) {
                     QVariant value = prop.read(outputWindow);
-                    if (value.isValid() && value.type() == QVariant::String) {
+                    if (value.isValid() && value.typeId() == QMetaType::QString) {
                         text = value.toString();
                         if (!text.isEmpty()) {
                             outputLines.append("");
@@ -1474,7 +1705,7 @@ QString MCPCommands::getCompileOutput()
                                 qDebug() << "Retrieved" << text.length() << "characters from" << propName << "property";
                                 break;
                             }
-                        } else if (value.type() == QVariant::String && !value.toString().isEmpty()) {
+                        } else if (value.typeId() == QMetaType::QString && !value.toString().isEmpty()) {
                             text = value.toString();
                             outputLines.append("");
                             outputLines.append(QString("Output from %1 property:").arg(propName));
@@ -1507,6 +1738,12 @@ QString MCPCommands::getCompileOutput()
                                 if (!childText.isEmpty() && childText.length() > text.length()) {
                                     text = childText;
                                 }
+                            }
+                        }
+                        if (text.isEmpty()) {
+                            QAbstractItemView* view = qobject_cast<QAbstractItemView*>(childWidget);
+                            if (view && extractFromItemView(view, QString::fromLatin1(metaObj->className()))) {
+                                break;
                             }
                         }
                     }
@@ -1667,6 +1904,17 @@ QString MCPCommands::getCompileOutput()
     return result;
 }
 
+
+QString MCPCommands::getBuildDiagnostics(const QString &filter)
+{
+    qDebug() << "Returning structured build diagnostics, filter:" << filter;
+    if (!m_issuesManager) {
+        return QStringLiteral("[]");
+    }
+    QJsonArray arr = m_issuesManager->getCurrentIssuesStructured(filter);
+    return QString::fromUtf8(QJsonDocument(arr).toJson(QJsonDocument::Indented));
+}
+
 QString MCPCommands::getApplicationOutput()
 {
     qDebug() << "Retrieving application output from Qt Creator";
@@ -1801,7 +2049,7 @@ QString MCPCommands::getMethodMetadata()
         "build", "debug", "runProject", "cleanProject", "loadSession", 
         "getVersion", "listProjects", "listBuildConfigs", "getCurrentProject", 
         "getCurrentBuildConfig", "quit", "listOpenFiles", "listSessions", 
-        "getCurrentSession", "saveSession", "listIssues", "getMethodMetadata", 
+        "getCurrentSession", "saveSession", "listIssues", "getBuildDiagnostics", "getMethodMetadata", 
         "setMethodMetadata", "stopDebug"
     };
     
@@ -1825,6 +2073,7 @@ QString MCPCommands::getMethodMetadata()
     results.append("runProject: Run the current project");
     results.append("cleanProject: Clean build artifacts");
     results.append("listIssues: List current build issues and warnings");
+    results.append("getBuildDiagnostics: Get structured build diagnostics (JSON array of file, line, message, severity) for Cursor Problems panel");
     results.append("getMethodMetadata: Get metadata about all methods");
     results.append("setMethodMetadata: Configure timeout values for methods");
     

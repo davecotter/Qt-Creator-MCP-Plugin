@@ -4,6 +4,7 @@
 #include <QStringList>
 #include <QString>
 #include <QList>
+#include <QJsonArray>
 
 // Need full type for MOC-generated slot code
 #include <projectexplorer/task.h>
@@ -33,6 +34,13 @@ public:
      * @return List of formatted issue strings (errors first, then warnings)
      */
     QStringList getCurrentIssues(const QString &filter = "all") const;
+
+    /**
+     * @brief Retrieves current issues as structured JSON for tooling (e.g. Cursor Problems panel)
+     * @param filter "all" (default), "errors", or "warnings"
+     * @return JSON array of { file, line, column?, message, severity, code? } per issue
+     */
+    QJsonArray getCurrentIssuesStructured(const QString &filter = "all") const;
 
     /**
      * @brief Checks if the Issues panel is accessible

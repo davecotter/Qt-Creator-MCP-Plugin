@@ -592,6 +592,9 @@ def detect_qt_library_version(config):
     return None
 
 
+
+
+
 def find_matching_qt_sdk(config, qt_version):
     """Find a Qt SDK installation matching the required version"""
     system = platform.system().lower()
@@ -783,6 +786,73 @@ def regenerate_version_files():
     except Exception as e:
         print_error(f" Failed to regenerate version files: {e}")
         return False
+
+def ensure_json_files_generated(build_dir, also_in_source=False):
+    """
+    Ensure JSON files are generated in the build directory with correct version.
+    This is called after build to ensure files exist before installation.
+    
+    Args:
+        build_dir: Build directory path
+        also_in_source: If True, also generate in source directory for MOC compilation
+    """
+    try:
+        # Read version from version.cmake
+        with open("version.cmake", 'r') as f:
+            content = f.read()
+        
+        import re
+        major_match = re.search(r'PLUGIN_VERSION_MAJOR (\d+)', content)
+        minor_match = re.search(r'PLUGIN_VERSION_MINOR (\d+)', content)
+        patch_match = re.search(r'PLUGIN_VERSION_PATCH (\d+)', content)
+        
+        if not all([major_match, minor_match, patch_match]):
+            print_error(" Could not extract version from version.cmake")
+            return False
+        
+        version = f"{major_match.group(1)}.{minor_match.group(1)}.{patch_match.group(1)}"
+        
+        # Read JSON template
+        json_template = "Qt_MCP_Plugin.json.in"
+        discovery_template = "Qt_MCP_Plugin_discovery.json.in"
+        
+        if not os.path.exists(json_template):
+            print_error(f" JSON template not found: {json_template}")
+            return False
+        
+        # Generate plugin JSON file in build directory
+        with open(json_template, 'r') as f:
+            json_content = f.read().replace("@PLUGIN_VERSION@", version)
+        
+        json_output = os.path.join(build_dir, "Qt_MCP_Plugin.json")
+        os.makedirs(build_dir, exist_ok=True)
+        with open(json_output, 'w') as f:
+            f.write(json_content)
+        print(f"[OK] Generated {json_output} with version {version}")
+        
+        # Also generate in source directory if requested (for MOC compilation)
+        if also_in_source:
+            source_json = "Qt_MCP_Plugin.json"
+            with open(source_json, 'w') as f:
+                f.write(json_content)
+            print(f"[OK] Generated {source_json} in source directory for MOC")
+        
+        # Generate discovery JSON file if template exists
+        if os.path.exists(discovery_template):
+            with open(discovery_template, 'r') as f:
+                discovery_content = f.read().replace("@PLUGIN_VERSION@", version)
+            
+            discovery_output = os.path.join(build_dir, "Qt_MCP_Plugin_discovery.json")
+            with open(discovery_output, 'w') as f:
+                f.write(discovery_content)
+            print(f"[OK] Generated {discovery_output} with version {version}")
+        
+        return True
+        
+    except Exception as e:
+        print_error(f" Failed to generate JSON files: {e}")
+        return False
+
 
 def get_mcp_timeout_for_function(function_name):
     """Get the appropriate timeout for a specific MCP function"""
@@ -1286,6 +1356,19 @@ def main():
     print("[OK] Qt SDK version compatible")
     print("")
 
+    # Check: Qt Creator Plugin Development SDK (required tools) at official location only.
+    # If not found, report and stop. Do not attempt workarounds.
+    sdk_dir = os.path.join(config["qt_creator_path"], "lib", "cmake", "QtCreator")
+    sdk_config = os.path.join(sdk_dir, "QtCreatorConfig.cmake")
+    if not os.path.isfile(sdk_config):
+        print("")
+        print_error("Qt Creator Plugin Development tools are not installed.")
+        print(f"   Expected: {sdk_config}")
+        print("   Install the Plugin Development component for Qt Creator (MaintenanceTool), then re-run.")
+        sys.exit(1)
+    print("[CHECK] Qt Creator Plugin Development SDK found")
+    print("")
+
     # Step 1: ALWAYS ensure Qt Creator is NOT running before starting
     print("[SEARCH] Checking for running Qt Creator...")
     if is_process_running(config["process_name"]):
@@ -1443,7 +1526,6 @@ def main():
                     print_error(" Could not detect Qt library version from Qt Creator")
                     print_error(" Please ensure Qt Creator is properly installed")
                     sys.exit(1)
-                
                 # Find matching Qt SDK
                 qt6_path = find_matching_qt_sdk(config, qt_lib_version)
                 if not qt6_path:
@@ -1455,15 +1537,14 @@ def main():
                     print(f"   3. Install Qt {qt_lib_version} (including macOS and Qt Plugin Development)")
                     print("   4. Re-run the build after installation completes")
                     sys.exit(1)
-                
                 qtcreator_dir = f"{config['qt_creator_path']}/lib/cmake/QtCreator"
                 qt6_dir = f"{qt6_path}/lib/cmake/Qt6"
                 cmake_cmd = [
-                    "cmake", 
+                    "cmake",
                     f"-DCMAKE_PREFIX_PATH={config['qt_creator_path']}",
                     f"-DQtCreator_DIR={qtcreator_dir}",
                     f"-DQt6_DIR={qt6_dir}",
-                    "-DCMAKE_BUILD_TYPE=Release", 
+                    "-DCMAKE_BUILD_TYPE=Release",
                     "-B", build_dir
                 ]
             else:
@@ -1500,6 +1581,12 @@ def main():
     # Step 5: Always rebuild plugin to ensure latest changes are included
     plugin_binary, _ = get_plugin_paths()
     current_dir = os.getcwd()
+    
+    # Step 5a: Generate JSON file in source directory for MOC compilation
+    print("[PROGRESS] Generating JSON file for MOC compilation...")
+    if not ensure_json_files_generated(build_dir, also_in_source=True):
+        print_error(" Failed to generate JSON files for build")
+        sys.exit(1)
     
     print("Building plugin...")
     
@@ -1573,6 +1660,12 @@ def main():
             finally:
                 os.chdir(original_dir)
         print("[OK] Build successful")
+    
+    # Step 5a: Ensure JSON files are generated in build directory
+    print("[PROGRESS] Ensuring JSON files are generated...")
+    if not ensure_json_files_generated(build_dir):
+        print_error(" Failed to generate JSON files")
+        sys.exit(1)
     
     # Step 5b: Clean old plugin versions before installing new one
     print("Cleaning old plugin versions...")
