@@ -50,6 +50,23 @@ After a successful build, restart Cursor to enable AI control of Qt Creator.
 
 **For AI Assistants:** See `.cursorrules` for detailed build instructions and troubleshooting.
 
+## Repository structure
+
+| Path | Contents |
+|------|----------|
+| `src/source/` | C++ implementation (.cpp, .mm) |
+| `src/header/` | C++ headers |
+| `src/resources/` | mcp.qrc, mcp.png, translations |
+| `src/*.in` | Plugin JSON and version templates |
+| `scripts/build/` | Build and Qt config (build_main.py, qt_config.py) |
+| `scripts/test/` | Test suite and build-diagnostics tests |
+| `scripts/installer/` | macOS installer app and scripts |
+| `scripts/git/` | Git credential helper for pushes |
+| `documentation/` | AGENTS.md, TESTING.md, and other docs |
+| `.qt/` | Qt path config per platform (see .qt/README.md) |
+
+Build output and logs go to `build/` and `logs/` (gitignored).
+
 ## Build diagnostics (Cursor Problems panel)
 
 The plugin exposes **structured build diagnostics** so Cursor (or other MCP clients) can show Qt Creator build errors and warnings in the Problems panel:
@@ -72,24 +89,26 @@ The plugin displays an icon in the **Tools -> MCP Plugin** menu. Menu icon handl
 
 ### Source Files
 
+All plugin source lives under `src/`: headers in `src/header/`, implementation in `src/source/`, resources in `src/resources/`.
+
 | File | Purpose |
 |------|---------|
-| `qt_mcp_plugin.cpp` | Main plugin entry point, menu setup |
-| `mcpserver.cpp/h` | HTTP server on port 3001 |
-| `mcpcommands.cpp/h` | MCP tool implementations |
-| `macos_menu_icon.mm/h` | macOS native menu icon support |
-| `platform_menu_icon.cpp` | Windows/Linux menu icon stub |
-| `issuesmanager.cpp/h` | Build issues tracking (list + structured JSON) |
-| `httpparser.cpp/h` | HTTP request parsing |
-| `httpresponse.cpp/h` | HTTP response generation |
+| `src/source/qt_mcp_plugin.cpp` | Main plugin entry point, menu setup |
+| `src/source/mcpserver.cpp`, `src/header/mcpserver.h` | HTTP server on port 3001 |
+| `src/source/mcpcommands.cpp`, `src/header/mcpcommands.h` | MCP tool implementations |
+| `src/source/macos_menu_icon.mm`, `src/header/macos_menu_icon.h` | macOS native menu icon support |
+| `src/source/platform_menu_icon.cpp` | Windows/Linux menu icon stub |
+| `src/source/issuesmanager.cpp`, `src/header/issuesmanager.h` | Build issues tracking (list + structured JSON) |
+| `src/source/httpparser.cpp`, `src/header/httpparser.h` | HTTP request parsing |
+| `src/source/httpresponse.cpp`, `src/header/httpresponse.h` | HTTP response generation |
 
 ## Extending the Plugin
 
 **Let AI do the work:** The plugin is designed for AI-assisted development. Describe what you want to add and let your AI assistant:
 
-1. **Add new MCP commands** in `mcpcommands.cpp/h`
-2. **Register tools** in `mcpserver.cpp` (both tool-list blocks if present)
-3. **Add menu actions** in `qt_mcp_plugin.cpp` and constants in `qt_mcp_pluginconstants.h`
+1. **Add new MCP commands** in `src/source/mcpcommands.cpp` and `src/header/mcpcommands.h`
+2. **Register tools** in `src/source/mcpserver.cpp` (both tool-list blocks if present)
+3. **Add menu actions** in `src/source/qt_mcp_plugin.cpp` and constants in `src/header/qt_mcp_pluginconstants.h`
 4. **Test** using the MCP server or Tools -> MCP Plugin menu
 
 **Example AI prompts:**

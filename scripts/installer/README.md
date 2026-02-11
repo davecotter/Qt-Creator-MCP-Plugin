@@ -22,7 +22,7 @@ python3 scripts/build/build_main.py
 To build the installer separately:
 
 ```bash
-cd installer
+cd scripts/installer
 python3 build_installer.py
 ```
 

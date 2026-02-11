@@ -247,6 +247,59 @@ def parse_http_response(response_text):
         'body': body
     }
 
+def qt_mcp_tools_call(tool_name, arguments=None, timeout=10):
+    params = {"name": tool_name}
+    if arguments:
+        params["arguments"] = arguments
+    req = {"jsonrpc": "2.0", "method": "tools/call", "params": params, "id": 1}
+    raw = send_tcp_request(json.dumps(req), timeout=timeout)
+    data = json.loads(raw)
+    if "error" in data:
+        raise RuntimeError("Qt MCP error: " + str(data["error"]))
+    return data.get("result", {})
+
+def launch_qt_creator():
+    try:
+        config = get_platform_config()
+        bin_path = config.get("qt_creator_bin")
+        app_path = config.get("qt_creator_app")
+        if not bin_path or not os.path.exists(bin_path):
+            return False
+        if platform.system().lower() == "darwin" and app_path and os.path.exists(app_path):
+            subprocess.Popen(["open", "-a", app_path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        else:
+            subprocess.Popen([bin_path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, cwd=os.path.dirname(bin_path))
+        return True
+    except Exception:
+        return False
+
+def kjams_mcp_get_app_version(base_url, timeout=5):
+    try:
+        if sys.version_info[0] >= 3:
+            from urllib.request import Request, urlopen
+        else:
+            from urllib2 import Request, urlopen
+        url = base_url.rstrip("/") + "/"
+        body = json.dumps({"jsonrpc": "2.0", "method": "tools/call", "id": 1, "params": {"name": "get_app_version", "arguments": {}}})
+        req = Request(url, data=body.encode("utf-8") if isinstance(body, str) else body, headers={"Content-Type": "application/json"}, method="POST")
+        resp = urlopen(req, timeout=timeout)
+        data = json.loads(resp.read().decode("utf-8"))
+        if "error" in data:
+            return None
+        content = data.get("result", {}).get("content") or []
+        if not content:
+            return None
+        text = content[0].get("text")
+        if text is None:
+            return None
+        try:
+            parsed = json.loads(text)
+            return parsed.get("version") or parsed.get("content") or text
+        except Exception:
+            return text
+    except Exception:
+        return None
+
 def test_server_connectivity(result):
     """Test basic server connectivity"""
     print_header("Server Connectivity Test")
@@ -599,6 +652,154 @@ def test_plugin_version(result, verbose=False):
         result.add_test("Plugin Version Check", False, str(e))
         return False
 
+def test_kjams_build_run_e2e(result, verbose=False):
+    """
+    E2E: ensure Qt Creator running and plugin version OK; load kjams session;
+    select 'kjams nightclub debug' config; build; on errors show JSON and stop;
+    on success run app; poll kJams MCP get_app_version until response (20s timeout).
+    """
+    print_header("kJams Build/Run E2E Test")
+    qt_port = 3001
+    session_name = "kjams"
+    config_name = "kjams nightclub debug"
+    kjams_mcp_url = os.environ.get("KJAMS_MCP_URL", "http://localhost:3002")
+    build_wait_timeout = 300
+    kjams_poll_timeout = 20
+    kjams_poll_interval = 2
+
+    # 1) If Qt Creator not open, launch it; then verify we can query plugin version
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(3)
+        sock.connect(("localhost", qt_port))
+        sock.close()
+    except Exception:
+        if verbose:
+            print("      Qt Creator not reachable, launching...")
+        if not launch_qt_creator():
+            print_test_result("Launch Qt Creator", False, "Could not launch Qt Creator")
+            result.add_test("kJams E2E", False, "Launch Qt Creator failed")
+            return False
+        for attempt in range(3):
+            time.sleep(5)
+            try:
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.settimeout(5)
+                sock.connect(("localhost", qt_port))
+                sock.close()
+                break
+            except Exception:
+                if attempt == 2:
+                    print_test_result("Qt Creator MCP reachable after launch", False, "Port 3001 not responding after 3 attempts")
+                    result.add_test("kJams E2E", False, "MCP not reachable after launch")
+                    return False
+        time.sleep(2)
+
+    # Query plugin version (must succeed)
+    try:
+        req = json.dumps({
+            "jsonrpc": "2.0", "method": "initialize", "id": 1,
+            "params": {"protocolVersion": "2024-11-05", "capabilities": {}, "clientInfo": {"name": "E2E", "version": "1.0"}}
+        })
+        raw = send_tcp_request(req, timeout=10)
+        data = json.loads(raw)
+        info = (data.get("result") or {}).get("serverInfo") or {}
+        version = info.get("version", "")
+        name = info.get("name", "")
+        if "Qt MCP Plugin" not in name or not version:
+            print_test_result("Query MCP plugin version", False, "Bad response: " + str(data))
+            result.add_test("kJams E2E", False, "Plugin version query failed")
+            return False
+        if verbose:
+            print("      Plugin: {} v{}".format(name, version))
+    except Exception as e:
+        print_test_result("Query MCP plugin version", False, str(e))
+        result.add_test("kJams E2E", False, "Plugin version query: " + str(e))
+        return False
+
+    # 2) If kjams session not open, open it
+    try:
+        current = qt_mcp_tools_call("getCurrentSession", timeout=10)
+        text = (current.get("content") or [{}])[0].get("text") or ""
+        if session_name not in text:
+            qt_mcp_tools_call("loadSession", {"sessionName": session_name}, timeout=30)
+            time.sleep(5)
+        if verbose:
+            print("      Session: " + session_name)
+    except Exception as e:
+        print_test_result("Load session '" + session_name + "'", False, str(e))
+        result.add_test("kJams E2E", False, "Load session: " + str(e))
+        return False
+
+    # 3) If "kjams nightclub debug" not selected, select it
+    try:
+        current = qt_mcp_tools_call("getCurrentBuildConfig", timeout=10)
+        text = (current.get("content") or [{}])[0].get("text") or ""
+        if config_name not in text:
+            qt_mcp_tools_call("switchBuildConfig", {"name": config_name}, timeout=10)
+            time.sleep(1)
+        if verbose:
+            print("      Build config: " + config_name)
+    except Exception as e:
+        print_test_result("Switch build config '" + config_name + "'", False, str(e))
+        result.add_test("kJams E2E", False, "Switch config: " + str(e))
+        return False
+
+    # 4) Build
+    try:
+        qt_mcp_tools_call("build", timeout=15)
+        qt_mcp_tools_call("waitForBuildCompletion", {"timeoutSeconds": build_wait_timeout}, timeout=build_wait_timeout + 30)
+    except Exception as e:
+        print_test_result("Build + wait", False, str(e))
+        result.add_test("kJams E2E", False, "Build/wait: " + str(e))
+        return False
+
+    # 5) Fetch build diagnostics. If build had errors, fetching and displaying JSON is SUCCESS.
+    try:
+        diag_result = qt_mcp_tools_call("getBuildDiagnostics", {"filter": "errors"}, timeout=15)
+        content = diag_result.get("content") or []
+        text = (content[0].get("text") if content else None) or ""
+        try:
+            diag_data = json.loads(text)
+        except Exception:
+            diag_data = {}
+        diagnostics = diag_data.get("diagnostics") or []
+        if diagnostics:
+            print(Colors.CYAN + "Build had errors. Fetched and displaying diagnostics (JSON):" + Colors.END)
+            print(json.dumps({"diagnostics": diagnostics}, indent=2))
+            print_test_result("Fetched and displayed build diagnostics", True, "Build failed; successfully fetched and displayed " + str(len(diagnostics)) + " diagnostic(s)")
+            result.add_test("kJams E2E", True, "Build had errors; successfully fetched and displayed diagnostics (JSON)")
+            return True
+    except Exception as e:
+        print_test_result("Get build diagnostics", False, str(e))
+        result.add_test("kJams E2E", False, "getBuildDiagnostics: " + str(e))
+        return False
+
+    # 6) Run the app
+    try:
+        qt_mcp_tools_call("runProject", timeout=15)
+        time.sleep(2)
+    except Exception as e:
+        print_test_result("Run project", False, str(e))
+        result.add_test("kJams E2E", False, "runProject: " + str(e))
+        return False
+
+    # 7) Poll kJams MCP get_app_version until app responds; timeout 20s
+    deadline = time.time() + kjams_poll_timeout
+    version = None
+    while time.time() < deadline:
+        version = kjams_mcp_get_app_version(kjams_mcp_url, timeout=3)
+        if version is not None:
+            break
+        time.sleep(kjams_poll_interval)
+    if version is None:
+        print_test_result("kJams app version (poll " + str(kjams_poll_timeout) + "s)", False, "No response from kJams MCP at " + kjams_mcp_url)
+        result.add_test("kJams E2E", False, "kJams get_app_version timeout")
+        return False
+    print_test_result("kJams app version", True, "Version: " + str(version))
+    result.add_test("kJams E2E", True, "App version: " + str(version))
+    return True
+
 def iterative_test(result, max_attempts=5, delay=2):
     """Run iterative tests with retry logic"""
     print_header("Iterative Testing")
@@ -665,6 +866,7 @@ For detailed documentation, see documentation/TESTING.md
                        help='Delay in seconds between iterative test attempts (default: 2)')
     
     parser.add_argument('--build-diagnostics', action='store_true', help='Run getBuildDiagnostics self-test (inject, build, get diagnostics, restore)')
+    parser.add_argument('--kjams-e2e', action='store_true', help='Run kJams E2E: launch Qt Creator if needed, load session, select config, build, run, poll kJams app version')
     args = parser.parse_args()
     
     print(Colors.MAGENTA + Colors.BOLD + "Qt MCP Plugin - Comprehensive Test Suite" + Colors.END)
@@ -674,6 +876,15 @@ For detailed documentation, see documentation/TESTING.md
     print("Platform: {}".format(config['name']))
     
     result = TestResult()
+    
+    if getattr(args, 'kjams_e2e', False):
+        test_kjams_build_run_e2e(result, args.verbose)
+        if result.print_summary():
+            print("\n" + Colors.GREEN + "[SUCCESS] kJams E2E test passed." + Colors.END)
+            sys.exit(0)
+        else:
+            print("\n" + Colors.RED + "[FAIL] kJams E2E test failed." + Colors.END)
+            sys.exit(1)
     
     # Iterative connectivity test if requested
     if args.iterative:

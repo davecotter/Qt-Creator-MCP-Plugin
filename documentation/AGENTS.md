@@ -11,6 +11,7 @@ Qt Creator plugin implementing the **Model Context Protocol (MCP)**. Enables AI/
 - scripts/build/ – main build and config scripts
 - scripts/test/ – test scripts
 - scripts/installer/ – installer assets and scripts
+- scripts/git/ – Git credential helper for agent pushes
 - build/ – build artifacts (CMake output, installer .app; in .gitignore)
 - logs/ – build and other log files (in .gitignore)
 - documentation/ – AGENTS.md, TESTING.md, and other docs

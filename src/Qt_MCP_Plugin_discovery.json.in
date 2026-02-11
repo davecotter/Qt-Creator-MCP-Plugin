@@ -1,4 +1,5 @@
 {
+  "clientInstructions": "Call the getMethodMetadata tool first to obtain timeout values for methods such as loadSession, build, debug, and waitForBuildCompletion. Use the listTools tool or the MCP method tools/list to see all available tools.",
   "mcp": {
     "version": "2024-11-05",
     "name": "Qt Creator MCP Plugin",
@@ -117,6 +118,22 @@
     {
       "name": "saveSession",
       "description": "Save the current session"
+    },
+    {
+      "name": "listTools",
+      "description": "List all available MCP tools. Same as the MCP tools/list method. Call this or tools/list to discover every tool including getMethodMetadata and listTools."
+    },
+    {
+      "name": "getMethodMetadata",
+      "description": "Get method metadata including timeout values for loadSession, build, debug, waitForBuildCompletion, etc. Call this first to discover timeout values."
+    },
+    {
+      "name": "setMethodMetadata",
+      "description": "Set timeout value (seconds) for a method (e.g. loadSession, build, debug).",
+      "parameters": {
+        "method": {"type": "string", "description": "Method name (e.g. loadSession, build)"},
+        "timeoutSeconds": {"type": "integer", "description": "Timeout in seconds"}
+      }
     }
   ],
   "installation": {

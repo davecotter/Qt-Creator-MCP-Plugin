@@ -106,6 +106,9 @@ This script handles EVERYTHING automatically:
 
 **DO NOT manually run cmake or build commands. Always use the build script.**
 
+### ⚠️ After every atomic change: run the build script
+**Anytime you make an atomic change to the plugin** (source code, CMake, version, JSON, discovery file, resources, etc.), **you MUST run the build script** (`python3 scripts/build/build_main.py`). The script will quit Qt Creator, bump the version, build, install, launch Qt Creator, and verify the new plugin version. Do not skip this step after editing plugin-related files.
+
 ---
 ## 🔴 MANUAL: Verify SDK Installation (if build script fails) 🔴
 

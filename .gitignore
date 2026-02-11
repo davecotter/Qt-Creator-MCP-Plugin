@@ -102,6 +102,7 @@ build.log
 
 # Build directories
 build/
+!scripts/build/
 build_*/
 debug/
 release/

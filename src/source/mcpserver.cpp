@@ -503,6 +503,39 @@ QJsonObject MCPServer::processRequest(const QJsonObject &request)
         waitForBuildCompletionTool["inputSchema"] = waitForBuildCompletionInputSchema;
         tools.append(waitForBuildCompletionTool);
         
+        // listTools: list all tools (including this one and getMethodMetadata)
+        QJsonObject listToolsTool;
+        listToolsTool["name"] = "listTools";
+        listToolsTool["description"] = "List all available MCP tools. Same as the MCP tools/list method. Call this or tools/list to discover every tool including getMethodMetadata and listTools.";
+        QJsonObject listToolsInputSchema;
+        listToolsInputSchema["type"] = "object";
+        listToolsInputSchema["properties"] = QJsonObject();
+        listToolsTool["inputSchema"] = listToolsInputSchema;
+        tools.append(listToolsTool);
+        
+        // getMethodMetadata: get timeout values for methods (call this first)
+        QJsonObject getMethodMetadataTool;
+        getMethodMetadataTool["name"] = "getMethodMetadata";
+        getMethodMetadataTool["description"] = "Get method metadata including timeout values for loadSession, build, debug, waitForBuildCompletion, etc. Call this first to discover timeout values.";
+        QJsonObject getMethodMetadataInputSchema;
+        getMethodMetadataInputSchema["type"] = "object";
+        getMethodMetadataInputSchema["properties"] = QJsonObject();
+        getMethodMetadataTool["inputSchema"] = getMethodMetadataInputSchema;
+        tools.append(getMethodMetadataTool);
+        
+        // setMethodMetadata: set timeout for a method
+        QJsonObject setMethodMetadataTool;
+        setMethodMetadataTool["name"] = "setMethodMetadata";
+        setMethodMetadataTool["description"] = "Set timeout value (seconds) for a method (e.g. loadSession, build, debug).";
+        QJsonObject setMethodMetadataInputSchema;
+        setMethodMetadataInputSchema["type"] = "object";
+        QJsonObject setMethodMetadataProps;
+        setMethodMetadataProps["method"] = QJsonObject{{"type", "string"}, {"description", "Method name (e.g. loadSession, build)"}};
+        setMethodMetadataProps["timeoutSeconds"] = QJsonObject{{"type", "integer"}, {"description", "Timeout in seconds"}};
+        setMethodMetadataInputSchema["properties"] = setMethodMetadataProps;
+        setMethodMetadataTool["inputSchema"] = setMethodMetadataInputSchema;
+        tools.append(setMethodMetadataTool);
+        
         QJsonObject toolsResult;
         toolsResult["tools"] = tools;
         result = toolsResult;
@@ -733,6 +766,27 @@ QJsonObject MCPServer::processRequest(const QJsonObject &request)
                     {"completed", completed},
                     {"timedOut", !completed}
                 };
+                result = createContentResponse(data);
+            }
+            else if (toolName == "getMethodMetadata") {
+                QString meta = m_commandsP->getMethodMetadata();
+                QJsonObject data{{"result", meta}};
+                result = createContentResponse(data);
+            }
+            else if (toolName == "setMethodMetadata") {
+                QString method;
+                int timeoutSeconds = -1;
+                if (arguments.isObject()) {
+                    QJsonObject args = arguments.toObject();
+                    method = args.value("method").toString();
+                    timeoutSeconds = args.value("timeoutSeconds").toInt(-1);
+                }
+                QString setResult = m_commandsP->setMethodMetadata(method, timeoutSeconds);
+                QJsonObject data{{"result", setResult}};
+                result = createContentResponse(data);
+            }
+            else if (toolName == "listTools") {
+                QJsonObject data{{"message", "Use the MCP method tools/list to get the full list of tools (including listTools and getMethodMetadata)."}};
                 result = createContentResponse(data);
             }
             else {
@@ -1046,6 +1100,39 @@ QJsonObject MCPServer::callMCPMethod(const QString &method, const QJsonValue &pa
         quitInputSchema["properties"] = QJsonObject();
         quitTool["inputSchema"] = quitInputSchema;
         tools.append(quitTool);
+        
+        // listTools
+        QJsonObject listToolsTool2;
+        listToolsTool2["name"] = "listTools";
+        listToolsTool2["description"] = "List all available MCP tools. Same as the MCP tools/list method. Call this or tools/list to discover every tool including getMethodMetadata and listTools.";
+        QJsonObject listToolsInputSchema2;
+        listToolsInputSchema2["type"] = "object";
+        listToolsInputSchema2["properties"] = QJsonObject();
+        listToolsTool2["inputSchema"] = listToolsInputSchema2;
+        tools.append(listToolsTool2);
+        
+        // getMethodMetadata
+        QJsonObject getMethodMetadataTool2;
+        getMethodMetadataTool2["name"] = "getMethodMetadata";
+        getMethodMetadataTool2["description"] = "Get method metadata including timeout values for loadSession, build, debug, waitForBuildCompletion, etc. Call this first to discover timeout values.";
+        QJsonObject getMethodMetadataInputSchema2;
+        getMethodMetadataInputSchema2["type"] = "object";
+        getMethodMetadataInputSchema2["properties"] = QJsonObject();
+        getMethodMetadataTool2["inputSchema"] = getMethodMetadataInputSchema2;
+        tools.append(getMethodMetadataTool2);
+        
+        // setMethodMetadata
+        QJsonObject setMethodMetadataTool2;
+        setMethodMetadataTool2["name"] = "setMethodMetadata";
+        setMethodMetadataTool2["description"] = "Set timeout value (seconds) for a method (e.g. loadSession, build, debug).";
+        QJsonObject setMethodMetadataInputSchema2;
+        setMethodMetadataInputSchema2["type"] = "object";
+        QJsonObject setMethodMetadataProps2;
+        setMethodMetadataProps2["method"] = QJsonObject{{"type", "string"}, {"description", "Method name (e.g. loadSession, build)"}};
+        setMethodMetadataProps2["timeoutSeconds"] = QJsonObject{{"type", "integer"}, {"description", "Timeout in seconds"}};
+        setMethodMetadataInputSchema2["properties"] = setMethodMetadataProps2;
+        setMethodMetadataTool2["inputSchema"] = setMethodMetadataInputSchema2;
+        tools.append(setMethodMetadataTool2);
         
         QJsonObject toolsResult;
         toolsResult["tools"] = tools;
