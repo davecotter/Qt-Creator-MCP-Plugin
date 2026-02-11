@@ -36,7 +36,7 @@ The plugin adds a **Tools -> MCP Plugin** menu (with icon) to Qt Creator and run
 
 **Build & Install:**
 ```bash
-python3 build_main.py
+python3 scripts/build/build_main.py
 ```
 
 The build script handles everything:
@@ -57,7 +57,9 @@ The plugin exposes **structured build diagnostics** so Cursor (or other MCP clie
 - **MCP tool:** `getBuildDiagnostics` - Returns a JSON array of `{ file, line, column, message, severity, code }` per issue (pretty-printed). Optional `filter`: "all", "errors", or "warnings".
 - **Menu:** **Tools -> MCP Plugin -> Get Build Diagnostics (JSON)** - Runs the same and shows the JSON in the plugin output pane so you can try it manually.
 
-Use this from a preLaunch script on build failure, or from an extension, to fill the Problems panel with the same issues Qt Creator reports. See `mcp-build-diagnostics.md` for integration options.
+Use this from a preLaunch script on build failure, or from an extension, to fill the Problems panel with the same issues Qt Creator reports. See documentation/ for build diagnostics and other docs (e.g. documentation/TESTING.md, documentation/AGENTS.md).
+
+**Self-test:** Run `python3 scripts/test/test_build_diagnostics.py --inject` (or `python3 scripts/test/test_suite.py --build-diagnostics`) to inject a syntax error, build via MCP, then assert `getBuildDiagnostics` returns the error. Requires Qt Creator running with a project open.
 
 ## Architecture
 

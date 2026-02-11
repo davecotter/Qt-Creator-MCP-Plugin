@@ -136,14 +136,20 @@ minsizerel/
 *.temp
 *~
 
-# Build output logs
+# Build output logs (also in logs/)
+build.log
 build_output.log
 cmake_config.log
+logs/
 
 # IDE workspace files
 *.code-workspace
+
+# Generated files (build dir is primary; ignore if at root)
+version.h
 
 # Generated JSON (built from .json.in)
 Qt_MCP_Plugin.json
 Qt_MCP_Plugin_discovery.json
 
+*.bak

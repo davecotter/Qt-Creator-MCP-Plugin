@@ -16,7 +16,7 @@ A standalone native macOS application for installing the Qt MCP Plugin into Qt C
 The installer is automatically built as part of the main build process:
 
 ```bash
-python3 build_main.py
+python3 scripts/build/build_main.py
 ```
 
 To build the installer separately:

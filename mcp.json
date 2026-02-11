@@ -61,11 +61,11 @@
       "Qt Plugin Development components"
     ],
     "commands": {
-      "build": "python3 build_main.py",
+      "build": "python3 scripts/build/build_main.py",
       "test": "echo '{\"jsonrpc\":\"2.0\",\"method\":\"initialize\",\"id\":1}' | nc localhost 3001"
     },
     "scripts": {
-      "build": "python3 build_main.py"
+      "build": "python3 scripts/build/build_main.py"
     },
     "auto_cleanup": true,
     "auto_install": true,
@@ -73,15 +73,15 @@
     "auto_cursor_registration": true
   },
   "platforms": {
-    "_note": "These are example paths only. Actual paths are configured in qt_config.py",
+    "_note": "These are example paths only. Actual paths are configured in scripts/build/qt_config.py",
     "macos": { "qt_root": "/Users/<username>/Developer/Qt" },
     "windows": { "qt_root": "C:/Qt" },
     "linux": { "qt_root": "/opt" }
   },
   "usage": {
-    "build_command": "python3 build_main.py",
+    "build_command": "python3 scripts/build/build_main.py",
     "prompts": [
-      "Build and install the Qt MCP Plugin using: python3 build_main.py",
+      "Build and install the Qt MCP Plugin using: python3 scripts/build/build_main.py",
       "Test that the plugin loads correctly and the MCP server is responding on port 3001.",
       "The build script automatically registers with Cursor IDE - restart Cursor after building."
     ]

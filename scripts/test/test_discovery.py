@@ -50,7 +50,7 @@ def print_discovery_info():
     print()
     
     print("DOCUMENTATION:")
-    print("  TESTING.md - Detailed testing documentation")
+    print("  documentation/TESTING.md - Detailed testing documentation")
     print("  test_suite.py --help - Command-line options")
     print()
     

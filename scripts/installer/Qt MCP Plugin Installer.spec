@@ -2,7 +2,7 @@
 
 
 a = Analysis(
-    ['/Volumes/Developer/depot/Qt_MCP_Plugin/installer/qt_mcp_installer.py'],
+    ['/Volumes/Developer/depot/Qt_MCP_Plugin/scripts/installer/qt_mcp_installer.py'],
     pathex=[],
     binaries=[],
     datas=[],
@@ -32,7 +32,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['/Volumes/Developer/depot/Qt_MCP_Plugin/installer/installer_icon.icns'],
+    icon=['/Volumes/Developer/depot/Qt_MCP_Plugin/scripts/installer/installer_icon.icns'],
 )
 coll = COLLECT(
     exe,
@@ -46,6 +46,6 @@ coll = COLLECT(
 app = BUNDLE(
     coll,
     name='Qt MCP Plugin Installer.app',
-    icon='/Volumes/Developer/depot/Qt_MCP_Plugin/installer/installer_icon.icns',
+    icon='/Volumes/Developer/depot/Qt_MCP_Plugin/scripts/installer/installer_icon.icns',
     bundle_identifier='com.qtmcp.installer',
 )

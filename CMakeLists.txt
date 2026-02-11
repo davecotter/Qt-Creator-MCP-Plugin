@@ -68,33 +68,39 @@ add_qtc_plugin(Qt_MCP_Plugin
     .github/workflows/build_cmake.yml
     .github/workflows/README.md
     README.md
-    qt_mcp_plugin.cpp
-    qt_mcp_pluginconstants.h
-    qt_mcp_plugintr.h
-    mcpserver.cpp
-    mcpserver.h
-    mcpcommands.cpp
-    mcpcommands.h
-    issuesmanager.cpp
-    issuesmanager.h
-    httpparser.cpp
-    httpparser.h
-    httpresponse.cpp
-    httpresponse.h
-    macos_menu_icon.h
-    mcp.png
-    mcp.qrc
+    src/source/qt_mcp_plugin.cpp
+    src/header/qt_mcp_pluginconstants.h
+    src/header/qt_mcp_plugintr.h
+    src/source/mcpserver.cpp
+    src/header/mcpserver.h
+    src/source/mcpcommands.cpp
+    src/header/mcpcommands.h
+    src/source/issuesmanager.cpp
+    src/header/issuesmanager.h
+    src/source/httpparser.cpp
+    src/header/httpparser.h
+    src/source/httpresponse.cpp
+    src/header/httpresponse.h
+    src/header/macos_menu_icon.h
+    src/resources/mcp.png
+    src/resources/mcp.qrc
 )
 
 # Add platform-specific menu icon implementation
 if(APPLE)
-    target_sources(Qt_MCP_Plugin PRIVATE macos_menu_icon.mm)
+    target_sources(Qt_MCP_Plugin PRIVATE src/source/macos_menu_icon.mm)
     # Link against AppKit framework for NSMenu/NSMenuItem access
     target_link_libraries(Qt_MCP_Plugin PRIVATE "-framework AppKit")
 else()
     # Windows/Linux: Use stub implementation
-    target_sources(Qt_MCP_Plugin PRIVATE platform_menu_icon.cpp)
+    target_sources(Qt_MCP_Plugin PRIVATE src/source/platform_menu_icon.cpp)
 endif()
+
+# Include dirs: project headers and generated version.h
+target_include_directories(Qt_MCP_Plugin PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/header
+    ${CMAKE_CURRENT_BINARY_DIR}
+)
 
 
 # Set plugin properties without version in filename
@@ -117,20 +123,20 @@ endif()
 # Generate the plugin JSON file with version substitution
 # Configure the JSON file with version replacement
 # Read the template and replace version placeholder
-file(READ ${CMAKE_CURRENT_SOURCE_DIR}/Qt_MCP_Plugin.json.in JSON_CONTENT)
+file(READ ${CMAKE_CURRENT_SOURCE_DIR}/src/Qt_MCP_Plugin.json.in JSON_CONTENT)
 string(REPLACE "@PLUGIN_VERSION@" "${PLUGIN_VERSION}" JSON_CONTENT "${JSON_CONTENT}")
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/Qt_MCP_Plugin.json "${JSON_CONTENT}")
 
 # Generate version.h from version.cmake variables
 configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/version.h.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/version.h.in
     ${CMAKE_CURRENT_BINARY_DIR}/version.h
     @ONLY
 )
 
 # Generate the MCP discovery file with version substitution
 configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/Qt_MCP_Plugin_discovery.json.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Qt_MCP_Plugin_discovery.json.in
     ${CMAKE_CURRENT_BINARY_DIR}/Qt_MCP_Plugin_discovery.json
     @ONLY
 )
@@ -139,14 +145,14 @@ configure_file(
 add_custom_command(
     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/Qt_MCP_Plugin.json ${CMAKE_CURRENT_BINARY_DIR}/Qt_MCP_Plugin_discovery.json
     COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_SOURCE_DIR}/Qt_MCP_Plugin.json.in
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Qt_MCP_Plugin.json.in
         ${CMAKE_CURRENT_BINARY_DIR}/Qt_MCP_Plugin.json
     COMMAND ${CMAKE_COMMAND} -E env sed -i '' 's/@PLUGIN_VERSION@/${PLUGIN_VERSION}/g' ${CMAKE_CURRENT_BINARY_DIR}/Qt_MCP_Plugin.json
     COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_SOURCE_DIR}/Qt_MCP_Plugin_discovery.json.in
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Qt_MCP_Plugin_discovery.json.in
         ${CMAKE_CURRENT_BINARY_DIR}/Qt_MCP_Plugin_discovery.json
     COMMAND ${CMAKE_COMMAND} -E env sed -i '' 's/@PLUGIN_VERSION@/${PLUGIN_VERSION}/g' ${CMAKE_CURRENT_BINARY_DIR}/Qt_MCP_Plugin_discovery.json
-    DEPENDS Qt_MCP_Plugin.json.in Qt_MCP_Plugin_discovery.json.in
+    DEPENDS src/Qt_MCP_Plugin.json.in src/Qt_MCP_Plugin_discovery.json.in
     COMMENT "Generating plugin JSON and discovery files with version ${PLUGIN_VERSION}"
 )
 
@@ -228,7 +234,7 @@ endif()
 # Custom target to install the plugin using the complete lifecycle script
 add_custom_target(InstallPlugin
     COMMAND ${CMAKE_COMMAND} -E echo "🚀 Running complete plugin lifecycle with build.py..."
-    COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR} python3 ${CMAKE_CURRENT_SOURCE_DIR}/build.py
+    COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR} python3 ${CMAKE_CURRENT_SOURCE_DIR}/scripts/build/build.py
     
     DEPENDS Qt_MCP_Plugin ${CMAKE_CURRENT_BINARY_DIR}/Qt_MCP_Plugin.json ${CMAKE_CURRENT_BINARY_DIR}/Qt_MCP_Plugin_discovery.json
     COMMENT "Installing plugin using complete lifecycle management (build.py)"

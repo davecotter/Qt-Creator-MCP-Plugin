@@ -1,6 +1,8 @@
 # Qt MCP Plugin - Cursor AI Build Instructions
 
 ## Project Overview
+
+**Documentation:** See `documentation/AGENTS.md` for agent discoverability and `documentation/TESTING.md` for testing.
 This is a Qt Creator plugin that implements the Model Context Protocol (MCP) for AI control of Qt Creator.
 
 ---
@@ -88,7 +90,7 @@ not the actual version. Using this will give you the WRONG version!
 
 **To build and install the plugin, run:**
 ```bash
-python3 build_main.py
+python3 scripts/build/build_main.py
 ```
 
 This script handles EVERYTHING automatically:
@@ -198,7 +200,7 @@ Key paths:
 ### 🟢 ALWAYS USE THE BUILD SCRIPT 🟢
 
 ```bash
-python3 build_main.py
+python3 scripts/build/build_main.py
 ```
 
 **This is the ONLY supported way to build.** The script handles all complexity automatically.

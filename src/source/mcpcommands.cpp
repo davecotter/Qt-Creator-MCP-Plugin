@@ -45,6 +45,7 @@
 #include <QFile>
 #include <QTimer>
 #include <QEventLoop>
+#include <QElapsedTimer>
 #include <QJsonDocument>
 #include <QJsonArray>
 
@@ -383,36 +384,28 @@ bool MCPCommands::waitForBuildCompletion(int timeoutSeconds)
         return true; // Already not building
     }
     
-    // Wait for build to complete using event loop
-    // We connect to the buildStateChanged SIGNAL (not the slot) to detect completion
-    QEventLoop loop;
-    QTimer timeoutTimer;
-    timeoutTimer.setSingleShot(true);
-    timeoutTimer.setInterval(timeoutSeconds * 1000);
-    
-    // Connect buildStateChanged SIGNAL to quit the event loop when build completes
-    connect(this, &MCPCommands::buildStateChanged, &loop, &QEventLoop::quit);
-    connect(&timeoutTimer, &QTimer::timeout, &loop, &QEventLoop::quit);
-    
-    qDebug() << "Starting event loop, waiting for buildStateChanged signal...";
-    timeoutTimer.start();
-    loop.exec();
-    qDebug() << "Event loop exited";
-    
-    m_buildMonitorTimer->stop();
-    timeoutTimer.stop();
-    
-    bool completed = !ProjectExplorer::BuildManager::isBuilding();
-    if (completed) {
-        m_buildWasInProgress = false;
-        qDebug() << "Build completed successfully";
-    } else if (timeoutTimer.isActive()) {
-        qDebug() << "Build still in progress after timeout";
-    } else {
-        qDebug() << "Build wait timed out";
+    // Poll instead of nested QEventLoop::exec(). Nested exec() can cause Qt Creator
+    // BuildManager to run its completion callback with an invalid progress object,
+    // leading to SIGSEGV in QFutureInterfaceBase::setProgressValueAndText (crash.log).
+    const int pollIntervalMs = 150;
+    QElapsedTimer elapsed;
+    elapsed.start();
+    qDebug() << "Polling for build completion, timeout:" << timeoutSeconds << "seconds";
+
+    while (ProjectExplorer::BuildManager::isBuilding()) {
+        if (elapsed.hasExpired(timeoutSeconds * 1000)) {
+            qDebug() << "Build wait timed out";
+            m_buildMonitorTimer->stop();
+            return false;
+        }
+        QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+        QThread::msleep(pollIntervalMs);
     }
-    
-    return completed;
+
+    m_buildMonitorTimer->stop();
+    m_buildWasInProgress = false;
+    qDebug() << "Build completed successfully";
+    return true;
 }
 
 void MCPCommands::onBuildStateChanged()
