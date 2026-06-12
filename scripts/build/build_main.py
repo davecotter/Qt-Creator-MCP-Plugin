@@ -1365,12 +1365,24 @@ def main():
 
     # Check: Qt Creator Plugin Development SDK (required tools) at official location only.
     # If not found, report and stop. Do not attempt workarounds.
-    sdk_dir = os.path.join(config["qt_creator_path"], "lib", "cmake", "QtCreator")
-    sdk_config = os.path.join(sdk_dir, "QtCreatorConfig.cmake")
-    if not os.path.isfile(sdk_config):
+    # Windows qt_creator_path is .../Tools/QtCreator/lib (SDK at lib/cmake/QtCreator).
+    # macOS/Linux use .../Resources or .../qtcreator with SDK at lib/cmake/QtCreator under that root.
+    sdk_candidates = [
+        os.path.join(config["qt_creator_path"], "lib", "cmake", "QtCreator"),
+        os.path.join(config["qt_creator_path"], "cmake", "QtCreator"),
+    ]
+    sdk_dir = None
+    for cand in sdk_candidates:
+        cfg = os.path.join(cand, "QtCreatorConfig.cmake")
+        if os.path.isfile(cfg):
+            sdk_dir = cand
+            break
+    if sdk_dir is None:
         print("")
         print_error("Qt Creator Plugin Development tools are not installed.")
-        print(f"   Expected: {sdk_config}")
+        print("   Looked for QtCreatorConfig.cmake in:")
+        for cand in sdk_candidates:
+            print(f"     - {os.path.join(cand, 'QtCreatorConfig.cmake')}")
         print("   Install the Plugin Development component for Qt Creator (MaintenanceTool), then re-run.")
         sys.exit(1)
     print("[CHECK] Qt Creator Plugin Development SDK found")
