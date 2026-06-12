@@ -3,6 +3,7 @@
 #include <QDebug>
 #include <QLoggingCategory>
 #include <QHostAddress>
+#include <QScopeGuard>
 
 // Define logging category for MCP server
 Q_LOGGING_CATEGORY(mcpServer, "qtcreator.mcpplugin.server", QtWarningMsg)
@@ -213,6 +214,16 @@ QJsonObject MCPServer::processRequest(const QJsonObject &request)
     else if (method == "tools/list") {
         QJsonArray tools;
         
+        // Heartbeat
+        QJsonObject pingTool;
+        pingTool["name"] = "ping";
+        pingTool["description"] = "Heartbeat check; returns immediately if the MCP server is reachable.";
+        QJsonObject pingInputSchema;
+        pingInputSchema["type"] = "object";
+        pingInputSchema["properties"] = QJsonObject();
+        pingTool["inputSchema"] = pingInputSchema;
+        tools.append(pingTool);
+        
         // Build tool
         QJsonObject buildTool;
         buildTool["name"] = "build";
@@ -252,7 +263,64 @@ QJsonObject MCPServer::processRequest(const QJsonObject &request)
         getCallStackInputSchema["properties"] = QJsonObject();
         getCallStackTool["inputSchema"] = getCallStackInputSchema;
         tools.append(getCallStackTool);
-        
+
+        // Debug play/pause (Continue or Interrupt)
+        QJsonObject debugPlayPauseTool;
+        debugPlayPauseTool["name"] = "debugPlayPause";
+        debugPlayPauseTool["description"] = "During an active debug session: continue (Go) if the inferior is stopped in the debugger, or interrupt (Pause) if it is running.";
+        QJsonObject debugPlayPauseInputSchema;
+        debugPlayPauseInputSchema["type"] = "object";
+        debugPlayPauseInputSchema["properties"] = QJsonObject();
+        debugPlayPauseTool["inputSchema"] = debugPlayPauseInputSchema;
+        tools.append(debugPlayPauseTool);
+
+        // Debugged app state query
+        QJsonObject getDebuggedAppStateTool;
+        getDebuggedAppStateTool["name"] = "getDebuggedAppState";
+        getDebuggedAppStateTool["description"] = "Query JSON state of the debugged inferior: not_running, running, or paused (stopped in debugger). Hung is not reported.";
+        QJsonObject getDebuggedAppStateInputSchema;
+        getDebuggedAppStateInputSchema["type"] = "object";
+        getDebuggedAppStateInputSchema["properties"] = QJsonObject();
+        getDebuggedAppStateTool["inputSchema"] = getDebuggedAppStateInputSchema;
+        tools.append(getDebuggedAppStateTool);
+
+        // List debugger threads
+        QJsonObject listThreadsTool;
+        listThreadsTool["name"] = "listThreads";
+        listThreadsTool["description"] = "List debugger threads with index, id, name, and current-thread flag. Requires an active debug session.";
+        QJsonObject listThreadsInputSchema;
+        listThreadsInputSchema["type"] = "object";
+        listThreadsInputSchema["properties"] = QJsonObject();
+        listThreadsTool["inputSchema"] = listThreadsInputSchema;
+        tools.append(listThreadsTool);
+
+        // Select debugger thread by index
+        QJsonObject selectThreadTool;
+        selectThreadTool["name"] = "selectThread";
+        selectThreadTool["description"] = "Select a debugger thread by index from listThreads. Requires the inferior to be paused.";
+        QJsonObject selectThreadInputSchema;
+        selectThreadInputSchema["type"] = "object";
+        QJsonObject selectThreadProperties;
+        selectThreadProperties["index"] = QJsonObject{{"type", "integer"}, {"description", "Thread index from listThreads"}};
+        selectThreadInputSchema["properties"] = selectThreadProperties;
+        selectThreadInputSchema["required"] = QJsonArray{"index"};
+        selectThreadTool["inputSchema"] = selectThreadInputSchema;
+        tools.append(selectThreadTool);
+
+        // Select call-stack frame by index
+        QJsonObject selectStackFrameTool;
+        selectStackFrameTool["name"] = "selectStackFrame";
+        selectStackFrameTool["description"] = "Activate a call-stack frame by index in the current thread (same as clicking a row in the Stack view). Requires the inferior to be paused.";
+        QJsonObject selectStackFrameInputSchema;
+        selectStackFrameInputSchema["type"] = "object";
+        QJsonObject selectStackFrameProperties;
+        selectStackFrameProperties["index"] = QJsonObject{{"type", "integer"}, {"description", "Stack frame index from getCallStack"}};
+        selectStackFrameInputSchema["properties"] = selectStackFrameProperties;
+        selectStackFrameInputSchema["required"] = QJsonArray{"index"};
+        selectStackFrameTool["inputSchema"] = selectStackFrameInputSchema;
+        tools.append(selectStackFrameTool);
+
+
         // Open file tool
         QJsonObject openFileTool;
         openFileTool["name"] = "openFile";
@@ -280,6 +348,29 @@ QJsonObject MCPServer::processRequest(const QJsonObject &request)
         openPrefsInputSchema["properties"] = openPrefsProperties;
         openPrefsTool["inputSchema"] = openPrefsInputSchema;
         tools.append(openPrefsTool);
+
+        // Frontmost dialog buttons
+        QJsonObject listFrontmostDialogButtonsTool;
+        listFrontmostDialogButtonsTool["name"] = "listFrontmostDialogButtons";
+        listFrontmostDialogButtonsTool["description"] = "List clickable button names on the frontmost Qt Creator dialog (modal dialog or active window).";
+        QJsonObject listFrontmostDialogButtonsInputSchema;
+        listFrontmostDialogButtonsInputSchema["type"] = "object";
+        listFrontmostDialogButtonsInputSchema["properties"] = QJsonObject();
+        listFrontmostDialogButtonsTool["inputSchema"] = listFrontmostDialogButtonsInputSchema;
+        tools.append(listFrontmostDialogButtonsTool);
+
+        QJsonObject clickDialogButtonTool;
+        clickDialogButtonTool["name"] = "clickDialogButton";
+        clickDialogButtonTool["description"] = "Click a button on the frontmost dialog by name (from listFrontmostDialogButtons). Case-insensitive; unique partial match allowed.";
+        QJsonObject clickDialogButtonInputSchema;
+        clickDialogButtonInputSchema["type"] = "object";
+        QJsonObject clickDialogButtonProperties;
+        clickDialogButtonProperties["name"] = QJsonObject{{"type", "string"}, {"description", "Button label/name to click"}};
+        clickDialogButtonInputSchema["properties"] = clickDialogButtonProperties;
+        clickDialogButtonInputSchema["required"] = QJsonArray{"name"};
+        clickDialogButtonTool["inputSchema"] = clickDialogButtonInputSchema;
+        tools.append(clickDialogButtonTool);
+
         
         // List projects tool
         QJsonObject listProjectsTool;
@@ -547,7 +638,15 @@ QJsonObject MCPServer::processRequest(const QJsonObject &request)
             QJsonObject paramsObj = params.toObject();
             QString toolName = paramsObj.value("name").toString();
             QJsonValue arguments = paramsObj.value("arguments");
-            
+
+            qCInfo(mcpServer) << "MCP tool START:" << toolName;
+            const auto logToolEnd = qScopeGuard([&toolName, &errorMessage]() {
+                if (errorMessage.isEmpty())
+                    qCInfo(mcpServer) << "MCP tool END:" << toolName << "ok";
+                else
+                    qCWarning(mcpServer) << "MCP tool END:" << toolName << "error:" << errorMessage;
+            });
+
             // Helper function to create MCP content format response
             auto createContentResponse = [](const QJsonValue &data) -> QJsonObject {
                 QJsonObject contentItem;
@@ -577,7 +676,11 @@ QJsonObject MCPServer::processRequest(const QJsonObject &request)
             };
             
             // Route to appropriate command based on tool name
-            if (toolName == "build") {
+            if (toolName == "ping") {
+                QJsonObject data{{"success", true}};
+                result = createContentResponse(data);
+            }
+            else if (toolName == "build") {
                 bool successB = m_commandsP->build();
                 QJsonObject data{{"success", successB}};
                 result = createContentResponse(data);
@@ -597,6 +700,63 @@ QJsonObject MCPServer::processRequest(const QJsonObject &request)
                 QJsonObject data{{"result", callStackResult}};
                 result = createContentResponse(data);
             }
+            else if (toolName == "debugPlayPause") {
+                QString r = m_commandsP->debugPlayPause();
+                QJsonObject data{{"result", r}};
+                result = createContentResponse(data);
+            }
+            else if (toolName == "getDebuggedAppState") {
+                QString jsonStr = m_commandsP->getDebuggedAppState();
+                QJsonParseError pe;
+                QJsonDocument doc = QJsonDocument::fromJson(jsonStr.toUtf8(), &pe);
+                QJsonObject data;
+                if (pe.error == QJsonParseError::NoError && doc.isObject())
+                    data = doc.object();
+                else
+                    data = QJsonObject{{"raw", jsonStr}, {"parseError", pe.errorString()}};
+                result = createContentResponse(data);
+            }
+
+            else if (toolName == "listThreads") {
+                QString jsonStr = m_commandsP->listThreads();
+                QJsonParseError pe;
+                QJsonDocument doc = QJsonDocument::fromJson(jsonStr.toUtf8(), &pe);
+                QJsonObject data;
+                if (pe.error == QJsonParseError::NoError && doc.isObject())
+                    data = doc.object();
+                else
+                    data = QJsonObject{{"raw", jsonStr}, {"parseError", pe.errorString()}};
+                result = createContentResponse(data);
+            }
+            else if (toolName == "selectThread") {
+                if (!arguments.isObject()) {
+                    errorMessage = "Invalid arguments for selectThread";
+                } else {
+                    const int index = arguments.toObject().value("index").toInt(-1);
+                    if (index < 0) {
+                        errorMessage = "selectThread requires non-negative integer index";
+                    } else {
+                        QString r = m_commandsP->selectThread(index);
+                        QJsonObject data{{"result", r}};
+                        result = createContentResponse(data);
+                    }
+                }
+            }
+            else if (toolName == "selectStackFrame") {
+                if (!arguments.isObject()) {
+                    errorMessage = "Invalid arguments for selectStackFrame";
+                } else {
+                    const int index = arguments.toObject().value("index").toInt(-1);
+                    if (index < 0) {
+                        errorMessage = "selectStackFrame requires non-negative integer index";
+                    } else {
+                        QString r = m_commandsP->selectStackFrame(index);
+                        QJsonObject data{{"result", r}};
+                        result = createContentResponse(data);
+                    }
+                }
+            }
+
             else if (toolName == "openFile") {
                 if (arguments.isObject()) {
                     QString path = arguments.toObject().value("path").toString();
@@ -615,6 +775,28 @@ QJsonObject MCPServer::processRequest(const QJsonObject &request)
                 bool successB = m_commandsP->openPreferencesPanel(panelName);
                 QJsonObject data{{"success", successB}};
                 result = createContentResponse(data);
+            }
+
+            else if (toolName == "listFrontmostDialogButtons") {
+                QString jsonStr = m_commandsP->listFrontmostDialogButtons();
+                QJsonParseError pe;
+                QJsonDocument doc = QJsonDocument::fromJson(jsonStr.toUtf8(), &pe);
+                QJsonObject data;
+                if (pe.error == QJsonParseError::NoError && doc.isObject())
+                    data = doc.object();
+                else
+                    data = QJsonObject{{"raw", jsonStr}, {"parseError", pe.errorString()}};
+                result = createContentResponse(data);
+            }
+            else if (toolName == "clickDialogButton") {
+                if (arguments.isObject()) {
+                    QString buttonName = arguments.toObject().value("name").toString();
+                    bool successB = m_commandsP->clickDialogButton(buttonName);
+                    QJsonObject data{{"success", successB}};
+                    result = createContentResponse(data);
+                } else {
+                    errorMessage = "Invalid arguments for clickDialogButton";
+                }
             }
             else if (toolName == "listProjects") {
                 QStringList projects = m_commandsP->listProjects();
@@ -762,9 +944,11 @@ QJsonObject MCPServer::processRequest(const QJsonObject &request)
                     timeout = arguments.toObject().value("timeoutSeconds").toInt(300);
                 }
                 bool completed = m_commandsP->waitForBuildCompletion(timeout);
+                const bool clientDisconnected = m_commandsP->lastBuildWaitClientDisconnected();
                 QJsonObject data{
                     {"completed", completed},
-                    {"timedOut", !completed}
+                    {"timedOut", !completed && !clientDisconnected},
+                    {"clientDisconnected", clientDisconnected}
                 };
                 result = createContentResponse(data);
             }
@@ -885,6 +1069,16 @@ QJsonObject MCPServer::callMCPMethod(const QString &method, const QJsonValue &pa
     else if (method == "tools/list") {
         QJsonArray tools;
         
+        // Heartbeat
+        QJsonObject pingTool;
+        pingTool["name"] = "ping";
+        pingTool["description"] = "Heartbeat check; returns immediately if the MCP server is reachable.";
+        QJsonObject pingInputSchema;
+        pingInputSchema["type"] = "object";
+        pingInputSchema["properties"] = QJsonObject();
+        pingTool["inputSchema"] = pingInputSchema;
+        tools.append(pingTool);
+        
         // Build tool
         QJsonObject buildTool;
         buildTool["name"] = "build";
@@ -924,7 +1118,64 @@ QJsonObject MCPServer::callMCPMethod(const QString &method, const QJsonValue &pa
         getCallStackInputSchema["properties"] = QJsonObject();
         getCallStackTool["inputSchema"] = getCallStackInputSchema;
         tools.append(getCallStackTool);
-        
+
+        // Debug play/pause (Continue or Interrupt)
+        QJsonObject debugPlayPauseTool;
+        debugPlayPauseTool["name"] = "debugPlayPause";
+        debugPlayPauseTool["description"] = "During an active debug session: continue (Go) if the inferior is stopped in the debugger, or interrupt (Pause) if it is running.";
+        QJsonObject debugPlayPauseInputSchema;
+        debugPlayPauseInputSchema["type"] = "object";
+        debugPlayPauseInputSchema["properties"] = QJsonObject();
+        debugPlayPauseTool["inputSchema"] = debugPlayPauseInputSchema;
+        tools.append(debugPlayPauseTool);
+
+        // Debugged app state query
+        QJsonObject getDebuggedAppStateTool;
+        getDebuggedAppStateTool["name"] = "getDebuggedAppState";
+        getDebuggedAppStateTool["description"] = "Query JSON state of the debugged inferior: not_running, running, or paused (stopped in debugger). Hung is not reported.";
+        QJsonObject getDebuggedAppStateInputSchema;
+        getDebuggedAppStateInputSchema["type"] = "object";
+        getDebuggedAppStateInputSchema["properties"] = QJsonObject();
+        getDebuggedAppStateTool["inputSchema"] = getDebuggedAppStateInputSchema;
+        tools.append(getDebuggedAppStateTool);
+
+        // List debugger threads
+        QJsonObject listThreadsTool;
+        listThreadsTool["name"] = "listThreads";
+        listThreadsTool["description"] = "List debugger threads with index, id, name, and current-thread flag. Requires an active debug session.";
+        QJsonObject listThreadsInputSchema;
+        listThreadsInputSchema["type"] = "object";
+        listThreadsInputSchema["properties"] = QJsonObject();
+        listThreadsTool["inputSchema"] = listThreadsInputSchema;
+        tools.append(listThreadsTool);
+
+        // Select debugger thread by index
+        QJsonObject selectThreadTool;
+        selectThreadTool["name"] = "selectThread";
+        selectThreadTool["description"] = "Select a debugger thread by index from listThreads. Requires the inferior to be paused.";
+        QJsonObject selectThreadInputSchema;
+        selectThreadInputSchema["type"] = "object";
+        QJsonObject selectThreadProperties;
+        selectThreadProperties["index"] = QJsonObject{{"type", "integer"}, {"description", "Thread index from listThreads"}};
+        selectThreadInputSchema["properties"] = selectThreadProperties;
+        selectThreadInputSchema["required"] = QJsonArray{"index"};
+        selectThreadTool["inputSchema"] = selectThreadInputSchema;
+        tools.append(selectThreadTool);
+
+        // Select call-stack frame by index
+        QJsonObject selectStackFrameTool;
+        selectStackFrameTool["name"] = "selectStackFrame";
+        selectStackFrameTool["description"] = "Activate a call-stack frame by index in the current thread (same as clicking a row in the Stack view). Requires the inferior to be paused.";
+        QJsonObject selectStackFrameInputSchema;
+        selectStackFrameInputSchema["type"] = "object";
+        QJsonObject selectStackFrameProperties;
+        selectStackFrameProperties["index"] = QJsonObject{{"type", "integer"}, {"description", "Stack frame index from getCallStack"}};
+        selectStackFrameInputSchema["properties"] = selectStackFrameProperties;
+        selectStackFrameInputSchema["required"] = QJsonArray{"index"};
+        selectStackFrameTool["inputSchema"] = selectStackFrameInputSchema;
+        tools.append(selectStackFrameTool);
+
+
         // Open file tool
         QJsonObject openFileTool;
         openFileTool["name"] = "openFile";
@@ -952,6 +1203,29 @@ QJsonObject MCPServer::callMCPMethod(const QString &method, const QJsonValue &pa
         openPrefsInputSchema["properties"] = openPrefsProperties;
         openPrefsTool["inputSchema"] = openPrefsInputSchema;
         tools.append(openPrefsTool);
+
+        // Frontmost dialog buttons
+        QJsonObject listFrontmostDialogButtonsTool;
+        listFrontmostDialogButtonsTool["name"] = "listFrontmostDialogButtons";
+        listFrontmostDialogButtonsTool["description"] = "List clickable button names on the frontmost Qt Creator dialog (modal dialog or active window).";
+        QJsonObject listFrontmostDialogButtonsInputSchema;
+        listFrontmostDialogButtonsInputSchema["type"] = "object";
+        listFrontmostDialogButtonsInputSchema["properties"] = QJsonObject();
+        listFrontmostDialogButtonsTool["inputSchema"] = listFrontmostDialogButtonsInputSchema;
+        tools.append(listFrontmostDialogButtonsTool);
+
+        QJsonObject clickDialogButtonTool;
+        clickDialogButtonTool["name"] = "clickDialogButton";
+        clickDialogButtonTool["description"] = "Click a button on the frontmost dialog by name (from listFrontmostDialogButtons). Case-insensitive; unique partial match allowed.";
+        QJsonObject clickDialogButtonInputSchema;
+        clickDialogButtonInputSchema["type"] = "object";
+        QJsonObject clickDialogButtonProperties;
+        clickDialogButtonProperties["name"] = QJsonObject{{"type", "string"}, {"description", "Button label/name to click"}};
+        clickDialogButtonInputSchema["properties"] = clickDialogButtonProperties;
+        clickDialogButtonInputSchema["required"] = QJsonArray{"name"};
+        clickDialogButtonTool["inputSchema"] = clickDialogButtonInputSchema;
+        tools.append(clickDialogButtonTool);
+
         
         // List projects tool
         QJsonObject listProjectsTool;
@@ -1226,10 +1500,13 @@ void MCPServer::handleClientDisconnected()
 {
     QTcpSocket *client = qobject_cast<QTcpSocket*>(sender());
     if (!client) return;
-    
+
+    if (m_commandsP)
+        m_commandsP->notifyClientDisconnected();
+
     m_clients.removeAll(client);
     client->deleteLater();
-    
+
     qCDebug(mcpServer) << "TCP client disconnected, remaining clients:" << m_clients.size();
 }
 

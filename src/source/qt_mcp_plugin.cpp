@@ -331,6 +331,16 @@ public:
 				.setText(Tr::tr("⏹️ Stop Debugging"))
 				.addOnTriggered(this, &Qt_MCP_PluginPlugin::executeStopDebug);
 
+		ActionBuilder(this, Constants::DEBUG_PLAY_PAUSE_ACTION_ID)
+				.addToContainer(Constants::MENU_ID)
+				.setText(Tr::tr("⏯️ Debug Continue / Pause (Go or Interrupt)"))
+				.addOnTriggered(this, &Qt_MCP_PluginPlugin::executeDebugPlayPause);
+
+		ActionBuilder(this, Constants::GET_DEBUGGED_APP_STATE_ACTION_ID)
+				.addToContainer(Constants::MENU_ID)
+				.setText(Tr::tr("📊 Get Debugged App State (JSON)"))
+				.addOnTriggered(this, &Qt_MCP_PluginPlugin::executeGetDebuggedAppState);
+
 		ActionBuilder(this, Constants::CLEAN_PROJECT_ACTION_ID)
 				.addToContainer(Constants::MENU_ID)
 				.setText(Tr::tr("🧹 Clean Project"))
@@ -612,6 +622,20 @@ private:
 		outputMessage("Stopping debug session...");
 		QString result = m_commandsP->stopDebug();
 		outputMessage(QString("Stop debug result: %1").arg(result));
+	}
+
+	void executeDebugPlayPause()
+	{
+		outputMessage("Debug Continue or Interrupt (same as debugger Go / Pause)...");
+		QString result = m_commandsP->debugPlayPause();
+		outputMessage(QString("Result: %1").arg(result));
+	}
+
+	void executeGetDebuggedAppState()
+	{
+		outputMessage("Debugged app state (JSON)...");
+		QString json = m_commandsP->getDebuggedAppState();
+		outputMessage(QString("State: %1").arg(json));
 	}
 
 	void executeCleanProject()

@@ -23,6 +23,10 @@
   },
   "tools": [
     {
+      "name": "ping",
+      "description": "Heartbeat check; returns immediately if the MCP server is reachable"
+    },
+    {
       "name": "build",
       "description": "Build the current Qt Creator project"
     },
@@ -118,6 +122,21 @@
     {
       "name": "saveSession",
       "description": "Save the current session"
+    },
+    {
+      "name": "listFrontmostDialogButtons",
+      "description": "List clickable button names on the frontmost Qt Creator dialog"
+    },
+    {
+      "name": "clickDialogButton",
+      "description": "Click a button on the frontmost dialog by name",
+      "parameters": {
+        "name": {
+          "type": "string",
+          "description": "Button label/name to click",
+          "required": true
+        }
+      }
     },
     {
       "name": "listTools",

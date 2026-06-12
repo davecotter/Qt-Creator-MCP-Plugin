@@ -19,6 +19,9 @@
 #include <projectexplorer/runcontrol.h>
 #include <projectexplorer/runconfiguration.h>
 #include <debugger/debuggerruncontrol.h>
+#include <debugger/debuggermainwindow.h>
+#include <debugger/debuggerinternalconstants.h>
+
 #include <utils/fileutils.h>
 #include <utils/id.h>
 #include <extensionsystem/pluginmanager.h>
@@ -27,18 +30,30 @@
 #include <QTextDocument>
 #include <QWidget>
 #include <QDialog>
+#include <QAbstractButton>
+#include <QPushButton>
+#include <QToolButton>
+#include <QCheckBox>
+#include <QComboBox>
+#include <QRadioButton>
 #include <QListWidget>
 #include <QListWidgetItem>
 #include <QCoreApplication>
+#include <QScopeGuard>
 #include <QMetaType>
 #include <QMetaMethod>
 #include <QAbstractItemView>
 #include <QAbstractItemModel>
+#include <QAbstractProxyModel>
 #include <QTreeView>
-#include <QTableView>
+#include <QMouseEvent>
+#include <QScrollBar>
+#include <QSet>
 #include <QRegularExpression>
+#include <functional>
 
 #include <QApplication>
+#include <QWindow>
 #include <QDebug>
 #include <QThread>
 #include <QProcess>
@@ -48,9 +63,834 @@
 #include <QElapsedTimer>
 #include <QJsonDocument>
 #include <QJsonArray>
+#include <QJsonObject>
 
 namespace Qt_MCP_Plugin {
 namespace Internal {
+
+namespace {
+
+bool debuggerActionEnabled(const QString &actionId)
+{
+    Core::ActionManager *actionManager = Core::ActionManager::instance();
+    if (!actionManager)
+        return false;
+    Core::Command *command = actionManager->command(Utils::Id::fromString(actionId));
+    return command && command->action() && command->action()->isEnabled();
+}
+bool triggerDebuggerAction(const QString &actionId)
+{
+    Core::ActionManager *actionManager = Core::ActionManager::instance();
+    if (!actionManager)
+        return false;
+    Core::Command *command = actionManager->command(Utils::Id::fromString(actionId));
+    if (command && command->action() && command->action()->isEnabled()) {
+        command->action()->trigger();
+        return true;
+    }
+    return false;
+}
+
+// Stack view uses a tree model (thread -> frames). Flat QModelIndex(0, c) reads the wrong level and
+// yields empty cells while still reporting rowCount > 0. Walk the tree and only accept non-empty rows.
+static QStringList collectModelDisplayRows(const QAbstractItemModel *model,
+                                          const QModelIndex &parent,
+                                          int maxRows)
+{
+    QStringList out;
+    if (!model || maxRows <= 0)
+        return out;
+
+    const int rowCount = model->rowCount(parent);
+    const int colCount = model->columnCount(parent);
+
+    for (int r = 0; r < rowCount && out.size() < maxRows; ++r) {
+        const QModelIndex first = model->index(r, 0, parent);
+        if (!first.isValid())
+            continue;
+
+        if (model->rowCount(first) > 0) {
+            const QStringList nested = collectModelDisplayRows(model, first, maxRows - out.size());
+            for (const QString &line : nested) {
+                out.append(line);
+                if (out.size() >= maxRows)
+                    return out;
+            }
+            continue;
+        }
+
+        QStringList cells;
+        for (int c = 0; c < colCount; ++c) {
+            const QModelIndex idx = model->index(r, c, parent);
+            QString cellText = model->data(idx, Qt::DisplayRole).toString();
+            if (cellText.isEmpty())
+                cellText = QStringLiteral("-");
+            cells.append(cellText);
+        }
+        out.append(cells.join(QStringLiteral(" | ")));
+    }
+    return out;
+}
+
+static bool isStackModelForMcp(QAbstractItemModel *model)
+{
+    if (!model || model->rowCount() == 0)
+        return false;
+
+    const int colCount = model->columnCount();
+
+    const QStringList stackHeaders = {QStringLiteral("level"), QStringLiteral("function"), QStringLiteral("file"),
+                                        QStringLiteral("line"), QStringLiteral("address"), QStringLiteral("from")};
+    const QStringList watchHeaders = {QStringLiteral("name"), QStringLiteral("value"), QStringLiteral("type"),
+                                      QStringLiteral("time")};
+
+    int stackHeaderCount = 0;
+    int watchHeaderCount = 0;
+
+    for (int col = 0; col < colCount; ++col) {
+        const QString header = model->headerData(col, Qt::Horizontal).toString().toLower();
+
+        for (const QString &sh : stackHeaders) {
+            if (header.contains(sh)) {
+                ++stackHeaderCount;
+                break;
+            }
+        }
+        for (const QString &wh : watchHeaders) {
+            if (header.contains(wh)) {
+                ++watchHeaderCount;
+                break;
+            }
+        }
+    }
+
+    if (watchHeaderCount > stackHeaderCount)
+        return false;
+    if (stackHeaderCount >= 2)
+        return true;
+
+    const QStringList lines = collectModelDisplayRows(model, QModelIndex(), 5);
+    for (const QString &line : lines) {
+        if (line.contains(QLatin1String("::")))
+            return true;
+    }
+    for (const QString &line : lines) {
+        if (line.contains(QRegularExpression(QStringLiteral(R"(\.(cpp|c|h|mm|m)(:|$))"))))
+            return true;
+    }
+    for (const QString &line : lines) {
+        if (line.contains(QLatin1String("0x")))
+            return true;
+    }
+
+    return false;
+}
+
+static bool cellLooksLikeStackLoadMore(const QString &text)
+{
+    const QString s = text.toLower();
+    return s.contains(QStringLiteral("<more")) || s.contains(QStringLiteral("more>"))
+        || s.contains(QStringLiteral("load more")) || s.contains(QStringLiteral("<load more"));
+}
+
+static bool rowLooksLikeStackLoadMore(const QAbstractItemModel *model, int row, const QModelIndex &parent)
+{
+    const int cc = model->columnCount(parent);
+    for (int c = 0; c < cc; ++c) {
+        const QString cellText = model->data(model->index(row, c, parent), Qt::DisplayRole).toString();
+        if (cellLooksLikeStackLoadMore(cellText))
+            return true;
+    }
+    return false;
+}
+
+static QModelIndex findLoadMoreLeafIndex(const QAbstractItemModel *model, const QModelIndex &parent)
+{
+    const int rows = model->rowCount(parent);
+    for (int r = 0; r < rows; ++r) {
+        const QModelIndex first = model->index(r, 0, parent);
+        if (!first.isValid())
+            continue;
+        if (model->rowCount(first) > 0) {
+            const QModelIndex hit = findLoadMoreLeafIndex(model, first);
+            if (hit.isValid())
+                return hit;
+            continue;
+        }
+        if (rowLooksLikeStackLoadMore(model, r, parent))
+            return first;
+    }
+    return QModelIndex();
+}
+
+static bool tryClickStackLoadMore(QAbstractItemView *view)
+{
+    QAbstractItemModel *model = view->model();
+    if (!model)
+        return false;
+
+    // If Qt Creator is not frontmost, synthetic mouse delivery and geometry can be unreliable.
+    if (QWidget *topLevel = view->window()) {
+        topLevel->raise();
+        topLevel->activateWindow();
+        if (QWindow *wh = topLevel->windowHandle())
+            wh->requestActivate();
+        view->setFocus(Qt::OtherFocusReason);
+        QCoreApplication::processEvents();
+        qDebug() << "MCP getCallStack: raised/activated stack window for load-more click";
+    }
+
+    // Stack "more" row is at the bottom; scroll there first (matches user workflow).
+    if (QScrollBar *vsb = view->verticalScrollBar()) {
+        vsb->setValue(vsb->maximum());
+        QCoreApplication::processEvents();
+    }
+
+    const QModelIndex target = findLoadMoreLeafIndex(model, QModelIndex());
+    if (!target.isValid())
+        return false;
+
+    view->scrollTo(target, QAbstractItemView::EnsureVisible);
+    view->setCurrentIndex(target);
+
+    QWidget *viewport = view->viewport();
+    QRect vr = view->visualRect(target);
+    if (!vr.isValid()) {
+        QCoreApplication::processEvents();
+        vr = view->visualRect(target);
+    }
+    if (!vr.isValid())
+        return false;
+
+    const QPoint localPos(
+        qBound(1, vr.center().x(), qMax(1, viewport->width() - 2)),
+        qBound(1, vr.center().y(), qMax(1, viewport->height() - 2)));
+    const QPoint globalPos = viewport->mapToGlobal(localPos);
+
+    QMouseEvent press(QEvent::MouseButtonPress, localPos, globalPos, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QMouseEvent release(QEvent::MouseButtonRelease, localPos, globalPos, Qt::LeftButton, Qt::NoButton, Qt::NoModifier);
+    QApplication::sendEvent(viewport, &press);
+    QApplication::sendEvent(viewport, &release);
+    qDebug() << "MCP getCallStack: single-clicked stack <More> row to request full stack";
+    return true;
+}
+
+static void tryExpandStackLoadMoreAllViews()
+{
+    const QWidgetList allWidgets = QApplication::allWidgets();
+    QList<QAbstractItemView *> stackViews;
+
+    for (QWidget *widget : allWidgets) {
+        if (!widget || !widget->isVisible())
+            continue;
+
+        const QList<QAbstractItemView *> children = widget->findChildren<QAbstractItemView *>(
+            QString(), Qt::FindChildrenRecursively);
+        for (QAbstractItemView *view : children) {
+            if (!view || !view->isVisible())
+                continue;
+            QAbstractItemModel *model = view->model();
+            if (model && isStackModelForMcp(model))
+                stackViews.append(view);
+        }
+
+        if (auto *direct = qobject_cast<QAbstractItemView *>(widget)) {
+            if (!direct->isVisible())
+                continue;
+            QAbstractItemModel *model = direct->model();
+            if (model && isStackModelForMcp(model))
+                stackViews.append(direct);
+        }
+    }
+
+    QSet<QAbstractItemView *> seen;
+    QList<QAbstractItemView *> unique;
+    for (QAbstractItemView *v : stackViews) {
+        if (!v || seen.contains(v))
+            continue;
+        seen.insert(v);
+        unique.append(v);
+    }
+
+    for (int pass = 0; pass < 10; ++pass) {
+        bool clicked = false;
+        for (QAbstractItemView *v : unique) {
+            if (tryClickStackLoadMore(v))
+                clicked = true;
+        }
+        if (!clicked)
+            break;
+        QCoreApplication::processEvents();
+        QThread::msleep(250);
+    }
+}
+
+
+
+#ifdef Q_OS_WIN
+enum StackCol {
+    ColLevel = 0,
+    ColFunction = 1,
+    ColFile = 2,
+    ColLine = 3,
+    ColAddress = 4,
+    ColCount = 5,
+};
+
+struct McpStackFrame {
+    QString level;
+    QString function;
+    QString file;
+    QString line;
+    QString address;
+
+    bool isPlaceholder() const
+    {
+        return function.contains(QLatin1String("<Select Symbol>"), Qt::CaseInsensitive)
+            || cellLooksLikeStackLoadMore(function);
+    }
+
+    bool hasLocation() const
+    {
+        return !file.isEmpty() || !line.isEmpty() || !address.isEmpty();
+    }
+
+    bool hasSymbol() const
+    {
+        return !function.isEmpty() && !isPlaceholder();
+    }
+};
+
+static QString stripHtml(const QString &html)
+{
+    QString t = html;
+    t.remove(QRegularExpression(QStringLiteral("<[^>]+>")));
+    t.replace(QRegularExpression(QStringLiteral("&nbsp;|&#160;")), QLatin1String(" "));
+    t.replace(QLatin1String("&lt;"), QLatin1String("<"));
+    t.replace(QLatin1String("&gt;"), QLatin1String(">"));
+    t.replace(QLatin1String("&amp;"), QLatin1String("&"));
+    return t.simplified();
+}
+
+static QString extractLabeledField(const QString &text, const QStringList &labels)
+{
+    for (const QString &label : labels) {
+        const int idx = text.indexOf(label, 0, Qt::CaseInsensitive);
+        if (idx < 0)
+            continue;
+        QString tail = text.mid(idx + label.size()).trimmed();
+        const int nextLabel = tail.indexOf(QRegularExpression(
+            QStringLiteral("\\b(Function|File|Line|Address|Module|Receiver|Note):\\b"),
+            QRegularExpression::CaseInsensitiveOption));
+        if (nextLabel > 0)
+            tail = tail.left(nextLabel).trimmed();
+        if (!tail.isEmpty())
+            return tail;
+    }
+    return QString();
+}
+
+static void mergeFromToolTip(const QString &rawTip, McpStackFrame &frame)
+{
+    if (rawTip.isEmpty())
+        return;
+    const QString tip = stripHtml(rawTip);
+    if (frame.function.isEmpty()) {
+        const QString fn = extractLabeledField(tip, {QStringLiteral("Function:"), QStringLiteral("JS-Function:")});
+        if (!fn.isEmpty())
+            frame.function = fn;
+    }
+    if (frame.file.isEmpty()) {
+        const QString file = extractLabeledField(tip, {QStringLiteral("File:")});
+        if (!file.isEmpty())
+            frame.file = file;
+    }
+    if (frame.line.isEmpty()) {
+        const QString line = extractLabeledField(tip, {QStringLiteral("Line:")});
+        if (!line.isEmpty())
+            frame.line = line;
+    }
+    if (frame.address.isEmpty()) {
+        const QString addr = extractLabeledField(tip, {QStringLiteral("Address:")});
+        if (!addr.isEmpty())
+            frame.address = addr;
+    }
+}
+
+static QString readModelCell(const QAbstractItemModel *model, const QModelIndex &idx)
+{
+    if (!idx.isValid())
+        return QString();
+    QString v = model->data(idx, Qt::DisplayRole).toString().trimmed();
+    if (!v.isEmpty())
+        return v;
+    v = model->data(idx, Qt::EditRole).toString().trimmed();
+    if (!v.isEmpty())
+        return v;
+    return model->data(idx, Debugger::DisplaySourceRole).toString().trimmed();
+}
+
+static QString readModelLineCell(const QAbstractItemModel *model, const QModelIndex &idx)
+{
+    if (!idx.isValid())
+        return QString();
+    const QVariant v = model->data(idx, Qt::DisplayRole);
+    if (!v.isValid())
+        return QString();
+    if (v.typeId() == QMetaType::QString)
+        return v.toString().trimmed();
+    return v.toString().trimmed();
+}
+
+static McpStackFrame readStackFrameRow(const QAbstractItemModel *model, int row, const QModelIndex &parent)
+{
+    McpStackFrame frame;
+    frame.level = readModelCell(model, model->index(row, ColLevel, parent));
+    frame.function = readModelCell(model, model->index(row, ColFunction, parent));
+    frame.file = readModelCell(model, model->index(row, ColFile, parent));
+    frame.line = readModelLineCell(model, model->index(row, ColLine, parent));
+    frame.address = readModelCell(model, model->index(row, ColAddress, parent));
+
+    const QString tip0 = model->data(model->index(row, 0, parent), Qt::ToolTipRole).toString();
+    const QString tip1 = model->data(model->index(row, 1, parent), Qt::ToolTipRole).toString();
+    mergeFromToolTip(tip0, frame);
+    mergeFromToolTip(tip1, frame);
+
+    return frame;
+}
+
+static void walkStackModel(const QAbstractItemModel *model,
+                           const QModelIndex &parent,
+                           QList<McpStackFrame> &frames,
+                           int maxFrames)
+{
+    if (!model || frames.size() >= maxFrames)
+        return;
+
+    const int rows = model->rowCount(parent);
+    for (int r = 0; r < rows && frames.size() < maxFrames; ++r) {
+        const QModelIndex first = model->index(r, 0, parent);
+        if (!first.isValid())
+            continue;
+        if (model->rowCount(first) > 0) {
+            walkStackModel(model, first, frames, maxFrames);
+            continue;
+        }
+
+        McpStackFrame frame = readStackFrameRow(model, r, parent);
+        if (frame.isPlaceholder())
+            continue;
+        if (!frame.hasSymbol() && !frame.hasLocation())
+            continue;
+        frames.append(frame);
+    }
+}
+
+static QAbstractItemModel *unwrapStackSourceModel(QAbstractItemModel *model)
+{
+    if (!model)
+        return nullptr;
+    if (auto *proxy = qobject_cast<QAbstractProxyModel *>(model))
+        return proxy->sourceModel();
+    return model;
+}
+
+static QList<McpStackFrame> collectStructuredStackFrames(QAbstractItemModel *model)
+{
+    QList<McpStackFrame> frames;
+    model = unwrapStackSourceModel(model);
+    if (!model)
+        return frames;
+    walkStackModel(model, QModelIndex(), frames, 4096);
+    return frames;
+}
+
+static bool stackFramesHaveLocationData(const QList<McpStackFrame> &frames)
+{
+    for (const McpStackFrame &f : frames) {
+        if (f.hasLocation())
+            return true;
+    }
+    return false;
+}
+
+static QString formatStackFramesText(const QList<McpStackFrame> &frames)
+{
+    QStringList lines;
+    lines.append(QStringLiteral("Columns: Level | Function | File | Line | Address"));
+    lines.append(QStringLiteral(""));
+    lines.append(QStringLiteral("Found %1 stack frames:").arg(frames.size()));
+    lines.append(QStringLiteral(""));
+    for (int i = 0; i < frames.size(); ++i) {
+        const McpStackFrame &f = frames.at(i);
+        lines.append(QStringLiteral("#%1: level=%2 | function=%3 | file=%4 | line=%5 | address=%6")
+                         .arg(i)
+                         .arg(f.level.isEmpty() ? QStringLiteral("-") : f.level)
+                         .arg(f.function.isEmpty() ? QStringLiteral("-") : f.function)
+                         .arg(f.file.isEmpty() ? QStringLiteral("-") : f.file)
+                         .arg(f.line.isEmpty() ? QStringLiteral("-") : f.line)
+                         .arg(f.address.isEmpty() ? QStringLiteral("-") : f.address));
+    }
+    return lines.join(QStringLiteral("\n"));
+}
+
+static QJsonArray stackFramesToJson(const QList<McpStackFrame> &frames)
+{
+    QJsonArray arr;
+    for (int i = 0; i < frames.size(); ++i) {
+        const McpStackFrame &f = frames.at(i);
+        QJsonObject o;
+        o.insert(QStringLiteral("index"), i);
+        if (!f.level.isEmpty())
+            o.insert(QStringLiteral("level"), f.level);
+        if (!f.function.isEmpty())
+            o.insert(QStringLiteral("function"), f.function);
+        if (!f.file.isEmpty())
+            o.insert(QStringLiteral("file"), f.file);
+        if (!f.line.isEmpty())
+            o.insert(QStringLiteral("line"), f.line);
+        if (!f.address.isEmpty())
+            o.insert(QStringLiteral("address"), f.address);
+        arr.append(o);
+    }
+    return arr;
+}
+
+static bool appendStackResultsFromModel(QAbstractItemModel *model, QStringList &results)
+{
+    const QList<McpStackFrame> frames = collectStructuredStackFrames(model);
+    if (frames.isEmpty())
+        return false;
+
+    results.append(formatStackFramesText(frames));
+    results.append(QStringLiteral(""));
+    QJsonObject payload;
+    payload.insert(QStringLiteral("frameCount"), frames.size());
+    payload.insert(QStringLiteral("hasFileLineOrAddress"), stackFramesHaveLocationData(frames));
+    payload.insert(QStringLiteral("frames"), stackFramesToJson(frames));
+    results.append(QStringLiteral("--- stack JSON ---"));
+    results.append(QString::fromUtf8(QJsonDocument(payload).toJson(QJsonDocument::Compact)));
+    return true;
+}
+
+static QAbstractItemModel *mcpFindStackHandlerModel()
+{
+    QApplication *app = qobject_cast<QApplication *>(QCoreApplication::instance());
+    if (!app)
+        return nullptr;
+
+    const QList<QAbstractItemModel *> models = app->findChildren<QAbstractItemModel *>(
+        QString(), Qt::FindChildrenRecursively);
+    for (QAbstractItemModel *model : models) {
+        if (!model)
+            continue;
+        const QByteArray cls(model->metaObject()->className());
+        if (cls.contains("StackHandler"))
+            return model;
+    }
+    return nullptr;
+}
+static bool extractStackLinesFromModel(QAbstractItemModel *model, QStringList &results)
+{
+    model = unwrapStackSourceModel(model);
+    if (!model)
+        return false;
+
+    const bool isHandlerModel = QString::fromUtf8(model->metaObject()->className()).contains(
+        QStringLiteral("StackHandler"));
+    if (!isHandlerModel && !isStackModelForMcp(model))
+        return false;
+
+    return appendStackResultsFromModel(model, results);
+}
+
+static bool tryExpandStackViaDebuggerActions()
+{
+    const QStringList expandIds = {
+        QStringLiteral("Debugger.ExpandStack"),
+        QStringLiteral("Debugger.LoadFullStack"),
+        QStringLiteral("Debugger.ViewFullStack"),
+    };
+    for (const QString &id : expandIds) {
+        if (triggerDebuggerAction(id))
+            return true;
+    }
+    return false;
+}
+
+static bool tryGetCallStackOnWindows(QStringList &results)
+{
+    Utils::DebuggerMainWindow::ensureMainWindowExists();
+
+    for (int i = 0; i < 40; ++i) {
+        if (debuggerActionEnabled(QStringLiteral("Debugger.Continue")))
+            break;
+        QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+        QThread::msleep(250);
+    }
+
+    tryExpandStackViaDebuggerActions();
+    tryExpandStackLoadMoreAllViews();
+
+    for (int pass = 0; pass < 20; ++pass) {
+        QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+        QThread::msleep(150);
+
+        if (QAbstractItemModel *handlerModel = mcpFindStackHandlerModel()) {
+            QStringList body;
+            if (appendStackResultsFromModel(handlerModel, body)) {
+                results.append(body);
+                return true;
+            }
+        }
+
+        if (QWidget *stackRoot = Utils::DebuggerMainWindow::centralWidgetStack()) {
+            const QList<QAbstractItemView *> views = stackRoot->findChildren<QAbstractItemView *>(
+                QString(), Qt::FindChildrenRecursively);
+            for (QAbstractItemView *view : views) {
+                if (!view)
+                    continue;
+                QStringList body;
+                if (appendStackResultsFromModel(view->model(), body)) {
+                    results.append(body);
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
+}
+#endif
+
+static void raiseQtCreatorMainWindow()
+{
+    if (QWidget *mw = Core::ICore::mainWindow()) {
+        mw->raise();
+        mw->activateWindow();
+        if (QWindow *wh = mw->windowHandle())
+            wh->requestActivate();
+        QCoreApplication::processEvents();
+    }
+}
+
+static void activateCursorIde()
+{
+#ifdef Q_OS_MACOS
+    {
+        QProcess p;
+        p.start(QStringLiteral("/usr/bin/osascript"),
+                QStringList({QStringLiteral("-e"),
+                             QStringLiteral("tell application \"Cursor\" to activate")}));
+        if (p.waitForFinished(3000) && p.exitCode() == 0)
+            return;
+    }
+    QProcess::startDetached(QStringLiteral("/usr/bin/open"),
+                            QStringList({QStringLiteral("-a"), QStringLiteral("Cursor")}));
+#elif defined(Q_OS_WIN)
+    QProcess::execute(QStringLiteral("powershell.exe"),
+                        QStringList({QStringLiteral("-NoProfile"), QStringLiteral("-STA"), QStringLiteral("-Command"),
+                                     QStringLiteral("(New-Object -ComObject WScript.Shell).AppActivate('Cursor')")}));
+#else
+    QProcess::execute(QStringLiteral("wmctrl"), QStringList({QStringLiteral("-a"), QStringLiteral("Cursor")}));
+#endif
+}
+
+
+
+static constexpr int kMaxMcpOutputChars = 65536;
+
+static QString truncateOutputTail(const QString &text, int maxChars = kMaxMcpOutputChars)
+{
+    if (text.length() <= maxChars)
+        return text;
+    return QStringLiteral("[... output truncated: showing last %1 of %2 characters ...]\n\n")
+               .arg(maxChars)
+               .arg(text.length())
+           + text.right(maxChars);
+}
+
+
+static QString stripButtonMnemonic(const QString &text)
+{
+    QString s = text;
+    s.remove(QLatin1Char('&'));
+    return s.trimmed();
+}
+
+static QString buttonDisplayName(const QAbstractButton *button)
+{
+    if (!button)
+        return {};
+    QString name = stripButtonMnemonic(button->text());
+    if (name.isEmpty())
+        name = button->accessibleName().trimmed();
+    if (name.isEmpty())
+        name = button->objectName().trimmed();
+    return name;
+}
+
+static bool isDialogActionButton(const QAbstractButton *button)
+{
+    if (!button)
+        return false;
+    if (qobject_cast<const QCheckBox *>(button) || qobject_cast<const QRadioButton *>(button))
+        return false;
+    return qobject_cast<const QPushButton *>(button) || qobject_cast<const QToolButton *>(button);
+}
+
+static bool isDialogLikeWidget(QWidget *widget)
+{
+    if (!widget || !widget->isVisible())
+        return false;
+    if (qobject_cast<QDialog *>(widget))
+        return true;
+    const Qt::WindowFlags flags = widget->windowFlags();
+    if (flags.testFlag(Qt::Dialog))
+        return true;
+    if (widget->isModal())
+        return true;
+    const QString cls = QString::fromLatin1(widget->metaObject()->className());
+    return cls.contains(QStringLiteral("Dialog"), Qt::CaseInsensitive);
+}
+
+static QWidget *frontmostDialogWidget()
+{
+    if (QWidget *modal = QApplication::activeModalWidget())
+        return modal;
+
+    if (QWidget *active = QApplication::activeWindow()) {
+        if (isDialogLikeWidget(active))
+            return active;
+    }
+
+    QWidget *bestDialog = nullptr;
+    for (QWidget *widget : QApplication::topLevelWidgets()) {
+        if (!isDialogLikeWidget(widget))
+            continue;
+        if (!bestDialog || widget->isActiveWindow() || widget->isModal())
+            bestDialog = widget;
+    }
+    return bestDialog;
+}
+
+static void activateWidgetWindow(QWidget *widget)
+{
+    if (!widget)
+        return;
+    widget->raise();
+    widget->activateWindow();
+    if (QWindow *window = widget->windowHandle())
+        window->requestActivate();
+}
+
+static QList<QAbstractButton *> visibleDialogButtons(QWidget *dialogWidget)
+{
+    QList<QAbstractButton *> out;
+    if (!dialogWidget)
+        return out;
+
+    const QList<QAbstractButton *> buttons = dialogWidget->findChildren<QAbstractButton *>(
+        QString(), Qt::FindChildrenRecursively);
+    for (QAbstractButton *button : buttons) {
+        if (!button || !isDialogActionButton(button))
+            continue;
+        if (!button->isVisibleTo(dialogWidget))
+            continue;
+        const QString name = buttonDisplayName(button);
+        if (name.isEmpty())
+            continue;
+        out.append(button);
+    }
+    return out;
+}
+
+} // namespace
+
+static constexpr int kDebuggerItemActivatedRole = Qt::UserRole + 12736;
+
+static QAbstractItemModel *mcpFindThreadsHandlerModel()
+{
+    QApplication *app = qobject_cast<QApplication *>(QCoreApplication::instance());
+    if (!app)
+        return nullptr;
+
+    const QList<QAbstractItemModel *> models = app->findChildren<QAbstractItemModel *>(
+        QString(), Qt::FindChildrenRecursively);
+    for (QAbstractItemModel *model : models) {
+        if (!model)
+            continue;
+        const QByteArray cls(model->metaObject()->className());
+        if (cls.contains("ThreadsHandler"))
+            return model;
+    }
+    return nullptr;
+}
+
+
+static QAbstractItemModel *mcpFindStackHandlerModel()
+{
+    QApplication *app = qobject_cast<QApplication *>(QCoreApplication::instance());
+    if (!app)
+        return nullptr;
+
+    const QList<QAbstractItemModel *> models = app->findChildren<QAbstractItemModel *>(
+        QString(), Qt::FindChildrenRecursively);
+    for (QAbstractItemModel *model : models) {
+        if (!model)
+            continue;
+        const QByteArray cls(model->metaObject()->className());
+        if (cls.contains("StackHandler"))
+            return model;
+    }
+    return nullptr;
+}
+
+static QComboBox *mcpFindThreadSwitcherCombo()
+{
+    QApplication *app = qobject_cast<QApplication *>(QCoreApplication::instance());
+    if (!app)
+        return nullptr;
+
+    const QList<QComboBox *> combos = app->findChildren<QComboBox *>(QString(), Qt::FindChildrenRecursively);
+    for (QComboBox *combo : combos) {
+        if (!combo || !combo->model())
+            continue;
+        const QByteArray cls(combo->model()->metaObject()->className());
+        if (cls.contains("ThreadsHandler"))
+            return combo;
+    }
+    return nullptr;
+}
+
+static QVector<QModelIndex> mcpCollectStackFrameIndices(const QAbstractItemModel *model,
+                                                          const QModelIndex &parent)
+{
+    QVector<QModelIndex> out;
+    if (!model)
+        return out;
+
+    const int rows = model->rowCount(parent);
+    for (int r = 0; r < rows; ++r) {
+        const QModelIndex rowIndex = model->index(r, 0, parent);
+        if (!rowIndex.isValid())
+            continue;
+        if (model->rowCount(rowIndex) > 0) {
+            const QVector<QModelIndex> nested = mcpCollectStackFrameIndices(model, rowIndex);
+            for (const QModelIndex &idx : nested)
+                out.append(idx);
+            continue;
+        }
+        out.append(rowIndex);
+    }
+    return out;
+}
+
+static bool mcpInferiorPausedInDebugger()
+{
+    return debuggerActionEnabled(QStringLiteral("Debugger.Continue"));
+}
+
 
 MCPCommands::MCPCommands(QObject *parent)
     : QObject(parent), m_sessionLoadResult(false), m_buildWasInProgress(false)
@@ -322,6 +1162,205 @@ QString MCPCommands::stopDebug()
     return results.join("\n");
 }
 
+QString MCPCommands::debugPlayPause()
+{
+    QStringList results;
+    results.append("=== DEBUG PLAY / PAUSE ===");
+
+    if (!isDebuggingActive()) {
+        results.append("ERROR: No active debug session.");
+        results.append("Start debugging first (debug tool), then use this to Continue or Interrupt the inferior.");
+        return results.join("\n");
+    }
+
+    if (triggerDebuggerAction("Debugger.Continue")) {
+        results.append("Action: Continue (same as debugger \"Go\" when stopped in debugger).");
+        results.append("The inferior should resume execution.");
+        return results.join("\n");
+    }
+
+    if (triggerDebuggerAction("Debugger.Interrupt")) {
+        results.append("Action: Interrupt (same as debugger \"Pause\" while the inferior is running).");
+        results.append("The debugger should break in as soon as the target stops.");
+        return results.join("\n");
+    }
+
+    results.append("ERROR: Neither Continue nor Interrupt is available on the debugger toolbar.");
+    results.append("The inferior may not be started yet, may have exited, or the session is in an unexpected state.");
+    return results.join("\n");
+}
+
+QString MCPCommands::getDebuggedAppState()
+{
+    QJsonObject o;
+
+    if (!isDebuggingActive()) {
+        o.insert(QStringLiteral("state"), QStringLiteral("not_running"));
+        o.insert(QStringLiteral("debugSessionActive"), false);
+        o.insert(QStringLiteral("detail"), QStringLiteral("No active debug session (Stop/Abort debugger actions are not enabled)."));
+        return QString::fromUtf8(QJsonDocument(o).toJson(QJsonDocument::Compact));
+    }
+
+    o.insert(QStringLiteral("debugSessionActive"), true);
+
+    const bool canContinue = debuggerActionEnabled(QStringLiteral("Debugger.Continue"));
+    const bool canInterrupt = debuggerActionEnabled(QStringLiteral("Debugger.Interrupt"));
+
+    if (canContinue && !canInterrupt) {
+        o.insert(QStringLiteral("state"), QStringLiteral("paused"));
+        o.insert(QStringLiteral("detail"), QStringLiteral("Inferior is stopped in the debugger (Continue is available)."));
+    } else if (canInterrupt && !canContinue) {
+        o.insert(QStringLiteral("state"), QStringLiteral("running"));
+        o.insert(QStringLiteral("detail"), QStringLiteral("Inferior appears to be running (Interrupt is available)."));
+    } else if (canContinue && canInterrupt) {
+        o.insert(QStringLiteral("state"), QStringLiteral("paused"));
+        o.insert(QStringLiteral("detail"), QStringLiteral("Both Continue and Interrupt are enabled; reporting paused."));
+    } else {
+        o.insert(QStringLiteral("state"), QStringLiteral("not_running"));
+        o.insert(QStringLiteral("detail"), QStringLiteral("Debug session is active but neither Continue nor Interrupt is enabled (inferior may not be running yet or has exited)."));
+    }
+
+    return QString::fromUtf8(QJsonDocument(o).toJson(QJsonDocument::Compact));
+}
+
+
+QString MCPCommands::listThreads()
+{
+    QJsonObject o;
+
+    if (!isDebuggingActive()) {
+        o.insert(QStringLiteral("error"), QStringLiteral("No active debug session."));
+        o.insert(QStringLiteral("threads"), QJsonArray());
+        o.insert(QStringLiteral("count"), 0);
+        return QString::fromUtf8(QJsonDocument(o).toJson(QJsonDocument::Compact));
+    }
+
+    QAbstractItemModel *model = mcpFindThreadsHandlerModel();
+    if (!model) {
+        o.insert(QStringLiteral("error"), QStringLiteral("ThreadsHandler model not found. Open the Threads view in Qt Creator."));
+        o.insert(QStringLiteral("threads"), QJsonArray());
+        o.insert(QStringLiteral("count"), 0);
+        return QString::fromUtf8(QJsonDocument(o).toJson(QJsonDocument::Compact));
+    }
+
+    QComboBox *combo = mcpFindThreadSwitcherCombo();
+    const int currentIndex = combo ? combo->currentIndex() : -1;
+
+    QJsonArray threads;
+    const int rowCount = model->rowCount();
+    for (int i = 0; i < rowCount; ++i) {
+        const QModelIndex rowIndex = model->index(i, 0);
+        QJsonObject threadObj;
+        threadObj.insert(QStringLiteral("index"), i);
+        const QString displayName = model->data(rowIndex, Qt::DisplayRole).toString();
+        threadObj.insert(QStringLiteral("displayName"), displayName);
+        QString id = model->data(model->index(i, 0), Qt::DisplayRole).toString();
+        if (displayName.startsWith(QLatin1Char('#'))) {
+            const int space = displayName.indexOf(QLatin1Char(' '));
+            id = space > 1 ? displayName.mid(1, space - 1) : displayName.mid(1);
+        }
+        threadObj.insert(QStringLiteral("id"), id);
+        threadObj.insert(QStringLiteral("name"), model->data(model->index(i, 6), Qt::DisplayRole).toString());
+        threadObj.insert(QStringLiteral("targetId"), model->data(model->index(i, 7), Qt::DisplayRole).toString());
+        threadObj.insert(QStringLiteral("current"), i == currentIndex);
+        threads.append(threadObj);
+    }
+
+    o.insert(QStringLiteral("threads"), threads);
+    o.insert(QStringLiteral("count"), threads.size());
+    if (currentIndex >= 0)
+        o.insert(QStringLiteral("currentIndex"), currentIndex);
+    o.insert(QStringLiteral("inferiorPaused"), mcpInferiorPausedInDebugger());
+
+    return QString::fromUtf8(QJsonDocument(o).toJson(QJsonDocument::Compact));
+}
+
+QString MCPCommands::selectThread(int index)
+{
+    QStringList results;
+    results.append(QStringLiteral("=== SELECT THREAD ==="));
+
+    if (!isDebuggingActive()) {
+        results.append(QStringLiteral("ERROR: No active debug session."));
+        return results.join(QString(QChar(10)));
+    }
+
+    if (!mcpInferiorPausedInDebugger()) {
+        results.append(QStringLiteral("ERROR: Debuggee is not paused in the debugger. Interrupt or stop at a breakpoint first."));
+        return results.join(QString(QChar(10)));
+    }
+
+    QAbstractItemModel *model = mcpFindThreadsHandlerModel();
+    if (!model) {
+        results.append(QStringLiteral("ERROR: ThreadsHandler model not found. Open the Threads view in Qt Creator."));
+        return results.join(QString(QChar(10)));
+    }
+
+    if (index < 0 || index >= model->rowCount()) {
+        results.append(QStringLiteral("ERROR: Thread index %1 out of range (0-%2).")
+                           .arg(index)
+                           .arg(model->rowCount() > 0 ? model->rowCount() - 1 : 0));
+        return results.join(QString(QChar(10)));
+    }
+
+    const QModelIndex rowIndex = model->index(index, 0);
+    const QString displayName = model->data(rowIndex, Qt::DisplayRole).toString();
+
+    if (!model->setData(rowIndex, QVariant(), kDebuggerItemActivatedRole)) {
+        results.append(QStringLiteral("ERROR: Failed to activate thread index %1.").arg(index));
+        return results.join(QString(QChar(10)));
+    }
+
+    results.append(QStringLiteral("OK: Selected thread index %1 (%2).")
+                       .arg(index)
+                       .arg(displayName.isEmpty() ? QStringLiteral("thread") : displayName));
+    results.append(QStringLiteral("Call stack reload may complete asynchronously; retry getCallStack if frames are empty."));
+    return results.join(QString(QChar(10)));
+}
+
+QString MCPCommands::selectStackFrame(int index)
+{
+    QStringList results;
+    results.append(QStringLiteral("=== SELECT STACK FRAME ==="));
+
+    if (!isDebuggingActive()) {
+        results.append(QStringLiteral("ERROR: No active debug session."));
+        return results.join(QString(QChar(10)));
+    }
+
+    if (!mcpInferiorPausedInDebugger()) {
+        results.append(QStringLiteral("ERROR: Debuggee is not paused in the debugger. Interrupt or stop at a breakpoint first."));
+        return results.join(QString(QChar(10)));
+    }
+
+    QAbstractItemModel *stackModel = mcpFindStackHandlerModel();
+    if (!stackModel) {
+        results.append(QStringLiteral("ERROR: StackHandler model not found. Open the Stack view in Qt Creator."));
+        return results.join(QString(QChar(10)));
+    }
+
+    const QVector<QModelIndex> frameIndices = mcpCollectStackFrameIndices(stackModel, QModelIndex());
+    if (index < 0 || index >= frameIndices.size()) {
+        results.append(QStringLiteral("ERROR: Stack frame index %1 out of range (0-%2).")
+                           .arg(index)
+                           .arg(frameIndices.size() > 0 ? frameIndices.size() - 1 : 0));
+        return results.join(QString(QChar(10)));
+    }
+
+    const QModelIndex frameIndex = frameIndices.at(index);
+    const QString label = stackModel->data(frameIndex, Qt::DisplayRole).toString();
+
+    if (!stackModel->setData(frameIndex, QVariant(), kDebuggerItemActivatedRole)) {
+        results.append(QStringLiteral("ERROR: Failed to activate stack frame index %1.").arg(index));
+        return results.join(QString(QChar(10)));
+    }
+
+    results.append(QStringLiteral("OK: Activated stack frame index %1.").arg(index));
+    if (!label.isEmpty())
+        results.append(QStringLiteral("Frame: %1").arg(label));
+    return results.join(QString(QChar(10)));
+}
+
 QString MCPCommands::getVersion()
 {
     return PLUGIN_VERSION_STRING;
@@ -372,40 +1411,62 @@ bool MCPCommands::isBuildInProgress() const
 
 bool MCPCommands::waitForBuildCompletion(int timeoutSeconds)
 {
-    qDebug() << "Waiting for build completion, timeout:" << timeoutSeconds << "seconds";
-    
-    // Start monitoring
+    qDebug() << "MCP waitForBuildCompletion START, timeout:" << timeoutSeconds << "seconds";
+
+    m_buildWaitActive = true;
+    m_abortBuildWait = false;
+    m_lastBuildWaitClientDisconnected = false;
+    const auto clearWaitState = qScopeGuard([this]() {
+        m_buildWaitActive = false;
+        m_abortBuildWait = false;
+        m_buildMonitorTimer->stop();
+    });
+
     m_buildMonitorTimer->start();
     m_buildWasInProgress = ProjectExplorer::BuildManager::isBuilding();
-    
+
     if (!m_buildWasInProgress) {
         qDebug() << "No build in progress when waitForBuildCompletion called";
-        m_buildMonitorTimer->stop();
-        return true; // Already not building
+        return true;
     }
-    
-    // Poll instead of nested QEventLoop::exec(). Nested exec() can cause Qt Creator
-    // BuildManager to run its completion callback with an invalid progress object,
-    // leading to SIGSEGV in QFutureInterfaceBase::setProgressValueAndText (crash.log).
+
     const int pollIntervalMs = 150;
     QElapsedTimer elapsed;
     elapsed.start();
-    qDebug() << "Polling for build completion, timeout:" << timeoutSeconds << "seconds";
 
     while (ProjectExplorer::BuildManager::isBuilding()) {
-        if (elapsed.hasExpired(timeoutSeconds * 1000)) {
-            qDebug() << "Build wait timed out";
-            m_buildMonitorTimer->stop();
+        if (m_abortBuildWait) {
+            m_lastBuildWaitClientDisconnected = true;
+            qDebug() << "MCP waitForBuildCompletion aborted: client disconnected (build continues)";
             return false;
         }
-        QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+        if (elapsed.hasExpired(timeoutSeconds * 1000)) {
+            qDebug() << "MCP waitForBuildCompletion timed out";
+            return false;
+        }
+        QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents, 50);
         QThread::msleep(pollIntervalMs);
     }
 
-    m_buildMonitorTimer->stop();
     m_buildWasInProgress = false;
-    qDebug() << "Build completed successfully";
+    qDebug() << "MCP waitForBuildCompletion END: build completed";
     return true;
+}
+
+void MCPCommands::notifyClientDisconnected()
+{
+    if (m_buildWaitActive)
+        m_abortBuildWait = true;
+}
+
+bool MCPCommands::isBuildWaitActive() const
+{
+    return m_buildWaitActive;
+}
+
+bool MCPCommands::lastBuildWaitClientDisconnected() const
+{
+    return m_lastBuildWaitClientDisconnected;
 }
 
 void MCPCommands::onBuildStateChanged()
@@ -762,223 +1823,282 @@ bool MCPCommands::killDebuggedProcesses()
 QString MCPCommands::getCallStack()
 {
     qDebug() << "Retrieving call stack from Qt Creator debugger";
-    
+
     QStringList results;
-    results.append("=== CALL STACK ===");
-    
-    // First, check if debugging is active
+    results.append(QStringLiteral("=== CALL STACK ==="));
+
     if (!isDebuggingActive()) {
-        results.append("ERROR: No active debug session");
-        results.append("The debugger is not running. Please start a debug session first.");
-        return results.join("\n");
+        results.append(QStringLiteral("ERROR: No active debug session"));
+        results.append(QStringLiteral("The debugger is not running. Please start a debug session first."));
+        return results.join(QStringLiteral("\n"));
     }
-    
-    results.append("Debug session is active.");
-    results.append("");
-    
+
+    results.append(QStringLiteral("Debug session is active."));
+    results.append(QStringLiteral(""));
+
+#ifdef Q_OS_WIN
+    {
+        QStringList engineResults = results;
+        if (tryGetCallStackOnWindows(engineResults)) {
+            engineResults.append(QStringLiteral(""));
+            engineResults.append(QStringLiteral("=== END CALL STACK ==="));
+            return engineResults.join(QStringLiteral("\n"));
+        }
+        qDebug() << "MCP getCallStack (Windows): direct stack read failed, falling back to stack views";
+
+        if (!debuggerActionEnabled(QStringLiteral("Debugger.Continue"))) {
+            results.append(QStringLiteral("ERROR: Debuggee is not paused in the debugger."));
+            results.append(QStringLiteral("Interrupt the running app (debugPlayPause) or stop at a breakpoint, then retry."));
+            results.append(QStringLiteral(""));
+            results.append(QStringLiteral("=== END CALL STACK ==="));
+            return results.join(QStringLiteral("\n"));
+        }
+    }
+#endif
+
+    raiseQtCreatorMainWindow();
+#ifndef Q_OS_WIN
+    const QScopeGuard restoreCursorFront([] { activateCursorIde(); });
+#endif
+
+    tryExpandStackLoadMoreAllViews();
+
     QWidgetList allWidgets = QApplication::allWidgets();
-    
-    // Helper lambda to check if a model looks like a stack trace model
-    auto isStackModel = [](QAbstractItemModel* model) -> bool {
-        if (!model || model->rowCount() == 0) return false;
-        
-        int colCount = model->columnCount();
-        
-        // Check column headers for stack-specific names
-        QStringList stackHeaders = {"level", "function", "file", "line", "address", "from"};
-        QStringList watchHeaders = {"name", "value", "type", "time"}; // Watch view headers to exclude
-        
-        int stackHeaderCount = 0;
-        int watchHeaderCount = 0;
-        
-        for (int col = 0; col < colCount; ++col) {
-            QString header = model->headerData(col, Qt::Horizontal).toString().toLower();
-            
-            for (const QString& sh : stackHeaders) {
-                if (header.contains(sh)) {
-                    stackHeaderCount++;
-                    break;
-                }
-            }
-            for (const QString& wh : watchHeaders) {
-                if (header.contains(wh)) {
-                    watchHeaderCount++;
-                    break;
-                }
-            }
-        }
-        
-        // If it has more watch headers than stack headers, it's probably a watch view
-        if (watchHeaderCount > stackHeaderCount) return false;
-        
-        // If it has at least 2 stack-related headers, it's likely a stack view
-        if (stackHeaderCount >= 2) return true;
-        
-        // Check first row content for stack-like patterns
-        for (int col = 0; col < colCount; ++col) {
-            QString cellText = model->data(model->index(0, col)).toString();
-            // Stack frames often have addresses (0x...) and function names with ::
-            if (cellText.contains(QRegularExpression("^0x[0-9a-fA-F]+$")) ||
-                cellText.contains("::") ||
-                cellText.contains(QRegularExpression("\\.(cpp|c|h|mm|m):\\d+"))) {
-                return true;
-            }
-        }
-        
-        return false;
+
+    const auto isStackModel = [](QAbstractItemModel *model) -> bool {
+        return isStackModelForMcp(model);
     };
-    
-    // Helper lambda to extract stack data from a model
-    auto extractStackFromModel = [&results](QAbstractItemModel* model) -> bool {
-        int rowCount = model->rowCount();
-        int colCount = model->columnCount();
-        
-        if (rowCount == 0) return false;
-        
-        // Get column headers
+
+    auto extractStackFromModel = [&results](QAbstractItemModel *model) -> bool {
+#ifdef Q_OS_WIN
+        return extractStackLinesFromModel(model, results);
+#else
+        if (!model)
+            return false;
+
+        const QStringList lines = collectModelDisplayRows(model, QModelIndex(), 4096);
+        if (lines.isEmpty())
+            return false;
+
+        const int colCount = model->columnCount();
         QStringList headers;
         for (int col = 0; col < colCount; ++col) {
-            QString header = model->headerData(col, Qt::Horizontal).toString();
-            if (!header.isEmpty()) {
+            const QString header = model->headerData(col, Qt::Horizontal).toString();
+            if (!header.isEmpty())
                 headers.append(header);
-            }
         }
-        
-        results.append(QString("Found %1 stack frames:").arg(rowCount));
-        if (!headers.isEmpty()) {
-            results.append("Columns: " + headers.join(" | "));
-        }
-        results.append("");
-        
-        // Extract each row
-        for (int row = 0; row < rowCount && row < 100; ++row) {
-            QStringList rowData;
-            
-            for (int col = 0; col < colCount; ++col) {
-                QModelIndex index = model->index(row, col);
-                QString data = model->data(index, Qt::DisplayRole).toString();
-                if (!data.isEmpty()) {
-                    rowData.append(data);
-                }
-            }
-            
-            if (!rowData.isEmpty()) {
-                results.append(QString("#%1: %2").arg(row).arg(rowData.join(" | ")));
-            }
-        }
-        
-        if (rowCount > 100) {
-            results.append(QString("... and %1 more frames (truncated)").arg(rowCount - 100));
-        }
-        
+
+        results.append(QStringLiteral("Found %1 stack frames:").arg(lines.size()));
+        if (!headers.isEmpty())
+            results.append(QStringLiteral("Columns: %1").arg(headers.join(QStringLiteral(" | "))));
+        results.append(QStringLiteral(""));
+
+        for (int i = 0; i < lines.size(); ++i)
+            results.append(QStringLiteral("#%1: %2").arg(i).arg(lines.at(i)));
+
         return true;
+#endif
     };
-    
-    // First pass: Look for widgets with "Stack" in their object name (most reliable)
-    for (QWidget* widget : allWidgets) {
-        if (!widget || !widget->isVisible()) continue;
-        
-        QString objectName = widget->objectName();
-        
-        // Look specifically for StackWindow or similar
-        if (objectName.contains("Stack", Qt::CaseInsensitive) && 
-            !objectName.contains("Watch", Qt::CaseInsensitive) &&
-            !objectName.contains("Local", Qt::CaseInsensitive)) {
-            
+
+    for (QWidget *widget : allWidgets) {
+        if (!widget || !widget->isVisible())
+            continue;
+
+        const QString objectName = widget->objectName();
+        if (objectName.contains(QLatin1String("Stack"), Qt::CaseInsensitive)
+            && !objectName.contains(QLatin1String("Watch"), Qt::CaseInsensitive)
+            && !objectName.contains(QLatin1String("Local"), Qt::CaseInsensitive)) {
+
             qDebug() << "Found stack widget by name:" << objectName;
-            
-            QList<QAbstractItemView*> views = widget->findChildren<QAbstractItemView*>(QString(), Qt::FindChildrenRecursively);
-            for (QAbstractItemView* view : views) {
-                QAbstractItemModel* model = view->model();
-                if (model && isStackModel(model)) {
-                    if (extractStackFromModel(model)) {
-                        results.append("");
-                        results.append("=== END CALL STACK ===");
-                        return results.join("\n");
-                    }
+
+            const QList<QAbstractItemView *> views = widget->findChildren<QAbstractItemView *>(
+                QString(), Qt::FindChildrenRecursively);
+            for (QAbstractItemView *view : views) {
+                QAbstractItemModel *model = view->model();
+                if (model && isStackModel(model) && extractStackFromModel(model)) {
+                    results.append(QStringLiteral(""));
+                    results.append(QStringLiteral("=== END CALL STACK ==="));
+                    return results.join(QStringLiteral("\n"));
                 }
             }
         }
     }
-    
-    // Second pass: Search all visible views and check their models
-    QList<QPair<int, QAbstractItemView*>> candidateViews; // score, view
-    
-    for (QWidget* widget : allWidgets) {
-        if (!widget || !widget->isVisible()) continue;
-        
-        QAbstractItemView* view = qobject_cast<QAbstractItemView*>(widget);
-        if (!view) continue;
-        
-        QAbstractItemModel* model = view->model();
-        if (!model || model->rowCount() == 0) continue;
-        
+
+    QList<QPair<int, QAbstractItemView *>> candidateViews;
+
+    for (QWidget *widget : allWidgets) {
+        if (!widget || !widget->isVisible())
+            continue;
+
+        auto *view = qobject_cast<QAbstractItemView *>(widget);
+        if (!view)
+            continue;
+
+        QAbstractItemModel *model = view->model();
+        if (!model || model->rowCount() == 0)
+            continue;
+
         int score = 0;
-        int colCount = model->columnCount();
-        
-        // Score based on headers
+        const int colCount = model->columnCount();
+
         for (int col = 0; col < colCount; ++col) {
-            QString header = model->headerData(col, Qt::Horizontal).toString().toLower();
-            if (header.contains("function")) score += 10;
-            if (header.contains("file")) score += 8;
-            if (header.contains("line")) score += 8;
-            if (header.contains("address")) score += 6;
-            if (header.contains("level")) score += 6;
-            if (header.contains("from") || header.contains("module")) score += 4;
-            
-            // Negative scores for watch-like views
-            if (header.contains("value")) score -= 5;
-            if (header.contains("type") && !header.contains("return")) score -= 5;
-            if (header.contains("time")) score -= 10;
+            const QString header = model->headerData(col, Qt::Horizontal).toString().toLower();
+            if (header.contains(QLatin1String("function")))
+                score += 10;
+            if (header.contains(QLatin1String("file")))
+                score += 8;
+            if (header.contains(QLatin1String("line")))
+                score += 8;
+            if (header.contains(QLatin1String("address")))
+                score += 6;
+            if (header.contains(QLatin1String("level")))
+                score += 6;
+            if (header.contains(QLatin1String("from")) || header.contains(QLatin1String("module")))
+                score += 4;
+
+            if (header.contains(QLatin1String("value")))
+                score -= 5;
+            if (header.contains(QLatin1String("type")) && !header.contains(QLatin1String("return")))
+                score -= 5;
+            if (header.contains(QLatin1String("time")))
+                score -= 10;
         }
-        
-        // Score based on content
-        if (model->rowCount() > 0) {
-            for (int col = 0; col < colCount && col < 5; ++col) {
-                QString cellText = model->data(model->index(0, col)).toString();
-                if (cellText.contains("0x")) score += 3;
-                if (cellText.contains("::")) score += 5;
-                if (cellText.contains(QRegularExpression("\\.(cpp|c|h|mm|m)"))) score += 4;
-            }
+
+        const QStringList sampleLines = collectModelDisplayRows(model, QModelIndex(), 3);
+        for (const QString &line : sampleLines) {
+            if (line.contains(QLatin1String("0x")))
+                score += 3;
+            if (line.contains(QLatin1String("::")))
+                score += 5;
+            if (line.contains(QRegularExpression(QStringLiteral("\\.(cpp|c|h|mm|m)"))))
+                score += 4;
         }
-        
-        if (score > 5) {
+
+        if (score > 5)
             candidateViews.append({score, view});
-        }
     }
-    
-    // Sort by score and try the best candidate
-    std::sort(candidateViews.begin(), candidateViews.end(), 
-              [](const auto& a, const auto& b) { return a.first > b.first; });
-    
-    for (const auto& [score, view] : candidateViews) {
+
+    std::sort(candidateViews.begin(), candidateViews.end(),
+              [](const auto &a, const auto &b) { return a.first > b.first; });
+
+    for (const auto &[score, view] : candidateViews) {
         qDebug() << "Trying candidate view with score" << score;
-        QAbstractItemModel* model = view->model();
+        QAbstractItemModel *model = view->model();
         if (model && extractStackFromModel(model)) {
-            results.append("");
-            results.append("=== END CALL STACK ===");
-            return results.join("\n");
+            results.append(QStringLiteral(""));
+            results.append(QStringLiteral("=== END CALL STACK ==="));
+            return results.join(QStringLiteral("\n"));
         }
     }
-    
-    // If we couldn't find the stack view, suggest alternatives
-    results.append("Could not automatically extract call stack data.");
-    results.append("");
-    results.append("The debugger is active but the Stack view content is not accessible.");
-    results.append("This may happen if:");
-    results.append("  - The Stack panel is not visible in Qt Creator");
-    results.append("  - The debugger is running (not paused at a breakpoint)");
-    results.append("  - No stack frames are available yet");
-    results.append("");
-    results.append("Suggestions:");
-    results.append("  1. Ensure the debugger is paused at a breakpoint");
-    results.append("  2. Open the Stack panel in Qt Creator (View > Views > Stack)");
-    results.append("  3. Try again after the debugger stops at a breakpoint");
-    
-    results.append("");
-    results.append("=== END CALL STACK ===");
-    
-    return results.join("\n");
+
+    results.append(QStringLiteral("Could not automatically extract call stack data."));
+    results.append(QStringLiteral(""));
+    results.append(QStringLiteral("The debugger is active but stack rows were not readable from views."));
+    results.append(QStringLiteral("This may happen if:"));
+    results.append(QStringLiteral("  - The Stack panel is not visible in Qt Creator"));
+    results.append(QStringLiteral("  - The debugger is running (not paused at a breakpoint)"));
+    results.append(QStringLiteral("  - No stack frames are available yet"));
+    results.append(QStringLiteral(""));
+    results.append(QStringLiteral("Suggestions:"));
+    results.append(QStringLiteral("  1. Ensure the debugger is paused at a breakpoint"));
+    results.append(QStringLiteral("  2. Open the Stack panel in Qt Creator (View > Views > Stack)"));
+    results.append(QStringLiteral("  3. Try again after the debugger stops at a breakpoint"));
+
+    results.append(QStringLiteral(""));
+    results.append(QStringLiteral("=== END CALL STACK ==="));
+
+    return results.join(QStringLiteral("\n"));
+}
+
+
+QString MCPCommands::listFrontmostDialogButtons()
+{
+    qDebug() << "MCP listFrontmostDialogButtons START";
+
+    QJsonObject root;
+    QWidget *dialogWidget = frontmostDialogWidget();
+    if (!dialogWidget) {
+        root.insert(QStringLiteral("found"), false);
+        root.insert(QStringLiteral("error"), QStringLiteral("No frontmost dialog found"));
+        return QString::fromUtf8(QJsonDocument(root).toJson(QJsonDocument::Compact));
+    }
+
+    activateWidgetWindow(dialogWidget);
+
+    root.insert(QStringLiteral("found"), true);
+    root.insert(QStringLiteral("dialogTitle"), dialogWidget->windowTitle());
+    root.insert(QStringLiteral("dialogClass"), QString::fromLatin1(dialogWidget->metaObject()->className()));
+
+    QJsonArray buttonArray;
+    QStringList names;
+    for (QAbstractButton *button : visibleDialogButtons(dialogWidget)) {
+        const QString name = buttonDisplayName(button);
+        if (names.contains(name, Qt::CaseInsensitive))
+            continue;
+        names.append(name);
+
+        QJsonObject entry;
+        entry.insert(QStringLiteral("name"), name);
+        entry.insert(QStringLiteral("enabled"), button->isEnabled());
+        buttonArray.append(entry);
+    }
+
+    root.insert(QStringLiteral("buttons"), buttonArray);
+    const QString json = QString::fromUtf8(QJsonDocument(root).toJson(QJsonDocument::Compact));
+    qDebug() << "MCP listFrontmostDialogButtons END, count:" << buttonArray.size();
+    return json;
+}
+
+bool MCPCommands::clickDialogButton(const QString &name)
+{
+    qDebug() << "MCP clickDialogButton START, name:" << name;
+
+    if (name.trimmed().isEmpty()) {
+        qDebug() << "MCP clickDialogButton: empty button name";
+        return false;
+    }
+
+    QWidget *dialogWidget = frontmostDialogWidget();
+    if (!dialogWidget) {
+        qDebug() << "MCP clickDialogButton: no frontmost dialog";
+        return false;
+    }
+
+    activateWidgetWindow(dialogWidget);
+
+    QList<QAbstractButton *> exactMatches;
+    QList<QAbstractButton *> partialMatches;
+    for (QAbstractButton *button : visibleDialogButtons(dialogWidget)) {
+        const QString displayName = buttonDisplayName(button);
+        if (displayName.compare(name, Qt::CaseInsensitive) == 0)
+            exactMatches.append(button);
+        else if (displayName.contains(name, Qt::CaseInsensitive))
+            partialMatches.append(button);
+    }
+
+    QAbstractButton *target = nullptr;
+    if (exactMatches.size() == 1)
+        target = exactMatches.first();
+    else if (exactMatches.isEmpty() && partialMatches.size() == 1)
+        target = partialMatches.first();
+    else if (exactMatches.size() + partialMatches.size() > 1) {
+        qDebug() << "MCP clickDialogButton: ambiguous button name:" << name;
+        return false;
+    }
+
+    if (!target) {
+        qDebug() << "MCP clickDialogButton: button not found:" << name;
+        return false;
+    }
+    if (!target->isEnabled()) {
+        qDebug() << "MCP clickDialogButton: button disabled:" << buttonDisplayName(target);
+        return false;
+    }
+
+    target->click();
+    QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents, 50);
+    qDebug() << "MCP clickDialogButton END, clicked:" << buttonDisplayName(target);
+    return true;
 }
 
 bool MCPCommands::openPreferencesPanel(const QString &panelName)
@@ -1363,7 +2483,7 @@ bool MCPCommands::stopBuildOnLimit() const
 
 QString MCPCommands::getCompileOutput()
 {
-    qDebug() << "Retrieving compile output from Qt Creator";
+    qDebug() << "MCP getCompileOutput START";
     
     QStringList outputLines;
     outputLines.append("=== COMPILE OUTPUT ===");
@@ -1892,8 +3012,10 @@ QString MCPCommands::getCompileOutput()
     outputLines.append("=== END COMPILE OUTPUT ===");
     
     QString result = outputLines.join("\n");
-    qDebug() << "Compile output retrieval completed, total length:" << result.length();
-    
+    const int rawLen = result.length();
+    result = truncateOutputTail(result);
+    qDebug() << "MCP getCompileOutput END, raw length:" << rawLen << "returned:" << result.length();
+
     return result;
 }
 
@@ -2043,7 +3165,7 @@ QString MCPCommands::getMethodMetadata()
         "getVersion", "listProjects", "listBuildConfigs", "getCurrentProject", 
         "getCurrentBuildConfig", "quit", "listOpenFiles", "listSessions", 
         "getCurrentSession", "saveSession", "listIssues", "getBuildDiagnostics", "getMethodMetadata", 
-        "setMethodMetadata", "stopDebug"
+        "setMethodMetadata", "stopDebug", "debugPlayPause", "getDebuggedAppState", "listThreads", "selectThread", "selectStackFrame", "getCallStack"
     };
     
     results.append("Available methods and their timeout settings:");
@@ -2063,6 +3185,8 @@ QString MCPCommands::getMethodMetadata()
     results.append("build: Compile the current project");
     results.append("debug: Start debugging the current project");
     results.append("stopDebug: Stop the current debug session");
+    results.append("debugPlayPause: Continue if paused, or Interrupt (pause) if the inferior is running");
+    results.append("getDebuggedAppState: JSON query - state is not_running, running, or paused (hung not reported)");
     results.append("runProject: Run the current project");
     results.append("cleanProject: Clean build artifacts");
     results.append("listIssues: List current build issues and warnings");
@@ -2131,3 +3255,4 @@ int MCPCommands::getMethodTimeout(const QString &method) const
 
 } // namespace Internal
 } // namespace Qt_MCP_Plugin
+

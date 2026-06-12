@@ -27,6 +27,10 @@ public:
     bool build();
     QString debug();
     QString stopDebug();
+    /** Continue if paused at breakpoint, or interrupt (pause) if inferior is running. Mirrors debugger Continue / Pause. */
+    QString debugPlayPause();
+    /** JSON: state not_running | running | paused; debugSessionActive; optional detail. No hung state (not detectable reliably). */
+    QString getDebuggedAppState();
     bool openFile(const QString &path);
     QStringList listProjects();
     QStringList listBuildConfigs();
@@ -67,6 +71,9 @@ public:
     // Build monitoring
     bool waitForBuildCompletion(int timeoutSeconds = 300);
     bool isBuildInProgress() const;
+    void notifyClientDisconnected();
+    bool isBuildWaitActive() const;
+    bool lastBuildWaitClientDisconnected() const;
     
     // Method metadata management
     QString getMethodMetadata();
@@ -82,10 +89,20 @@ public:
     
     // Debugger state inspection
     QString getCallStack();
+    /** JSON array of threads with index, id, name, and current flag. */
+    QString listThreads();
+    /** Select debugger thread by listThreads index (requires paused inferior). */
+    QString selectThread(int index);
+    /** Activate call-stack frame by index in the current thread (requires paused inferior). */
+    QString selectStackFrame(int index);
 
     // Preferences dialog helpers
     bool openPreferencesPanel(const QString &panelName);
-    
+
+    // Frontmost dialog button helpers
+    QString listFrontmostDialogButtons();
+    bool clickDialogButton(const QString &name);
+
 
 signals:
     void sessionLoadRequested(const QString &sessionName);
@@ -107,6 +124,9 @@ private:
     
     // Build state tracking
     bool m_buildWasInProgress;
+    bool m_buildWaitActive = false;
+    bool m_abortBuildWait = false;
+    bool m_lastBuildWaitClientDisconnected = false;
     QTimer *m_buildMonitorTimer;
 };
 
