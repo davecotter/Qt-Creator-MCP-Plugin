@@ -11,7 +11,7 @@
     "Url" : "https://www.metamusemedia.com",
     "DocumentationUrl" : "https://github.com/davecotter/Qt-Creator-MCP-Plugin",
     "Dependencies" : [
-        { "Id" : "core", "Version" : "18.0.2" },
-        { "Id" : "projectexplorer", "Version" : "18.0.2" }
+        { "Id" : "core", "Version" : "19.0.2" },
+        { "Id" : "projectexplorer", "Version" : "19.0.2" }
     ]
 }
