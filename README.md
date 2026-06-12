@@ -108,7 +108,9 @@ All plugin source lives under `src/`: headers in `src/header/`, implementation i
 
 1. **Add new MCP commands** in `src/source/mcpcommands.cpp` and `src/header/mcpcommands.h`
 2. **Register tools** in `src/source/mcpserver.cpp` (both tool-list blocks if present)
-3. **Add menu actions** in `src/source/qt_mcp_plugin.cpp` and constants in `src/header/qt_mcp_pluginconstants.h`
+3. **Expose in the UI** (each new MCP tool should be discoverable without reading source):
+   - **Menu:** When it makes sense for a user to trigger the action from Qt Creator, add a **Tools → MCP Plugin** item in `src/source/qt_mcp_plugin.cpp` and an action id in `src/header/qt_mcp_pluginconstants.h`, following existing commands.
+   - **About dialog:** If a menu entry is not appropriate (metadata-only helpers, rarely used plumbing, or anything awkward as a standalone action), document the tool in the **About MCP Plugin** dialog (`MCPServerStatusDialog` in `qt_mcp_plugin.cpp`, opened from **Tools → MCP Plugin → About MCP Plugin**).
 4. **Test** using the MCP server or Tools -> MCP Plugin menu
 
 **Example AI prompts:**
