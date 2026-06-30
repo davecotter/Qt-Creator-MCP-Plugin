@@ -59,16 +59,8 @@ def print_error(message):
     print(f"[ERROR] {message}")
 
 def get_plugin_paths():
-    """Get the correct plugin paths based on repo root and platform (single build/ dir)."""
-    repo_root = qt_config.get_repo_root()
-    build_dir = os.path.join(repo_root, "build")
-    system = platform.system().lower()
-    if system == "windows":
-        plugin_binary = os.path.join(build_dir, "lib", "qtcreator", "plugins", "Release", "Qt_MCP_Plugin.dll")
-        plugin_json = os.path.join(build_dir, "Qt_MCP_Plugin.json")
-    else:
-        plugin_binary = os.path.join(build_dir, PLUGIN_RELATIVE_PATH, PLUGIN_BINARY_NAME)
-        plugin_json = os.path.join(build_dir, PLUGIN_JSON_NAME)
+    """Get the correct plugin paths based on repo root and platform."""
+    plugin_binary, plugin_json, _ = qt_config.get_built_plugin_paths()
     return plugin_binary, plugin_json
 
 # Platform configuration is now handled by qt_config.get_platform_config()
@@ -337,7 +329,7 @@ def verify_plugin_installation(config):
     
     if system == "windows":
         # Get timestamps of built vs installed plugin
-        built_plugin = os.path.join("build", "lib", "qtcreator", "plugins", "Release", "Qt_MCP_Plugin.dll")
+        built_plugin = qt_config.get_built_plugin_paths()[0]
         installed_plugin = os.path.join(config["qt_creator_path"], "qtcreator", "plugins", "Qt_MCP_Plugin.dll")
         
         if not os.path.exists(built_plugin):
@@ -779,8 +771,8 @@ def regenerate_version_files():
 #define PLUGIN_JSON_FILE "{json_file}"
 """
         
-        # Write to build/version.h (single canonical location)
-        build_dir = os.path.join(qt_config.get_repo_root(), "build")
+        # Write to build_<platform>/version.h
+        build_dir = qt_config.get_build_dir()
         os.makedirs(build_dir, exist_ok=True)
         version_h_path = os.path.join(build_dir, "version.h")
         with open(version_h_path, 'w') as f:
@@ -1205,10 +1197,7 @@ def install_plugin(config):
         os.makedirs(app_bundle_dir, exist_ok=True)
         
         # Use absolute paths for xcopy
-        current_dir = qt_config.get_repo_root()
-        plugin_binary = os.path.join(current_dir, "build", "lib", "qtcreator", "plugins", "Release", "Qt_MCP_Plugin.dll")
-        plugin_json = os.path.join(current_dir, "build", "Qt_MCP_Plugin.json")
-        plugin_discovery = os.path.join(current_dir, "build", "Qt_MCP_Plugin_discovery.json")
+        plugin_binary, plugin_json, plugin_discovery = qt_config.get_built_plugin_paths()
         
         # Use windeployqt to automatically stage Qt dependencies
         try:
@@ -1269,9 +1258,7 @@ def install_plugin(config):
         app_bundle_dir = "/usr/lib/qtcreator/plugins"
         os.makedirs(app_bundle_dir, exist_ok=True)
         
-        plugin_binary = "build/lib/qtcreator/plugins/libQt_MCP_Plugin.so"
-        plugin_json = "build/Qt_MCP_Plugin.json"
-        plugin_discovery = "build/Qt_MCP_Plugin_discovery.json"
+        plugin_binary, plugin_json, plugin_discovery = qt_config.get_built_plugin_paths()
         
         if os.path.exists(plugin_binary):
             run_command(["cp", plugin_binary, app_bundle_dir + "/"])
@@ -1427,9 +1414,9 @@ def main():
     
     print("[OK] Qt Creator is not running - proceeding with build")
 
-    # Step 2: Use platform-specific build directory to avoid conflicts
+    # Step 2: Use platform-specific build directory to avoid cross-platform conflicts
     system = platform.system().lower()
-    build_dir = os.path.join(qt_config.get_repo_root(), "build")
+    build_dir = qt_config.get_build_dir()
     print(f"Using {build_dir} directory for {system} build...")
 
     # Step 3: Bump version automatically
@@ -1484,8 +1471,10 @@ def main():
     # Step 5: Configure CMake
     print("[CONFIG] Configuring CMake...")
     
+    qt_config.ensure_fresh_build_dir(build_dir)
+    
     # First, configure CMake if needed
-    if not os.path.exists(f"{build_dir}/CMakeCache.txt"):
+    if not os.path.exists(os.path.join(build_dir, "CMakeCache.txt")):
         print("[CONFIG] Running CMake configuration...")
         
         if system == "windows":
@@ -1614,7 +1603,7 @@ def main():
     # Build the plugin
     # Use the same environment that was set up for CMake configuration
     
-    if current_dir.endswith("/build"):
+    if os.path.normpath(current_dir) == os.path.normpath(build_dir):
         # We're in build directory, build from here
         if system == "windows":
             # Windows build using Qt Creator's build system - Release only
@@ -1788,7 +1777,7 @@ def main():
         if installer_success and platform.system().lower() == "darwin":
             print("")
             print("A standalone installer app has been created at:")
-            print(f"  {os.path.join(qt_config.get_repo_root(), 'build', 'Qt MCP Plugin Installer.app')}")
+            print(f"  {os.path.join(qt_config.get_build_dir(), 'Qt MCP Plugin Installer.app')}")
         print_section_break()
         print("")
         

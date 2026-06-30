@@ -105,6 +105,15 @@ This script handles EVERYTHING automatically:
 - ✅ Registers with Cursor IDE
 
 **DO NOT manually run cmake or build commands. Always use the build script.**
+### Platform build directories
+Each platform uses its own out-of-tree build folder so Mac and Windows depots do not clobber each other:
+- macOS: `build_darwin/`
+- Windows: `build_windows/`
+- Linux: `build_linux/`
+
+The build script selects the correct directory automatically. Stale CMake caches (wrong path or generator) are removed before configure.
+
+
 
 ### ⚠️ After every atomic change: run the build script
 **Anytime you make an atomic change to the plugin** (source code, CMake, version, JSON, discovery file, resources, etc.), **you MUST run the build script** (`python3 scripts/build/build_main.py`). The script will quit Qt Creator, bump the version, build, install, launch Qt Creator, and verify the new plugin version. Do not skip this step after editing plugin-related files.
@@ -219,8 +228,8 @@ python3 scripts/build/build_main.py
 
 # macOS:
 $QT_ROOT/Tools/CMake/CMake.app/Contents/bin/cmake \
-  -DCMAKE_PREFIX_PATH="$QT_ROOT/Qt Creator.app/Contents/Resources" -B build
-$QT_ROOT/Tools/CMake/CMake.app/Contents/bin/cmake --build build
+  -DCMAKE_PREFIX_PATH="$QT_ROOT/Qt Creator.app/Contents/Resources" -B build_darwin
+$QT_ROOT/Tools/CMake/CMake.app/Contents/bin/cmake --build build_darwin
 
 # Windows (PowerShell):
 & "$QT_ROOT\Tools\CMake_64\bin\cmake.exe" `

@@ -12,7 +12,7 @@ Qt Creator plugin implementing the **Model Context Protocol (MCP)**. Enables AI/
 - scripts/test/ – test scripts
 - scripts/installer/ – installer assets and scripts
 - scripts/git/ – Git credential helper for agent pushes
-- build/ – build artifacts (CMake output, installer .app; in .gitignore)
+- build_darwin/, build_windows/, build_linux/ – per-platform CMake output and installer (in .gitignore)
 - logs/ – build and other log files (in .gitignore)
 - documentation/ – AGENTS.md, TESTING.md, and other docs
 - .qt/ – Qt path config per platform
@@ -28,7 +28,7 @@ When Qt Creator is running with the plugin loaded, the MCP server listens at htt
 ## Tools available (after plugin is installed and Qt Creator is running)
 build, getBuildStatus, debug, openFile(path), listProjects, listBuildConfigs, switchBuildConfig(name), runProject, cleanProject, listOpenFiles, listSessions, loadSession(sessionName), listIssues, getBuildDiagnostics, getCurrentProject, getCurrentBuildConfig, getCurrentSession, saveSession, quit.
 
-Authoritative list: src/Qt_MCP_Plugin_discovery.json.in or generated build/Qt_MCP_Plugin_discovery.json.
+Authoritative list: src/Qt_MCP_Plugin_discovery.json.in or generated build_<platform>/Qt_MCP_Plugin_discovery.json.
 
 ## Documentation
 - documentation/AGENTS.md – this file (agent discoverability)

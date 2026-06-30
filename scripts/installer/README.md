@@ -19,6 +19,8 @@ The installer is automatically built as part of the main build process:
 python3 scripts/build/build_main.py
 ```
 
+Build artifacts are written to `build_darwin/` (macOS), `build_windows/`, or `build_linux/`.
+
 To build the installer separately:
 
 ```bash

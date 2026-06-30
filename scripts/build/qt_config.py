@@ -10,6 +10,7 @@ If the file is empty/missing, auto-discovery is attempted.
 
 import os
 import platform
+import shutil
 import socket
 import subprocess
 import re
@@ -247,6 +248,125 @@ PLUGIN_DIRECTORIES = {
     "darwin": "PlugIns/qtcreator",
     "linux": "plugins"
 }
+
+# Per-platform build directories (avoid cross-platform CMake cache clashes on shared depots)
+BUILD_DIR_NAMES = {
+    "windows": "build_windows",
+    "darwin": "build_darwin",
+    "linux": "build_linux",
+}
+
+
+def get_build_dir(repo_root=None):
+    """Return the platform-specific out-of-tree build directory."""
+    repo_root = repo_root or get_repo_root()
+    system = platform.system().lower()
+    return os.path.join(repo_root, BUILD_DIR_NAMES.get(system, f"build_{system}"))
+
+
+def _normalize_path_for_compare(path):
+    return os.path.normcase(os.path.normpath(os.path.abspath(path)))
+
+
+def is_cmake_cache_stale(build_dir, repo_root=None):
+    """
+    Return True if CMakeCache.txt exists but was created for a different
+    source tree, build directory, or platform toolchain.
+    """
+    cache_file = os.path.join(build_dir, "CMakeCache.txt")
+    if not os.path.isfile(cache_file):
+        return False
+
+    repo_root = repo_root or get_repo_root()
+    repo_norm = _normalize_path_for_compare(repo_root)
+    build_norm = _normalize_path_for_compare(build_dir)
+
+    try:
+        with open(cache_file, "r", encoding="utf-8", errors="replace") as f:
+            lines = f.readlines()
+    except OSError:
+        return True
+
+    cached_src = None
+    cached_build = None
+    generator = None
+
+    for line in lines:
+        line = line.rstrip("\n")
+        if line.startswith("# For build in directory:"):
+            cached_build = line.split(":", 1)[1].strip()
+        elif line.startswith("CMAKE_HOME_DIRECTORY:INTERNAL="):
+            cached_src = line.split("=", 1)[1].strip()
+        elif line.startswith("CMAKE_GENERATOR:INTERNAL="):
+            generator = line.split("=", 1)[1].strip()
+
+    if cached_build and _normalize_path_for_compare(cached_build) != build_norm:
+        return True
+    if cached_src and _normalize_path_for_compare(cached_src) != repo_norm:
+        return True
+
+    system = platform.system().lower()
+    if generator:
+        gen_lower = generator.lower()
+        if system == "windows":
+            if "unix makefiles" in gen_lower:
+                return True
+        elif system in ("darwin", "linux"):
+            if "visual studio" in gen_lower:
+                return True
+
+    return False
+
+
+def ensure_fresh_build_dir(build_dir=None, repo_root=None):
+    """
+    Remove build_dir if its CMake cache is stale (wrong platform or repo path).
+    Returns True if the directory was removed.
+    """
+    build_dir = build_dir or get_build_dir(repo_root)
+    if not is_cmake_cache_stale(build_dir, repo_root):
+        return False
+
+    print(f"[CLEAN] Stale CMake cache in {build_dir} — removing build directory")
+    if os.path.isdir(build_dir):
+        shutil.rmtree(build_dir)
+    return True
+
+
+def get_build_plugin_dir(build_dir=None):
+    """Directory containing the built plugin binary and JSON files."""
+    build_dir = build_dir or get_build_dir()
+    system = platform.system().lower()
+    if system == "darwin":
+        return os.path.join(
+            build_dir, "Qt Creator.app", "Contents", "PlugIns", "qtcreator"
+        )
+    if system == "windows":
+        return os.path.join(build_dir, "lib", "qtcreator", "plugins", "Release")
+    return os.path.join(build_dir, "lib", "qtcreator", "plugins")
+
+
+def get_built_plugin_paths(build_dir=None):
+    """Return (binary, json, discovery) paths under the platform build directory."""
+    build_dir = build_dir or get_build_dir()
+    json_path = os.path.join(build_dir, "Qt_MCP_Plugin.json")
+    discovery_path = os.path.join(build_dir, "Qt_MCP_Plugin_discovery.json")
+    system = platform.system().lower()
+    if system == "windows":
+        binary = os.path.join(
+            build_dir, "lib", "qtcreator", "plugins", "Release", "Qt_MCP_Plugin.dll"
+        )
+    elif system == "darwin":
+        binary = os.path.join(
+            get_build_plugin_dir(build_dir), "libQt_MCP_Plugin.1.dylib"
+        )
+    else:
+        binary = os.path.join(
+            build_dir, "lib", "qtcreator", "plugins", "libQt_MCP_Plugin.so"
+        )
+    return binary, json_path, discovery_path
+
+
 
 # Path construction helpers
 def build_qt_creator_path(base_path, system):

@@ -13,6 +13,14 @@ import subprocess
 import glob
 import plistlib
 
+# Import shared build path helpers
+_build_scripts = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'build'
+)
+if _build_scripts not in sys.path:
+    sys.path.insert(0, _build_scripts)
+import qt_config
+
 # =============================================================================
 # Configuration
 # =============================================================================
@@ -39,17 +47,10 @@ def get_project_root():
 
 
 def get_build_plugin_dir():
-    project_root = get_project_root()
-    
-    # Single build/ dir; plugin lives under build/lib/qtcreator/... or build/.../PlugIns
-    build_dir = os.path.join(
-        project_root, 'build', 'Qt Creator.app',
-        'Contents', 'PlugIns', 'qtcreator'
-    )
-    if os.path.isdir(build_dir):
-        if glob.glob(os.path.join(build_dir, PLUGIN_DYLIB_PATTERN)):
-            return build_dir
-    
+    plugin_dir = qt_config.get_build_plugin_dir()
+    if os.path.isdir(plugin_dir):
+        if glob.glob(os.path.join(plugin_dir, PLUGIN_DYLIB_PATTERN)):
+            return plugin_dir
     return None
 
 
@@ -214,9 +215,8 @@ def embed_plugin_files(app_path):
         return False
     
     # Copy JSON files
-    project_root = get_project_root()
-    build_dir = os.path.join(project_root, 'build')
-    
+    build_dir = qt_config.get_build_dir()
+
     for json_file in PLUGIN_FILES:
         for src_path in [
             os.path.join(plugin_source, json_file),
@@ -257,8 +257,7 @@ def sign_app_bundle(app_path):
 
 
 def move_to_build_dir(app_path):
-    project_root = get_project_root()
-    build_dir = os.path.join(project_root, 'build')
+    build_dir = qt_config.get_build_dir()
     os.makedirs(build_dir, exist_ok=True)
     final_path = os.path.join(build_dir, APP_BUNDLE_NAME)
     
