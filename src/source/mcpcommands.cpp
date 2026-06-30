@@ -19,7 +19,6 @@
 #include <projectexplorer/runcontrol.h>
 #include <projectexplorer/runconfiguration.h>
 #include <debugger/debuggerruncontrol.h>
-#include <debugger/debuggermainwindow.h>
 #include <debugger/debuggerinternalconstants.h>
 
 #include <utils/fileutils.h>
@@ -327,14 +326,41 @@ static void tryExpandStackLoadMoreAllViews()
 
 
 
-#ifdef Q_OS_WIN
-enum StackCol {
-    ColLevel = 0,
-    ColFunction = 1,
-    ColFile = 2,
-    ColLine = 3,
-    ColAddress = 4,
-    ColCount = 5,
+struct StackColumnIndices {
+    int level = 0;
+    int function = 1;
+    int file = 2;
+    int line = 3;
+    int address = 4;
+
+    static StackColumnIndices resolve(const QAbstractItemModel *model)
+    {
+        StackColumnIndices idx;
+        if (!model)
+            return idx;
+
+        const int colCount = model->columnCount();
+        if (colCount <= 0)
+            return idx;
+
+        const auto resolveOne = [&](const QStringList &needles, int defaultCol) -> int {
+            for (int c = 0; c < colCount; ++c) {
+                const QString header = model->headerData(c, Qt::Horizontal).toString().toLower();
+                for (const QString &needle : needles) {
+                    if (header.contains(needle))
+                        return c;
+                }
+            }
+            return defaultCol >= 0 && defaultCol < colCount ? defaultCol : -1;
+        };
+
+        idx.level = resolveOne({QStringLiteral("level")}, 0);
+        idx.function = resolveOne({QStringLiteral("function")}, 1);
+        idx.file = resolveOne({QStringLiteral("file")}, 2);
+        idx.line = resolveOne({QStringLiteral("line")}, 3);
+        idx.address = resolveOne({QStringLiteral("address")}, 4);
+        return idx;
+    }
 };
 
 struct McpStackFrame {
@@ -442,17 +468,27 @@ static QString readModelLineCell(const QAbstractItemModel *model, const QModelIn
     return v.toString().trimmed();
 }
 
-static McpStackFrame readStackFrameRow(const QAbstractItemModel *model, int row, const QModelIndex &parent)
+static McpStackFrame readStackFrameRow(const QAbstractItemModel *model,
+                                       int row,
+                                       const QModelIndex &parent,
+                                       const StackColumnIndices &cols)
 {
     McpStackFrame frame;
-    frame.level = readModelCell(model, model->index(row, ColLevel, parent));
-    frame.function = readModelCell(model, model->index(row, ColFunction, parent));
-    frame.file = readModelCell(model, model->index(row, ColFile, parent));
-    frame.line = readModelLineCell(model, model->index(row, ColLine, parent));
-    frame.address = readModelCell(model, model->index(row, ColAddress, parent));
+    if (cols.level >= 0)
+        frame.level = readModelCell(model, model->index(row, cols.level, parent));
+    if (cols.function >= 0)
+        frame.function = readModelCell(model, model->index(row, cols.function, parent));
+    if (cols.file >= 0)
+        frame.file = readModelCell(model, model->index(row, cols.file, parent));
+    if (cols.line >= 0)
+        frame.line = readModelLineCell(model, model->index(row, cols.line, parent));
+    if (cols.address >= 0)
+        frame.address = readModelCell(model, model->index(row, cols.address, parent));
 
-    const QString tip0 = model->data(model->index(row, 0, parent), Qt::ToolTipRole).toString();
-    const QString tip1 = model->data(model->index(row, 1, parent), Qt::ToolTipRole).toString();
+    const int tipColA = cols.level >= 0 ? cols.level : 0;
+    const int tipColB = cols.function >= 0 ? cols.function : 1;
+    const QString tip0 = model->data(model->index(row, tipColA, parent), Qt::ToolTipRole).toString();
+    const QString tip1 = model->data(model->index(row, tipColB, parent), Qt::ToolTipRole).toString();
     mergeFromToolTip(tip0, frame);
     mergeFromToolTip(tip1, frame);
 
@@ -462,7 +498,8 @@ static McpStackFrame readStackFrameRow(const QAbstractItemModel *model, int row,
 static void walkStackModel(const QAbstractItemModel *model,
                            const QModelIndex &parent,
                            QList<McpStackFrame> &frames,
-                           int maxFrames)
+                           int maxFrames,
+                           const StackColumnIndices &cols)
 {
     if (!model || frames.size() >= maxFrames)
         return;
@@ -473,11 +510,11 @@ static void walkStackModel(const QAbstractItemModel *model,
         if (!first.isValid())
             continue;
         if (model->rowCount(first) > 0) {
-            walkStackModel(model, first, frames, maxFrames);
+            walkStackModel(model, first, frames, maxFrames, cols);
             continue;
         }
 
-        McpStackFrame frame = readStackFrameRow(model, r, parent);
+        McpStackFrame frame = readStackFrameRow(model, r, parent, cols);
         if (frame.isPlaceholder())
             continue;
         if (!frame.hasSymbol() && !frame.hasLocation())
@@ -501,7 +538,8 @@ static QList<McpStackFrame> collectStructuredStackFrames(QAbstractItemModel *mod
     model = unwrapStackSourceModel(model);
     if (!model)
         return frames;
-    walkStackModel(model, QModelIndex(), frames, 4096);
+    const StackColumnIndices cols = StackColumnIndices::resolve(model);
+    walkStackModel(model, QModelIndex(), frames, 4096, cols);
     return frames;
 }
 
@@ -573,6 +611,7 @@ static bool appendStackResultsFromModel(QAbstractItemModel *model, QStringList &
     return true;
 }
 
+
 static QAbstractItemModel *mcpFindStackHandlerModel()
 {
     QApplication *app = qobject_cast<QApplication *>(QCoreApplication::instance());
@@ -590,6 +629,7 @@ static QAbstractItemModel *mcpFindStackHandlerModel()
     }
     return nullptr;
 }
+
 static bool extractStackLinesFromModel(QAbstractItemModel *model, QStringList &results)
 {
     model = unwrapStackSourceModel(model);
@@ -618,10 +658,8 @@ static bool tryExpandStackViaDebuggerActions()
     return false;
 }
 
-static bool tryGetCallStackOnWindows(QStringList &results)
+static bool tryGetCallStackDirect(QStringList &results)
 {
-    Utils::DebuggerMainWindow::ensureMainWindowExists();
-
     for (int i = 0; i < 40; ++i) {
         if (debuggerActionEnabled(QStringLiteral("Debugger.Continue")))
             break;
@@ -631,6 +669,8 @@ static bool tryGetCallStackOnWindows(QStringList &results)
 
     tryExpandStackViaDebuggerActions();
     tryExpandStackLoadMoreAllViews();
+
+    QWidget *searchRoot = Core::ICore::mainWindow();
 
     for (int pass = 0; pass < 20; ++pass) {
         QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
@@ -644,8 +684,8 @@ static bool tryGetCallStackOnWindows(QStringList &results)
             }
         }
 
-        if (QWidget *stackRoot = Utils::DebuggerMainWindow::centralWidgetStack()) {
-            const QList<QAbstractItemView *> views = stackRoot->findChildren<QAbstractItemView *>(
+        if (searchRoot) {
+            const QList<QAbstractItemView *> views = searchRoot->findChildren<QAbstractItemView *>(
                 QString(), Qt::FindChildrenRecursively);
             for (QAbstractItemView *view : views) {
                 if (!view)
@@ -661,7 +701,6 @@ static bool tryGetCallStackOnWindows(QStringList &results)
 
     return false;
 }
-#endif
 
 static void raiseQtCreatorMainWindow()
 {
@@ -827,24 +866,6 @@ static QAbstractItemModel *mcpFindThreadsHandlerModel()
     return nullptr;
 }
 
-
-static QAbstractItemModel *mcpFindStackHandlerModel()
-{
-    QApplication *app = qobject_cast<QApplication *>(QCoreApplication::instance());
-    if (!app)
-        return nullptr;
-
-    const QList<QAbstractItemModel *> models = app->findChildren<QAbstractItemModel *>(
-        QString(), Qt::FindChildrenRecursively);
-    for (QAbstractItemModel *model : models) {
-        if (!model)
-            continue;
-        const QByteArray cls(model->metaObject()->className());
-        if (cls.contains("StackHandler"))
-            return model;
-    }
-    return nullptr;
-}
 
 static QComboBox *mcpFindThreadSwitcherCombo()
 {
@@ -1836,15 +1857,14 @@ QString MCPCommands::getCallStack()
     results.append(QStringLiteral("Debug session is active."));
     results.append(QStringLiteral(""));
 
-#ifdef Q_OS_WIN
     {
         QStringList engineResults = results;
-        if (tryGetCallStackOnWindows(engineResults)) {
+        if (tryGetCallStackDirect(engineResults)) {
             engineResults.append(QStringLiteral(""));
             engineResults.append(QStringLiteral("=== END CALL STACK ==="));
             return engineResults.join(QStringLiteral("\n"));
         }
-        qDebug() << "MCP getCallStack (Windows): direct stack read failed, falling back to stack views";
+        qDebug() << "MCP getCallStack: direct stack read failed, falling back to stack views";
 
         if (!debuggerActionEnabled(QStringLiteral("Debugger.Continue"))) {
             results.append(QStringLiteral("ERROR: Debuggee is not paused in the debugger."));
@@ -1854,7 +1874,6 @@ QString MCPCommands::getCallStack()
             return results.join(QStringLiteral("\n"));
         }
     }
-#endif
 
     raiseQtCreatorMainWindow();
 #ifndef Q_OS_WIN
@@ -1870,34 +1889,7 @@ QString MCPCommands::getCallStack()
     };
 
     auto extractStackFromModel = [&results](QAbstractItemModel *model) -> bool {
-#ifdef Q_OS_WIN
         return extractStackLinesFromModel(model, results);
-#else
-        if (!model)
-            return false;
-
-        const QStringList lines = collectModelDisplayRows(model, QModelIndex(), 4096);
-        if (lines.isEmpty())
-            return false;
-
-        const int colCount = model->columnCount();
-        QStringList headers;
-        for (int col = 0; col < colCount; ++col) {
-            const QString header = model->headerData(col, Qt::Horizontal).toString();
-            if (!header.isEmpty())
-                headers.append(header);
-        }
-
-        results.append(QStringLiteral("Found %1 stack frames:").arg(lines.size()));
-        if (!headers.isEmpty())
-            results.append(QStringLiteral("Columns: %1").arg(headers.join(QStringLiteral(" | "))));
-        results.append(QStringLiteral(""));
-
-        for (int i = 0; i < lines.size(); ++i)
-            results.append(QStringLiteral("#%1: %2").arg(i).arg(lines.at(i)));
-
-        return true;
-#endif
     };
 
     for (QWidget *widget : allWidgets) {
