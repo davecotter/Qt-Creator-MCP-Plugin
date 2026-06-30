@@ -91,6 +91,7 @@ Makefile
 !CMakeLists.txt
 !version.cmake
 !*.cmake.in
+!cmake/*.cmake
 
 # Qt Creator plugin build artifacts
 *.dylib

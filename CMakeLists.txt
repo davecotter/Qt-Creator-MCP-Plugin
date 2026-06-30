@@ -34,8 +34,13 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+find_package(Qt6 COMPONENTS Widgets Network Concurrent REQUIRED)
+
+if(WIN32)
+  include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/ProvideQt6TaskTreeFromQtCreator.cmake)
+endif()
+
 find_package(QtCreator REQUIRED COMPONENTS Core)
-find_package(Qt6 COMPONENTS Widgets Network REQUIRED)
 
 # Add a CMake option that enables building your plugin with tests.
 # You don't want your released plugin binaries to contain tests,
@@ -101,6 +106,24 @@ target_include_directories(Qt_MCP_Plugin PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src/header
     ${CMAKE_CURRENT_BINARY_DIR}
 )
+
+if(WIN32 AND QTC_TASKTREE_INCLUDE_DIR)
+  target_include_directories(Qt_MCP_Plugin PRIVATE ${QTC_TASKTREE_INCLUDE_DIR})
+endif()
+
+
+# Plugin Development SDK omits some plugin-private headers (e.g. debugger) that
+# remain in the Qt Creator.app bundle.
+if(APPLE)
+    foreach(_prefix IN LISTS CMAKE_PREFIX_PATH)
+        if(_prefix MATCHES "/Qt Creator\.sdk$")
+            get_filename_component(_qt_root "${_prefix}" DIRECTORY)
+            target_include_directories(Qt_MCP_Plugin PRIVATE
+                "${_qt_root}/Qt Creator.app/Contents/Resources/Headers/qtcreator/src/plugins")
+            break()
+        endif()
+    endforeach()
+endif()
 
 
 # Set plugin properties without version in filename

@@ -254,6 +254,12 @@ def build_qt_creator_path(base_path, system):
     if system == "windows":
         return "{}/Tools/QtCreator/lib".format(base_path)
     elif system == "darwin":
+        # Qt Creator 19+ ships Plugin Development SDK via MaintenanceTool as
+        # "Qt Creator.sdk" beside the app bundle (not inside Contents/Resources).
+        sdk_path = os.path.join(base_path, "Qt Creator.sdk")
+        sdk_cfg = os.path.join(sdk_path, "lib", "cmake", "QtCreator", "QtCreatorConfig.cmake")
+        if os.path.isfile(sdk_cfg):
+            return sdk_path
         return "{}/Qt Creator.app/Contents/Resources".format(base_path)
     else:  # linux
         return "{}/qtcreator".format(base_path)
@@ -413,7 +419,7 @@ def get_qt_config():
     
     # Add build-specific fields
     if system == "darwin":
-        config["qt_creator_app"] = qt_creator_path.replace("/Contents/Resources", "")
+        config["qt_creator_app"] = os.path.join(base_path, "Qt Creator.app")
         config["qt6_path"] = base_path + "/{}/macos".format(qt_version)
     elif system == "windows":
         config["qt_creator_app"] = None  # Windows doesn't use app bundles

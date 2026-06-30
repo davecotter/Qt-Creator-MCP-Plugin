@@ -86,9 +86,9 @@ def setup_windows_environment():
     
     # Try to find Visual Studio installation
     vs_paths = [
-        "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat",
+        "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat",
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat",
-        "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat"
+        "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat"
     ]
     
     for vs_path in vs_paths:
@@ -1529,7 +1529,9 @@ def main():
             
             # Combine Qt Creator and Qt6 paths
             cmake_prefix_path = qt_creator_root + ";" + qt6_path
-            cmake_cmd = [cmake_exe, "-DCMAKE_PREFIX_PATH=" + cmake_prefix_path, "-G", "Visual Studio 16 2019", "-A", "x64", "-DCMAKE_BUILD_TYPE=Release", "-B", build_dir]
+            cmake_generator = "Visual Studio 17 2022" if "msvc2022_64" in qt6_path.replace("\\", "/") else "Visual Studio 16 2019"
+            print(f"[CONFIG] Using CMake generator: {cmake_generator}")
+            cmake_cmd = [cmake_exe, "-DCMAKE_PREFIX_PATH=" + cmake_prefix_path, "-G", cmake_generator, "-A", "x64", "-DCMAKE_BUILD_TYPE=Release", "-B", build_dir]
             logger.debug(f"CMake command: {cmake_cmd}")
             logger.debug(f"Qt Creator lib path: {config['qt_creator_path']}")
             logger.debug(f"Qt Creator root path: {qt_creator_root}")
