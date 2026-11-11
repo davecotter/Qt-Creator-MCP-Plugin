@@ -37,70 +37,152 @@ void MCPServer::handleHttpRequest(QTcpSocket *client, const HttpParser::HttpRequ
 {
     qCDebug(mcpServer) << "Handling HTTP request:" << request.method << request.uri;
 
-    // Handle different HTTP methods
+    // ------------------------------------------------------------------
+    // MCP Streamable HTTP (spec 2025-03-26)
+    //
+    // One endpoint, three verbs:
+    //   GET    - optional server->client SSE channel (not supported here)
+    //   POST   - client->server JSON-RPC (requests, notifications, responses)
+    //   DELETE - client-initiated session termination
+    //
+    // Session lifecycle:
+    //   - Server mints an `Mcp-Session-Id` on the first `initialize` response.
+    //   - Client echoes it on every subsequent request.
+    //   - 404 on mismatched session tells client to reinitialize.
+    // ------------------------------------------------------------------
+
+    if (request.method == "OPTIONS") {
+        // CORS preflight - all details live in createCorsResponse().
+        QByteArray resp = HttpResponse::createCorsResponse(QByteArray(),
+            HttpResponse::NO_CONTENT);
+        sendHttpResponse(client, resp);
+        return;
+    }
+
     if (request.method == "GET") {
-        // Simple GET request - return server info
+        // Clients requesting an SSE stream are told we don't offer one. The
+        // spec explicitly allows a server to refuse server->client streaming
+        // via 405, and Streamable HTTP clients handle that gracefully.
+        const QString accept = request.headers.value("accept").toLower();
+        if (accept.contains("text/event-stream")) {
+            QByteArray resp = HttpResponse::createErrorResponse(
+                HttpResponse::METHOD_NOT_ALLOWED,
+                "Server does not support SSE on GET");
+            sendHttpResponse(client, resp);
+            return;
+        }
+
+        // Plain GET - keep the legacy info blob for human/browser probing.
         QJsonObject serverInfo;
         serverInfo["name"] = "Qt MCP Plugin HTTP Server";
-        serverInfo["version"] = "1.0.0";
-        serverInfo["transport"] = "HTTP";
+        serverInfo["version"] = m_commandsP->getVersion();
+        serverInfo["transport"] = "streamable-http";
         serverInfo["protocol"] = "MCP";
-        
-        QJsonDocument doc(serverInfo);
-        QByteArray response = HttpResponse::createCorsResponse(doc.toJson());
-        sendHttpResponse(client, response);
+        serverInfo["protocolVersion"] = "2025-03-26";
+
+        QByteArray resp = HttpResponse::createCorsResponse(
+            QJsonDocument(serverInfo).toJson());
+        sendHttpResponse(client, resp);
+        return;
+    }
+
+    if (request.method == "DELETE") {
+        const QString sessionId = request.headers.value("mcp-session-id");
+        if (!m_sessionId.isEmpty() && sessionId == m_sessionId) {
+            qCDebug(mcpServer) << "Terminating MCP session:" << m_sessionId;
+            m_sessionId.clear();
+        }
+        QByteArray resp = HttpResponse::createCorsResponse(QByteArray(),
+            HttpResponse::NO_CONTENT);
+        sendHttpResponse(client, resp);
         return;
     }
 
     if (request.method == "POST") {
-        // Handle MCP JSON-RPC requests
         if (request.body.isEmpty()) {
-            QByteArray errorResponse = HttpResponse::createErrorResponse(
+            QByteArray resp = HttpResponse::createErrorResponse(
                 HttpResponse::BAD_REQUEST, "Empty request body");
-            sendHttpResponse(client, errorResponse);
+            sendHttpResponse(client, resp);
             return;
         }
 
-        // Parse JSON-RPC request
-        QJsonParseError error;
-        QJsonDocument doc = QJsonDocument::fromJson(request.body, &error);
-        
-        if (error.error != QJsonParseError::NoError) {
-            qDebug() << "JSON parse error:" << error.errorString();
-            QByteArray errorResponse = HttpResponse::createErrorResponse(
-                HttpResponse::BAD_REQUEST, "Invalid JSON: " + error.errorString());
-            sendHttpResponse(client, errorResponse);
+        QJsonParseError parseError;
+        QJsonDocument doc = QJsonDocument::fromJson(request.body, &parseError);
+
+        if (parseError.error != QJsonParseError::NoError) {
+            qCWarning(mcpServer) << "JSON parse error:" << parseError.errorString();
+            QByteArray resp = HttpResponse::createErrorResponse(
+                HttpResponse::BAD_REQUEST, "Invalid JSON: " + parseError.errorString());
+            sendHttpResponse(client, resp);
             return;
         }
-        
+
         if (!doc.isObject()) {
-            qDebug() << "Invalid JSON-RPC message: not an object";
-            QByteArray errorResponse = HttpResponse::createErrorResponse(
+            // Batched requests (JSON arrays) are legal JSON-RPC but we do not
+            // currently support them; reject clearly rather than silently drop.
+            QByteArray resp = HttpResponse::createErrorResponse(
                 HttpResponse::BAD_REQUEST, "Invalid JSON-RPC: not an object");
-            sendHttpResponse(client, errorResponse);
+            sendHttpResponse(client, resp);
             return;
         }
-        
-        // Process the MCP request
-        QJsonObject response = processRequest(doc.object());
+
+        const QJsonObject rpc = doc.object();
+        const QString rpcMethod = rpc.value("method").toString();
+        const bool isInitialize = (rpcMethod == "initialize");
+        // A JSON-RPC notification or response has no `id` (or an explicit null
+        // id for errors with unidentifiable id); in that case the spec requires
+        // the server to reply 202 Accepted with no body.
+        const bool isNotification = !rpc.contains("id") || rpc.value("id").isNull();
+
+        const QString incomingSession = request.headers.value("mcp-session-id");
+
+        // Session validation. We allow the very first request - typically the
+        // `initialize` - to establish the session. After that every request
+        // must present the matching Mcp-Session-Id or be told to reinitialize.
+        if (!isInitialize && !m_sessionId.isEmpty() && !incomingSession.isEmpty()
+            && incomingSession != m_sessionId) {
+            qCWarning(mcpServer) << "Rejecting request with stale session id"
+                                 << incomingSession << "current" << m_sessionId;
+            QByteArray resp = HttpResponse::createErrorResponse(
+                HttpResponse::NOT_FOUND,
+                "Invalid or expired Mcp-Session-Id; reinitialize");
+            sendHttpResponse(client, resp);
+            return;
+        }
+
+        QJsonObject rpcResponse = processRequest(rpc);
+
+        if (isNotification) {
+            // Per spec: no response body for notifications/responses.
+            QByteArray resp = HttpResponse::createCorsResponse(QByteArray(),
+                HttpResponse::ACCEPTED);
+            sendHttpResponse(client, resp);
+            return;
+        }
+
+        QMap<QString, QString> extraHeaders;
+        if (isInitialize) {
+            if (m_sessionId.isEmpty()) {
+                m_sessionId = QUuid::createUuid().toString(QUuid::WithoutBraces);
+                qCInfo(mcpServer) << "Started MCP session:" << m_sessionId;
+            }
+            extraHeaders.insert("Mcp-Session-Id", m_sessionId);
+        } else if (!m_sessionId.isEmpty()) {
+            // Reflect session id back on every response so proxies/clients can
+            // see the active session even if they lost track of it.
+            extraHeaders.insert("Mcp-Session-Id", m_sessionId);
+        }
+
         QByteArray jsonResponse = HttpResponse::createCorsResponse(
-            QJsonDocument(response).toJson());
+            QJsonDocument(rpcResponse).toJson(), HttpResponse::OK, extraHeaders);
         sendHttpResponse(client, jsonResponse);
         return;
     }
 
-    if (request.method == "OPTIONS") {
-        // Handle CORS preflight requests
-        QByteArray response = HttpResponse::createCorsResponse(QByteArray(), 
-            HttpResponse::NO_CONTENT);
-        sendHttpResponse(client, response);
-        return;
-    }
-
     // Method not allowed
-    QByteArray errorResponse = HttpResponse::createErrorResponse(
+    QByteArray resp = HttpResponse::createErrorResponse(
         HttpResponse::METHOD_NOT_ALLOWED, "Method not allowed: " + request.method);
-    sendHttpResponse(client, errorResponse);
+    sendHttpResponse(client, resp);
 }
 
 void MCPServer::sendHttpResponse(QTcpSocket *client, const QByteArray &httpResponse)
@@ -200,13 +282,22 @@ QJsonObject MCPServer::processRequest(const QJsonObject &request)
         QJsonObject toolsCapability;
         toolsCapability["listChanged"] = false;
         capabilities["tools"] = toolsCapability;
-        
+
         QJsonObject serverInfo;
         serverInfo["name"] = "Qt MCP Plugin";
         serverInfo["version"] = m_commandsP->getVersion();
-        
+
+        // Negotiate protocol version: echo the client's requested version if
+        // we support it, otherwise advertise our preferred spec (2025-03-26).
+        const QString requestedVersion =
+            params.toObject().value("protocolVersion").toString();
+        static const QStringList kSupportedVersions = { "2025-03-26", "2024-11-05" };
+        const QString negotiatedVersion =
+            kSupportedVersions.contains(requestedVersion) ? requestedVersion
+                                                          : QStringLiteral("2025-03-26");
+
         QJsonObject initResult;
-        initResult["protocolVersion"] = "2024-11-05";
+        initResult["protocolVersion"] = negotiatedVersion;
         initResult["capabilities"] = capabilities;
         initResult["serverInfo"] = serverInfo;
         result = initResult;
@@ -1055,13 +1146,21 @@ QJsonObject MCPServer::callMCPMethod(const QString &method, const QJsonValue &pa
         QJsonObject toolsCapability;
         toolsCapability["listChanged"] = false;
         capabilities["tools"] = toolsCapability;
-        
+
         QJsonObject serverInfo;
         serverInfo["name"] = "Qt MCP Plugin";
         serverInfo["version"] = m_commandsP->getVersion();
-        
+
+        // Same version negotiation as the HTTP initialize path.
+        const QString requestedVersion =
+            params.toObject().value("protocolVersion").toString();
+        static const QStringList kSupportedVersions = { "2025-03-26", "2024-11-05" };
+        const QString negotiatedVersion =
+            kSupportedVersions.contains(requestedVersion) ? requestedVersion
+                                                          : QStringLiteral("2025-03-26");
+
         QJsonObject initResult;
-        initResult["protocolVersion"] = "2024-11-05";
+        initResult["protocolVersion"] = negotiatedVersion;
         initResult["capabilities"] = capabilities;
         initResult["serverInfo"] = serverInfo;
         result = initResult;

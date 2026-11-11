@@ -1555,6 +1555,9 @@ def main():
                     f"-DQtCreator_DIR={qtcreator_dir}",
                     f"-DQt6_DIR={qt6_dir}",
                     "-DCMAKE_BUILD_TYPE=Release",
+                    # Match Qt Creator's LC_BUILD_VERSION minos (13.0) so the
+                    # plugin loads on older hosts (e.g. macOS 26).
+                    "-DCMAKE_OSX_DEPLOYMENT_TARGET=13.0",
                     "-B", build_dir
                 ]
             else:
@@ -1756,7 +1759,7 @@ def main():
         # Step 9: Register with Cursor IDE for automatic MCP discovery
         register_with_cursor()
         
-        # Step 10: Build standalone installer app (macOS only)
+        # Step 10: Build standalone installer (macOS .app / Windows .exe)
         installer_success = build_installer_app()
         
         print("")
@@ -1769,15 +1772,18 @@ def main():
         print("[SUCCESS] MCP server is responding correctly")
         print("[SUCCESS] Plugin version verified")
         print("[SUCCESS] Registered with Cursor IDE")
-        if installer_success and platform.system().lower() == "darwin":
-            print("[SUCCESS] Standalone installer app created")
+        if installer_success and platform.system().lower() in ("darwin", "windows"):
+            print("[SUCCESS] Standalone installer created")
         print("")
         print("The MCP Plugin is now ready to use!")
         print("Restart Cursor to enable AI control of Qt Creator.")
-        if installer_success and platform.system().lower() == "darwin":
+        if installer_success and platform.system().lower() in ("darwin", "windows"):
             print("")
-            print("A standalone installer app has been created at:")
-            print(f"  {os.path.join(qt_config.get_build_dir(), 'Qt MCP Plugin Installer.app')}")
+            print("A standalone installer has been created at:")
+            if platform.system().lower() == "windows":
+                print(f"  {os.path.join(qt_config.get_build_dir(), 'Qt MCP Plugin Installer.exe')}")
+            else:
+                print(f"  {os.path.join(qt_config.get_build_dir(), 'Qt MCP Plugin Installer.app')}")
         print_section_break()
         print("")
         
@@ -1824,12 +1830,11 @@ def main():
         sys.exit(1)
 
 def build_installer_app():
-    """Build the standalone installer app bundle"""
+    """Build the standalone installer (macOS .app or Windows .exe)"""
     system = platform.system().lower()
     
-    # Only build installer on macOS for now
-    if system != "darwin":
-        print("[INFO] Installer app building is only supported on macOS")
+    if system not in ("darwin", "windows"):
+        print("[INFO] Installer building is only supported on macOS and Windows")
         return True  # Not a failure, just skip
     
     print("")

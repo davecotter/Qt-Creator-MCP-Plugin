@@ -8,6 +8,7 @@
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QTimer>
+#include <QUuid>
 
 #include "mcpcommands.h"
 #include "httpparser.h"
@@ -54,6 +55,11 @@ private slots:
     QList<QTcpSocket*> m_clients;
     MCPCommands *m_commandsP;
     quint16 m_port;
+
+    // MCP Streamable HTTP (spec 2025-03-26) session id. Minted on the
+    // first `initialize` request, echoed in every response's Mcp-Session-Id
+    // header, and required on every subsequent client request.
+    QString m_sessionId;
 };
 
 } // namespace Internal

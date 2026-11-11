@@ -36,6 +36,10 @@
 #include <QPalette>
 #include <QTextEdit>
 #include <QScrollArea>
+#include <QDateTime>
+#include <QLocale>
+#include <QDate>
+#include <QTime>
 
 using namespace Core;
 
@@ -43,6 +47,40 @@ using namespace Core;
 Q_LOGGING_CATEGORY(mcpPlugin, "qtcreator.mcpplugin", QtWarningMsg)
 
 namespace Qt_MCP_Plugin::Internal {
+
+/** Compile-time build stamp as "Build: July 11, 2026, 2:01pm". */
+static QString mcpFriendlyBuildDateString()
+{
+    // __DATE__ is "Mmm dd yyyy" or "Mmm d yyyy"; __TIME__ is "hh:mm:ss" (24h).
+    const QString dateStr = QString::fromLatin1(__DATE__);
+    const QString timeStr = QString::fromLatin1(__TIME__);
+    QDateTime dt = QLocale::c().toDateTime(dateStr + QLatin1Char(' ') + timeStr,
+                                           QStringLiteral("MMM d yyyy HH:mm:ss"));
+    if (!dt.isValid()) {
+        dt = QLocale::c().toDateTime(dateStr + QLatin1Char(' ') + timeStr,
+                                     QStringLiteral("MMM dd yyyy HH:mm:ss"));
+    }
+    if (!dt.isValid())
+        return QStringLiteral("Build: %1 %2").arg(dateStr, timeStr);
+
+    const QString month = QLocale::c().toString(dt.date(), QStringLiteral("MMMM"));
+    const int day = dt.date().day();
+    const int year = dt.date().year();
+    const int hour24 = dt.time().hour();
+    const int minute = dt.time().minute();
+    const QLatin1String ampm(hour24 < 12 ? "am" : "pm");
+    int hour12 = hour24 % 12;
+    if (hour12 == 0)
+        hour12 = 12;
+
+    return QStringLiteral("Build: %1 %2, %3, %4:%5%6")
+        .arg(month)
+        .arg(day)
+        .arg(year)
+        .arg(hour12)
+        .arg(minute, 2, 10, QLatin1Char('0'))
+        .arg(ampm);
+}
 
 class MCPServerStatusDialog : public QDialog
 {
@@ -77,6 +115,10 @@ public:
 		titleLayout->addStretch();
 		
 		layout->addLayout(titleLayout);
+
+		QLabel *buildDateLabel = new QLabel(mcpFriendlyBuildDateString());
+		buildDateLabel->setStyleSheet(QStringLiteral("QLabel { color: #666; }"));
+		layout->addWidget(buildDateLabel);
 		
 		// Status section
 		QHBoxLayout *statusLayout = new QHBoxLayout();
@@ -438,7 +480,7 @@ private:
 		request["id"] = 1;
 		
 		QJsonObject params;
-		params["protocolVersion"] = "2024-11-05";
+		params["protocolVersion"] = "2025-03-26";
 		params["capabilities"] = QJsonObject();
 		
 		QJsonObject clientInfo;

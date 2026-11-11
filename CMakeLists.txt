@@ -36,7 +36,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 find_package(Qt6 COMPONENTS Widgets Network Concurrent REQUIRED)
 
-if(WIN32)
+# Qt SDK often omits qttasktree; shim from Qt Creator's shipped library (Win/macOS).
+if(WIN32 OR APPLE)
   include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/ProvideQt6TaskTreeFromQtCreator.cmake)
 endif()
 

@@ -20,6 +20,10 @@
 #include <projectexplorer/runconfiguration.h>
 #include <debugger/debuggerruncontrol.h>
 #include <debugger/debuggerinternalconstants.h>
+#include <debugger/debuggerengine.h>
+#include <debugger/enginemanager.h>
+#include <debugger/stackhandler.h>
+#include <debugger/stackframe.h>
 
 #include <utils/fileutils.h>
 #include <utils/id.h>
@@ -136,6 +140,9 @@ static bool isStackModelForMcp(QAbstractItemModel *model)
     if (!model || model->rowCount() == 0)
         return false;
 
+    if (QString::fromUtf8(model->metaObject()->className()).contains(QStringLiteral("StackHandler")))
+        return true;
+
     const int colCount = model->columnCount();
 
     const QStringList stackHeaders = {QStringLiteral("level"), QStringLiteral("function"), QStringLiteral("file"),
@@ -145,6 +152,8 @@ static bool isStackModelForMcp(QAbstractItemModel *model)
 
     int stackHeaderCount = 0;
     int watchHeaderCount = 0;
+    bool hasFunctionHeader = false;
+    bool hasAddressHeader = false;
 
     for (int col = 0; col < colCount; ++col) {
         const QString header = model->headerData(col, Qt::Horizontal).toString().toLower();
@@ -161,23 +170,46 @@ static bool isStackModelForMcp(QAbstractItemModel *model)
                 break;
             }
         }
+        if (header.contains(QStringLiteral("function")))
+            hasFunctionHeader = true;
+        if (header.contains(QStringLiteral("address")))
+            hasAddressHeader = true;
     }
 
     if (watchHeaderCount > stackHeaderCount)
         return false;
-    if (stackHeaderCount >= 2)
+
+    // Reject plugin/extension lists that only share "level" + "file" headers.
+    if (!hasFunctionHeader && !hasAddressHeader)
+        return false;
+
+    const QStringList lines = collectModelDisplayRows(model, QModelIndex(), 8);
+    int debugLikeLines = 0;
+    int pluginLikeLines = 0;
+    for (const QString &line : lines) {
+        if (line.contains(QLatin1String("::"))
+            || line.contains(QRegularExpression(QStringLiteral(R"(\.(cpp|c|h|mm|m)(:|$))")))
+            || line.contains(QLatin1String("0x")))
+            ++debugLikeLines;
+        if (line.contains(QRegularExpression(QStringLiteral(R"(\d+\.\d+(?:\.\d+)?)")))
+            && !line.contains(QLatin1String("::")))
+            ++pluginLikeLines;
+    }
+    if (pluginLikeLines > 0 && debugLikeLines == 0)
+        return false;
+    if (debugLikeLines > 0)
         return true;
 
-    const QStringList lines = collectModelDisplayRows(model, QModelIndex(), 5);
-    for (const QString &line : lines) {
+    const QStringList legacyLines = collectModelDisplayRows(model, QModelIndex(), 5);
+    for (const QString &line : legacyLines) {
         if (line.contains(QLatin1String("::")))
             return true;
     }
-    for (const QString &line : lines) {
+    for (const QString &line : legacyLines) {
         if (line.contains(QRegularExpression(QStringLiteral(R"(\.(cpp|c|h|mm|m)(:|$))"))))
             return true;
     }
-    for (const QString &line : lines) {
+    for (const QString &line : legacyLines) {
         if (line.contains(QLatin1String("0x")))
             return true;
     }
@@ -386,6 +418,110 @@ struct McpStackFrame {
         return !function.isEmpty() && !isPlaceholder();
     }
 };
+
+using DebuggerEngine = Debugger::Internal::DebuggerEngine;
+using DebuggerEngineManager = Debugger::Internal::EngineManager;
+using DebuggerStackHandler = Debugger::Internal::StackHandler;
+using DebuggerStackFrame = Debugger::Internal::StackFrame;
+
+static DebuggerEngine *mcpCurrentDebuggerEngine()
+{
+    DebuggerEngineManager *manager = DebuggerEngineManager::instance();
+    if (!manager)
+        return nullptr;
+    return manager->currentEngine().data();
+}
+
+
+static bool frameLooksLikeDebugStackFrame(const McpStackFrame &frame)
+{
+    if (frame.function.contains(QLatin1String("::")))
+        return true;
+    if (frame.file.contains(QRegularExpression(
+            QStringLiteral(R"(\.(cpp|c|h|hpp|mm|m)([:/\\]|$))"),
+            QRegularExpression::CaseInsensitiveOption)))
+        return true;
+    if (frame.address.contains(QLatin1String("0x"), Qt::CaseInsensitive))
+        return true;
+    if (frame.level.contains(QRegularExpression(QStringLiteral(R"(^\d+$)")))
+        && frame.hasSymbol())
+        return true;
+    return false;
+}
+
+static bool frameLooksLikePluginListEntry(const McpStackFrame &frame)
+{
+    if (frame.function.contains(QLatin1String("::")))
+        return false;
+    if (frame.file.contains(QRegularExpression(
+            QStringLiteral(R"(\.(cpp|c|h|hpp|mm|m)([:/\\]|$))"),
+            QRegularExpression::CaseInsensitiveOption)))
+        return false;
+    if (frame.address.contains(QLatin1String("0x"), Qt::CaseInsensitive))
+        return false;
+
+    const bool versionInFile = frame.file.contains(
+        QRegularExpression(QStringLiteral(R"(\d+\.\d+(?:\.\d+)?)")));
+    const bool numericLine = frame.line.contains(QRegularExpression(QStringLiteral(R"(^\d+$)")));
+    const bool emptyFunction = frame.function.isEmpty() || frame.function == QLatin1String("-");
+
+    if (versionInFile && emptyFunction)
+        return true;
+    if (versionInFile && !numericLine && !frame.line.isEmpty())
+        return true;
+    return false;
+}
+
+static bool framesLookLikeDebugCallStack(const QList<McpStackFrame> &frames)
+{
+    if (frames.isEmpty())
+        return false;
+
+    int debugLike = 0;
+    int pluginLike = 0;
+    for (const McpStackFrame &frame : frames) {
+        if (frameLooksLikeDebugStackFrame(frame))
+            ++debugLike;
+        if (frameLooksLikePluginListEntry(frame))
+            ++pluginLike;
+    }
+
+    if (debugLike == 0)
+        return false;
+    if (pluginLike * 2 >= frames.size())
+        return false;
+    return true;
+}
+
+static QList<McpStackFrame> collectStackFramesFromHandler(DebuggerStackHandler *handler)
+{
+    QList<McpStackFrame> frames;
+    if (!handler)
+        return frames;
+
+    const int size = handler->stackSize();
+    for (int i = 0; i < size; ++i) {
+        if (handler->isSpecialFrame(i))
+            continue;
+        const DebuggerStackFrame sf = handler->frameAt(i);
+        if (!sf.isUsable() && sf.function.isEmpty() && sf.file.isEmpty())
+            continue;
+
+        McpStackFrame frame;
+        frame.level = sf.level;
+        frame.function = sf.function;
+        frame.file = sf.file.toUserOutput();
+        frame.line = sf.line >= 0 ? QString::number(sf.line) : QString();
+        if (sf.address)
+            frame.address = QStringLiteral("0x%1").arg(sf.address, 0, 16);
+        if (frame.isPlaceholder())
+            continue;
+        if (!frame.hasSymbol() && !frame.hasLocation())
+            continue;
+        frames.append(frame);
+    }
+    return frames;
+}
 
 static QString stripHtml(const QString &html)
 {
@@ -596,9 +732,19 @@ static QJsonArray stackFramesToJson(const QList<McpStackFrame> &frames)
 
 static bool appendStackResultsFromModel(QAbstractItemModel *model, QStringList &results)
 {
-    const QList<McpStackFrame> frames = collectStructuredStackFrames(model);
-    if (frames.isEmpty())
+    QList<McpStackFrame> frames;
+    if (auto *handler = qobject_cast<DebuggerStackHandler *>(unwrapStackSourceModel(model)))
+        frames = collectStackFramesFromHandler(handler);
+    else
+        frames = collectStructuredStackFrames(model);
+
+    if (frames.isEmpty() || !framesLookLikeDebugCallStack(frames)) {
+        if (!frames.isEmpty())
+            qDebug() << "MCP getCallStack: rejected" << frames.size()
+                     << "rows from" << model->metaObject()->className()
+                     << "- not a debug inferior stack";
         return false;
+    }
 
     results.append(formatStackFramesText(frames));
     results.append(QStringLiteral(""));
@@ -614,20 +760,37 @@ static bool appendStackResultsFromModel(QAbstractItemModel *model, QStringList &
 
 static QAbstractItemModel *mcpFindStackHandlerModel()
 {
+    if (DebuggerEngine *engine = mcpCurrentDebuggerEngine()) {
+        if (DebuggerStackHandler *handler = engine->stackHandler())
+            return handler;
+    }
+
     QApplication *app = qobject_cast<QApplication *>(QCoreApplication::instance());
     if (!app)
         return nullptr;
+
+    DebuggerStackHandler *bestHandler = nullptr;
+    int bestFrameCount = -1;
 
     const QList<QAbstractItemModel *> models = app->findChildren<QAbstractItemModel *>(
         QString(), Qt::FindChildrenRecursively);
     for (QAbstractItemModel *model : models) {
         if (!model)
             continue;
-        const QByteArray cls(model->metaObject()->className());
-        if (cls.contains("StackHandler"))
-            return model;
+        auto *handler = qobject_cast<DebuggerStackHandler *>(model);
+        if (!handler)
+            continue;
+        const int frameCount = handler->stackSize();
+        if (frameCount > bestFrameCount) {
+            bestHandler = handler;
+            bestFrameCount = frameCount;
+        }
     }
-    return nullptr;
+
+    if (!bestHandler)
+        qDebug() << "MCP getCallStack: StackHandler not found via engine or widget tree";
+
+    return bestHandler;
 }
 
 static bool extractStackLinesFromModel(QAbstractItemModel *model, QStringList &results)
@@ -658,48 +821,99 @@ static bool tryExpandStackViaDebuggerActions()
     return false;
 }
 
-static bool tryGetCallStackDirect(QStringList &results)
+static QString mcpEscapeAppleScriptString(const QString &value)
 {
-    for (int i = 0; i < 40; ++i) {
-        if (debuggerActionEnabled(QStringLiteral("Debugger.Continue")))
-            break;
-        QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
-        QThread::msleep(250);
+    return value;
+}
+
+static QString mcpCaptureFrontmostApplicationName()
+{
+#ifdef Q_OS_MACOS
+    QProcess p;
+    p.start(QStringLiteral("/usr/bin/osascript"),
+            QStringList({QStringLiteral("-e"),
+                         QStringLiteral("tell application \"System Events\" to get name of first application process whose frontmost is true")}));
+    if (p.waitForFinished(3000) && p.exitCode() == 0) {
+        const QString name = QString::fromUtf8(p.readAllStandardOutput()).trimmed();
+        if (!name.isEmpty())
+            return name;
     }
-
-    tryExpandStackViaDebuggerActions();
-    tryExpandStackLoadMoreAllViews();
-
-    QWidget *searchRoot = Core::ICore::mainWindow();
-
-    for (int pass = 0; pass < 20; ++pass) {
-        QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
-        QThread::msleep(150);
-
-        if (QAbstractItemModel *handlerModel = mcpFindStackHandlerModel()) {
-            QStringList body;
-            if (appendStackResultsFromModel(handlerModel, body)) {
-                results.append(body);
-                return true;
+#elif defined(Q_OS_WIN)
+    QProcess p;
+    p.start(QStringLiteral("powershell.exe"),
+            QStringList({QStringLiteral("-NoProfile"), QStringLiteral("-STA"), QStringLiteral("-Command"),
+                         QStringLiteral("Add-Type @'\nusing System;\nusing System.Runtime.InteropServices;\npublic class McpFg {\n [DllImport(\"user32.dll\")] public static extern IntPtr GetForegroundWindow();\n [DllImport(\"user32.dll\")] public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint pid);\n}\n'@ -PassThru | Out-Null; $h=[McpFg]::GetForegroundWindow(); [uint32]$pid=0; [void][McpFg]::GetWindowThreadProcessId($h,[ref]$pid); if ($pid -gt 0) { (Get-Process -Id $pid -ErrorAction SilentlyContinue).ProcessName }")}));
+    if (p.waitForFinished(3000) && p.exitCode() == 0) {
+        const QString name = QString::fromUtf8(p.readAllStandardOutput()).trimmed();
+        if (!name.isEmpty())
+            return name;
+    }
+#else
+    QProcess p;
+    p.start(QStringLiteral("wmctrl"), QStringList({QStringLiteral("-lx")}));
+    if (p.waitForFinished(3000) && p.exitCode() == 0) {
+        const QStringList lines = QString::fromUtf8(p.readAllStandardOutput()).split(QLatin1Char('\n'));
+        for (const QString &line : lines) {
+            if (line.contains(QLatin1String(" 0 "))) {
+                const QStringList parts = line.split(QLatin1Char(' '), Qt::SkipEmptyParts);
+                if (parts.size() >= 3)
+                    return parts.last();
             }
         }
-
-        if (searchRoot) {
-            const QList<QAbstractItemView *> views = searchRoot->findChildren<QAbstractItemView *>(
-                QString(), Qt::FindChildrenRecursively);
-            for (QAbstractItemView *view : views) {
-                if (!view)
-                    continue;
-                QStringList body;
-                if (appendStackResultsFromModel(view->model(), body)) {
-                    results.append(body);
-                    return true;
-                }
-            }
-        }
     }
+#endif
+    return QString();
+}
 
-    return false;
+static bool mcpActivateApplicationByName(const QString &appName)
+{
+    if (appName.isEmpty())
+        return false;
+
+#ifdef Q_OS_MACOS
+    QProcess p;
+    p.start(QStringLiteral("/usr/bin/osascript"),
+            QStringList({QStringLiteral("-e"),
+                         QStringLiteral("tell application \"%1\" to activate").arg(mcpEscapeAppleScriptString(appName))}));
+    if (p.waitForFinished(3000) && p.exitCode() == 0)
+        return true;
+    return QProcess::startDetached(QStringLiteral("/usr/bin/open"),
+                                   QStringList({QStringLiteral("-a"), appName}));
+#elif defined(Q_OS_WIN)
+    const int code = QProcess::execute(QStringLiteral("powershell.exe"),
+                                       QStringList({QStringLiteral("-NoProfile"), QStringLiteral("-STA"), QStringLiteral("-Command"),
+                                                    QStringLiteral("(New-Object -ComObject WScript.Shell).AppActivate('%1')").arg(appName)}));
+    return code == 0;
+#else
+    const int code = QProcess::execute(QStringLiteral("wmctrl"), QStringList({QStringLiteral("-a"), appName}));
+    return code == 0;
+#endif
+}
+
+static void activateCursorIde()
+{
+    if (mcpActivateApplicationByName(QStringLiteral("Cursor")))
+        return;
+#ifdef Q_OS_MACOS
+    QProcess::startDetached(QStringLiteral("/usr/bin/open"),
+                            QStringList({QStringLiteral("-a"), QStringLiteral("Cursor")}));
+#elif defined(Q_OS_WIN)
+    QProcess::execute(QStringLiteral("powershell.exe"),
+                        QStringList({QStringLiteral("-NoProfile"), QStringLiteral("-STA"), QStringLiteral("-Command"),
+                                     QStringLiteral("(New-Object -ComObject WScript.Shell).AppActivate('Cursor')")}));
+#else
+    QProcess::execute(QStringLiteral("wmctrl"), QStringList({QStringLiteral("-a"), QStringLiteral("Cursor")}));
+#endif
+}
+
+static void mcpRestoreFrontmostApplication(const QString &priorFrontmost)
+{
+    if (!priorFrontmost.isEmpty() && mcpActivateApplicationByName(priorFrontmost)) {
+        qDebug() << "MCP getCallStack: restored frontmost application" << priorFrontmost;
+        return;
+    }
+    activateCursorIde();
+    qDebug() << "MCP getCallStack: restored Cursor (prior frontmost unavailable:" << priorFrontmost << ")";
 }
 
 static void raiseQtCreatorMainWindow()
@@ -713,29 +927,52 @@ static void raiseQtCreatorMainWindow()
     }
 }
 
-static void activateCursorIde()
+
+static bool tryGetCallStackDirect(QStringList &results)
 {
-#ifdef Q_OS_MACOS
-    {
-        QProcess p;
-        p.start(QStringLiteral("/usr/bin/osascript"),
-                QStringList({QStringLiteral("-e"),
-                             QStringLiteral("tell application \"Cursor\" to activate")}));
-        if (p.waitForFinished(3000) && p.exitCode() == 0)
-            return;
+    for (int i = 0; i < 40; ++i) {
+        if (debuggerActionEnabled(QStringLiteral("Debugger.Continue")))
+            break;
+        QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+        QThread::msleep(250);
     }
-    QProcess::startDetached(QStringLiteral("/usr/bin/open"),
-                            QStringList({QStringLiteral("-a"), QStringLiteral("Cursor")}));
-#elif defined(Q_OS_WIN)
-    QProcess::execute(QStringLiteral("powershell.exe"),
-                        QStringList({QStringLiteral("-NoProfile"), QStringLiteral("-STA"), QStringLiteral("-Command"),
-                                     QStringLiteral("(New-Object -ComObject WScript.Shell).AppActivate('Cursor')")}));
-#else
-    QProcess::execute(QStringLiteral("wmctrl"), QStringList({QStringLiteral("-a"), QStringLiteral("Cursor")}));
-#endif
+
+    const QString priorFrontmost = mcpCaptureFrontmostApplicationName();
+    raiseQtCreatorMainWindow();
+    const QScopeGuard restoreFrontmost([&] { mcpRestoreFrontmostApplication(priorFrontmost); });
+
+    tryExpandStackViaDebuggerActions();
+    tryExpandStackLoadMoreAllViews();
+
+    bool sawHandler = false;
+    for (int pass = 0; pass < 20; ++pass) {
+        QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+        QThread::msleep(150);
+
+        if (QAbstractItemModel *handlerModel = mcpFindStackHandlerModel()) {
+            sawHandler = true;
+            QStringList body;
+            if (appendStackResultsFromModel(handlerModel, body)) {
+                results.append(body);
+                return true;
+            }
+            auto *handler = qobject_cast<DebuggerStackHandler *>(handlerModel);
+            if (handler) {
+                qDebug() << "MCP getCallStack: StackHandler found (stackSize="
+                         << handler->stackSize() << " contentsValid="
+                         << handler->isContentsValid() << ") but no usable frames yet, pass"
+                         << pass;
+            }
+        }
+    }
+
+    if (!sawHandler)
+        qDebug() << "MCP getCallStack: StackHandler model never appeared during direct read";
+    else
+        qDebug() << "MCP getCallStack: StackHandler present but inferior stack frames unavailable";
+
+    return false;
 }
-
-
 
 static constexpr int kMaxMcpOutputChars = 65536;
 
@@ -1864,7 +2101,7 @@ QString MCPCommands::getCallStack()
             engineResults.append(QStringLiteral("=== END CALL STACK ==="));
             return engineResults.join(QStringLiteral("\n"));
         }
-        qDebug() << "MCP getCallStack: direct stack read failed, falling back to stack views";
+        qDebug() << "MCP getCallStack: direct StackHandler read failed";
 
         if (!debuggerActionEnabled(QStringLiteral("Debugger.Continue"))) {
             results.append(QStringLiteral("ERROR: Debuggee is not paused in the debugger."));
@@ -1875,126 +2112,18 @@ QString MCPCommands::getCallStack()
         }
     }
 
-    raiseQtCreatorMainWindow();
-#ifndef Q_OS_WIN
-    const QScopeGuard restoreCursorFront([] { activateCursorIde(); });
-#endif
-
-    tryExpandStackLoadMoreAllViews();
-
-    QWidgetList allWidgets = QApplication::allWidgets();
-
-    const auto isStackModel = [](QAbstractItemModel *model) -> bool {
-        return isStackModelForMcp(model);
-    };
-
-    auto extractStackFromModel = [&results](QAbstractItemModel *model) -> bool {
-        return extractStackLinesFromModel(model, results);
-    };
-
-    for (QWidget *widget : allWidgets) {
-        if (!widget || !widget->isVisible())
-            continue;
-
-        const QString objectName = widget->objectName();
-        if (objectName.contains(QLatin1String("Stack"), Qt::CaseInsensitive)
-            && !objectName.contains(QLatin1String("Watch"), Qt::CaseInsensitive)
-            && !objectName.contains(QLatin1String("Local"), Qt::CaseInsensitive)) {
-
-            qDebug() << "Found stack widget by name:" << objectName;
-
-            const QList<QAbstractItemView *> views = widget->findChildren<QAbstractItemView *>(
-                QString(), Qt::FindChildrenRecursively);
-            for (QAbstractItemView *view : views) {
-                QAbstractItemModel *model = view->model();
-                if (model && isStackModel(model) && extractStackFromModel(model)) {
-                    results.append(QStringLiteral(""));
-                    results.append(QStringLiteral("=== END CALL STACK ==="));
-                    return results.join(QStringLiteral("\n"));
-                }
-            }
-        }
-    }
-
-    QList<QPair<int, QAbstractItemView *>> candidateViews;
-
-    for (QWidget *widget : allWidgets) {
-        if (!widget || !widget->isVisible())
-            continue;
-
-        auto *view = qobject_cast<QAbstractItemView *>(widget);
-        if (!view)
-            continue;
-
-        QAbstractItemModel *model = view->model();
-        if (!model || model->rowCount() == 0)
-            continue;
-
-        int score = 0;
-        const int colCount = model->columnCount();
-
-        for (int col = 0; col < colCount; ++col) {
-            const QString header = model->headerData(col, Qt::Horizontal).toString().toLower();
-            if (header.contains(QLatin1String("function")))
-                score += 10;
-            if (header.contains(QLatin1String("file")))
-                score += 8;
-            if (header.contains(QLatin1String("line")))
-                score += 8;
-            if (header.contains(QLatin1String("address")))
-                score += 6;
-            if (header.contains(QLatin1String("level")))
-                score += 6;
-            if (header.contains(QLatin1String("from")) || header.contains(QLatin1String("module")))
-                score += 4;
-
-            if (header.contains(QLatin1String("value")))
-                score -= 5;
-            if (header.contains(QLatin1String("type")) && !header.contains(QLatin1String("return")))
-                score -= 5;
-            if (header.contains(QLatin1String("time")))
-                score -= 10;
-        }
-
-        const QStringList sampleLines = collectModelDisplayRows(model, QModelIndex(), 3);
-        for (const QString &line : sampleLines) {
-            if (line.contains(QLatin1String("0x")))
-                score += 3;
-            if (line.contains(QLatin1String("::")))
-                score += 5;
-            if (line.contains(QRegularExpression(QStringLiteral("\\.(cpp|c|h|mm|m)"))))
-                score += 4;
-        }
-
-        if (score > 5)
-            candidateViews.append({score, view});
-    }
-
-    std::sort(candidateViews.begin(), candidateViews.end(),
-              [](const auto &a, const auto &b) { return a.first > b.first; });
-
-    for (const auto &[score, view] : candidateViews) {
-        qDebug() << "Trying candidate view with score" << score;
-        QAbstractItemModel *model = view->model();
-        if (model && extractStackFromModel(model)) {
-            results.append(QStringLiteral(""));
-            results.append(QStringLiteral("=== END CALL STACK ==="));
-            return results.join(QStringLiteral("\n"));
-        }
-    }
-
-    results.append(QStringLiteral("Could not automatically extract call stack data."));
+    results.append(QStringLiteral("ERROR: Could not read inferior call stack from StackHandler."));
     results.append(QStringLiteral(""));
-    results.append(QStringLiteral("The debugger is active but stack rows were not readable from views."));
+    results.append(QStringLiteral("The debugger is paused but stack frames were not available from the debugger engine."));
     results.append(QStringLiteral("This may happen if:"));
-    results.append(QStringLiteral("  - The Stack panel is not visible in Qt Creator"));
-    results.append(QStringLiteral("  - The debugger is running (not paused at a breakpoint)"));
-    results.append(QStringLiteral("  - No stack frames are available yet"));
+    results.append(QStringLiteral("  - Stack data has not arrived from the debugger backend yet"));
+    results.append(QStringLiteral("  - The Stack panel needs a moment to populate (retry getCallStack)"));
+    results.append(QStringLiteral("  - The inferior stopped without symbolic stack information"));
     results.append(QStringLiteral(""));
     results.append(QStringLiteral("Suggestions:"));
-    results.append(QStringLiteral("  1. Ensure the debugger is paused at a breakpoint"));
+    results.append(QStringLiteral("  1. Retry getCallStack after a short pause"));
     results.append(QStringLiteral("  2. Open the Stack panel in Qt Creator (View > Views > Stack)"));
-    results.append(QStringLiteral("  3. Try again after the debugger stops at a breakpoint"));
+    results.append(QStringLiteral("  3. Use listThreads / selectThread if stopped on a non-main thread"));
 
     results.append(QStringLiteral(""));
     results.append(QStringLiteral("=== END CALL STACK ==="));

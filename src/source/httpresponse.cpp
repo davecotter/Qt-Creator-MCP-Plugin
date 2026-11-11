@@ -67,26 +67,44 @@ QByteArray HttpResponse::createErrorResponse(StatusCode statusCode, const QStrin
     return buildResponse(response);
 }
 
-QByteArray HttpResponse::createCorsResponse(const QByteArray &jsonBody, StatusCode statusCode)
+QByteArray HttpResponse::createCorsResponse(const QByteArray &jsonBody,
+                                           StatusCode statusCode,
+                                           const QMap<QString, QString> &extraHeaders)
 {
     ResponseData response;
     response.statusCode = statusCode;
     response.statusMessage = getStatusMessage(statusCode);
     response.version = "1.1";
     response.body = jsonBody;
-    
-    // Set standard headers for JSON response
-    response.headers["Content-Type"] = "application/json; charset=utf-8";
+
+    // Set standard headers for JSON response.
+    // 204 (No Content) and 202 (Accepted with empty body) intentionally omit
+    // Content-Type to stay spec-correct; Content-Length is still set to 0.
+    if (statusCode != NO_CONTENT && !jsonBody.isEmpty()) {
+        response.headers["Content-Type"] = "application/json; charset=utf-8";
+    }
     response.headers["Content-Length"] = QString::number(jsonBody.size());
     response.headers["Server"] = "Qt MCP Plugin HTTP Server";
     response.headers["Connection"] = "close";
-    
-    // Add CORS headers
+
+    // CORS for MCP Streamable HTTP (spec 2025-03-26):
+    //   - DELETE needed for client-initiated session termination
+    //   - Mcp-Session-Id / MCP-Protocol-Version are custom headers the client
+    //     both sends and needs to read back from the server
     response.headers["Access-Control-Allow-Origin"] = "*";
-    response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS";
-    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization";
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, DELETE, OPTIONS";
+    response.headers["Access-Control-Allow-Headers"] =
+        "Content-Type, Authorization, Mcp-Session-Id, MCP-Protocol-Version, Accept";
+    response.headers["Access-Control-Expose-Headers"] =
+        "Mcp-Session-Id, MCP-Protocol-Version";
     response.headers["Access-Control-Max-Age"] = "3600";
-    
+
+    // Merge caller-supplied extra headers last so they can override defaults
+    // (e.g. Mcp-Session-Id on the initialize response).
+    for (auto it = extraHeaders.constBegin(); it != extraHeaders.constEnd(); ++it) {
+        response.headers[it.key()] = it.value();
+    }
+
     return buildResponse(response);
 }
 
@@ -114,6 +132,7 @@ QString HttpResponse::getStatusMessage(StatusCode statusCode)
     switch (statusCode) {
         case OK: return "OK";
         case CREATED: return "Created";
+        case ACCEPTED: return "Accepted";
         case NO_CONTENT: return "No Content";
         case BAD_REQUEST: return "Bad Request";
         case UNAUTHORIZED: return "Unauthorized";

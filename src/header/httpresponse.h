@@ -27,6 +27,7 @@ public:
     enum StatusCode {
         OK = 200,
         CREATED = 201,
+        ACCEPTED = 202,
         NO_CONTENT = 204,
         BAD_REQUEST = 400,
         UNAUTHORIZED = 401,
@@ -85,8 +86,9 @@ public:
      * @param statusCode HTTP status code (default: 200 OK)
      * @return Formatted HTTP response with CORS headers
      */
-    static QByteArray createCorsResponse(const QByteArray &jsonBody, 
-                                       StatusCode statusCode = OK);
+    static QByteArray createCorsResponse(const QByteArray &jsonBody,
+                                       StatusCode statusCode = OK,
+                                       const QMap<QString, QString> &extraHeaders = {});
 
     /**
      * @brief Build HTTP response from response data
